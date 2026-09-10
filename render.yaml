@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: werket
+    runtime: docker
+    plan: free
+    healthCheckPath: /
