@@ -1,9 +1,10 @@
 # Werket
 
-Werket is a standalone Amharic writing workspace inspired by Pages and Word.
-It combines a paper-like editor, Fidel phonetic typing, direct seven-order
-letter families, predictive words/sentences, local document storage, import,
-export, printing, and a mobile/desktop-installable PWA.
+Werket is a standalone Amharic file editor inspired by VS Code, Pages, and
+Word. It combines a workspace/file tree, tabs, a paper-like editor, Fidel
+phonetic typing, direct seven-order letter families, dictionary-backed spell
+checking, predictive words/sentences, book templates, local document storage,
+import, export, printing, and a mobile/desktop-installable PWA.
 
 ## Run
 
@@ -13,6 +14,11 @@ python3 app.py
 
 Open `http://localhost:8765`. On a phone or tablet, use **Install app** or
 **Add to Home screen**. Documents are saved locally in the browser.
+
+Templates include Blank document, Letter, Daily journal, and Book project. The
+Book project creates an outline, characters file, research notes, and chapter
+files in a `chapters/` folder. Font family and size are adjustable in the
+editor toolbar.
 
 ## Input
 

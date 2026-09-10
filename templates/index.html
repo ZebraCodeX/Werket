@@ -1,4 +1,49 @@
-<!doctype html><html lang="am"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#233b7a"><link rel="manifest" href="/manifest.json"><link rel="stylesheet" href="/static/werket.css"><title>Werket</title></head><body>
-<header><div class="brand"><b>ፈ</b><span><strong>Werket</strong><small>Amharic writing studio</small></span></div><input id="title" value="Untitled document" aria-label="Document title"><div class="actions"><i id="status">Ready</i><button id="open">Open</button><input id="file" type="file" accept=".txt,.md" hidden><button id="save">Save</button><button id="export">Export</button></div></header>
-<main><aside><button id="new">＋ New document</button><h4>DOCUMENTS</h4><div id="docs"></div><div class="note"><b>Fast Amharic input</b><p>Type with Fidel phonetics: <b>selam</b> → ሰላም. Tap a family for all seven vowel orders.</p></div></aside><section class="writing"><nav><button data-wrap="# ">Title</button><button data-wrap="**" data-end="**"><b>B</b></button><button data-wrap="_" data-end="_"><i>I</i></button><button data-wrap="- ">List</button><button id="print">Print</button><button id="clear">Clear</button></nav><div class="paper"><textarea id="editor" dir="auto" spellcheck="false" placeholder="የሚያስቡትን ይጻፉ..."></textarea></div><footer><span id="count">0 words · 0 dictionary words · 0 chars</span><span>Local autosave</span></footer><div class="keyboard-title"><b>Amharic keyboard</b><span>Fidel + phonetic QWERTY <button id="toggle">Hide / show</button></span></div><div id="keyboard"></div></section><aside class="right"><div class="card"><h3>Smart suggestions</h3><p>Werket predicts the word or thought you are forming.</p><div id="suggestions"><small>Start typing...</small></div></div><div class="card"><h3>Spelling</h3><p id="spellSummary">All words are checked against the Werket dictionary.</p><div id="errors"></div></div><div class="card"><h3>Writing tools</h3><button class="wide" id="accept">Accept first suggestion <kbd>Tab</kbd></button><div class="stat">Word completion <b>ON</b></div><div class="stat">Sentence prediction <b>ON</b></div><div class="stat">Offline mode <b>READY</b></div></div></aside></main>
-<script src="/static/werket.js"></script><script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});</script></body></html>
+<!doctype html>
+<html lang="am">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/static/werket.css">
+  <title>Werket | Amharic Editor</title>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand" id="brandHome" aria-label="Werket home"><span class="brand-mark">ፈ</span><span><b>Werket</b><small>Amharic editor</small></span></button>
+      <div class="topbar-center"><span class="workspace-name">My workspace</span><span class="slash">/</span><input id="projectName" value="My documents" aria-label="Workspace name"></div>
+      <div class="top-actions"><span id="saveStatus" class="save-status">Ready</span><button class="top-btn" id="importBtn">Import</button><input id="importFile" type="file" accept=".txt,.md" hidden><button class="top-btn" id="exportBtn">Export</button><button class="top-btn primary" id="saveBtn">Save</button><button class="avatar" title="Local workspace">Z</button></div>
+    </header>
+    <div class="app-body">
+      <aside class="activitybar"><button class="activity active" title="Files">▤</button><button class="activity" id="templatesActivity" title="Templates">✦</button><button class="activity" title="Search">⌕</button><div class="activity-bottom"><button class="activity" id="settingsBtn" title="Settings">⚙</button></div></aside>
+      <aside class="explorer" id="explorerPanel">
+        <div class="panel-heading"><span>EXPLORER</span><button id="newFileBtn" title="New file">＋</button></div>
+        <div class="workspace-label"><span class="chevron">⌄</span><b id="treeProjectName">MY DOCUMENTS</b><button id="newProjectBtn" title="New project">＋</button></div>
+        <div id="fileTree" class="file-tree"></div>
+        <div class="explorer-bottom"><button id="newDocBtn" class="outline-action">＋ New document</button><button id="templatesBtn" class="outline-action">✦ Templates</button></div>
+      </aside>
+      <main class="editor-area">
+        <div id="tabs" class="tabs"></div>
+        <section class="editor-toolbar" aria-label="Editor toolbar">
+          <div class="toolbar-group"><button class="tool" data-prefix="# " title="Heading 1">H1</button><button class="tool" data-prefix="## " title="Heading 2">H2</button><button class="tool" data-wrap="**" data-end="**" title="Bold"><b>B</b></button><button class="tool" data-wrap="_" data-end="_" title="Italic"><i>I</i></button><span class="toolbar-rule"></span><button class="tool" data-prefix="- " title="Bullet list">• List</button><button class="tool" data-prefix="1. " title="Numbered list">1. List</button></div>
+          <div class="toolbar-group typography"><label>Font <select id="fontFamily"><option value="Noto Sans Ethiopic">Noto Sans Ethiopic</option><option value="Abyssinica SIL">Abyssinica SIL</option><option value="Nyala">Nyala</option><option value="Aptos">Aptos</option><option value="Georgia">Georgia</option></select></label><label>Size <select id="fontSize"><option value="16">16</option><option value="18" selected>18</option><option value="20">20</option><option value="24">24</option><option value="28">28</option></select></label></div>
+        </section>
+        <section class="document-stage"><div class="document-paper"><div id="lineNumbers" class="line-numbers" aria-hidden="true">1</div><textarea id="editor" spellcheck="false" autocorrect="off" autocomplete="off" dir="auto" placeholder="Start writing in Amharic..."></textarea></div></section>
+        <div class="editor-status"><span id="fileStatus">Plain text · UTF-8</span><span id="editorStats">0 words · 0 dictionary words · 0 characters</span><button id="keyboardBtn">Keyboard</button><button id="toggleInspector">Inspector</button></div>
+        <section id="keyboardPanel" class="keyboard-panel"><div class="keyboard-panel-head"><div><b>Amharic keyboard</b><span>Tap a family, then choose its order</span></div><div><label class="switch-label"><input id="phoneticToggle" type="checkbox" checked><span>Phonetic QWERTY</span></label><button id="closeKeyboard" class="small-btn">Hide</button></div></div><div id="keyboard" class="keyboard"></div></section>
+      </main>
+      <aside class="inspector" id="inspector">
+        <div class="inspector-heading"><b>INSPECTOR</b><button id="closeInspector">×</button></div>
+        <section class="inspector-section"><div class="section-title"><span>Suggestions</span><span class="live-dot">LIVE</span></div><p class="section-help">Dictionary words and likely continuations.</p><div id="suggestions" class="suggestions"><span class="empty">Start typing for suggestions.</span></div></section>
+        <section class="inspector-section"><div class="section-title"><span>Spelling</span><span id="spellBadge" class="badge">READY</span></div><p id="spellSummary" class="section-help">Every Amharic word is checked against the dictionary.</p><div id="errors" class="errors"></div></section>
+        <section class="inspector-section outline-section"><div class="section-title"><span>Book outline</span><button id="addOutlineBtn" class="link-btn">＋</button></div><div id="outline" class="outline"><span class="empty">Create a book project to see its structure.</span></div></section>
+        <section class="inspector-section"><div class="section-title"><span>Shortcuts</span></div><div class="shortcut"><kbd>⌘/Ctrl</kbd><span>+ S</span><small>Save</small></div><div class="shortcut"><kbd>Tab</kbd><small>Accept suggestion</small></div><div class="shortcut"><kbd>⌘/Ctrl</kbd><span>+ P</span><small>Print</small></div></section>
+      </aside>
+    </div>
+  </div>
+  <dialog id="templateDialog" class="template-dialog"><div class="dialog-head"><div><b>Start a new project</b><span>Choose a structure and begin writing.</span></div><button id="closeTemplates">×</button></div><div id="templateGrid" class="template-grid"></div></dialog>
+  <script src="/static/werket.js"></script>
+  <script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});</script>
+</body>
+</html>
