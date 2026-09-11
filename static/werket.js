@@ -977,8 +977,9 @@ function importPdf(file) {
     $('keyboardPanel').classList.toggle('open', oskOpen);
     document.body.classList.toggle('osk-open', oskOpen);
     $('keyboardBtn').classList.toggle('active', oskOpen);
-    $('keyboardBtn').textContent = oskOpen ? '⌄' : '⌃';
+    $('keyboardBtn').textContent = oskOpen ? '⌨️⬇️' : '⌨️⬆️';
     $('keyboardBtn').title = oskOpen ? 'Hide keyboard' : 'Show keyboard';
+    $('keyboardBtn').setAttribute('aria-label', oskOpen ? 'Hide keyboard' : 'Show keyboard');
     localStorage.setItem(oskPrefKey, oskOpen ? '1' : '0');
     hideOrders();
     if (oskOpen) {
@@ -1000,7 +1001,7 @@ function importPdf(file) {
     if (!offer) setOsk(false);
     else {
       $('keyboardBtn').hidden = false;
-      $('keyboardBtn').textContent = oskOpen ? '⌄' : '⌃';
+      $('keyboardBtn').textContent = oskOpen ? '⌨️⬇️' : '⌨️⬆️';
       if (oskOpen) setOsk(true);
     }
   }
@@ -1686,6 +1687,11 @@ var errorsEl = $('errors');
 
   function renderKeyboard() {
     var host = $('keyboard'), html = '';
+    // Layer indicator
+    html += '<div class="keyboard-layer-indicator">';
+    html += '<span class="' + (kbLayer === 'fidel' ? 'active' : '') + '" data-layer="fidel">Fidel</span>';
+    html += '<span class="' + (kbLayer === 'num' ? 'active' : '') + '" data-layer="num">123/#</span>';
+    html += '</div>';
     if (kbLayer === 'num') {
       [['1','2','3','4','5','6','7','8','9','0'],['፩','፪','፫','፬','፭','፮','፯','፰','፱','፲'],['፤','፥','፦','፧','፨','?','!','(',')','-']].forEach(function (row) {
         html += '<div class="keys">';
@@ -1712,6 +1718,13 @@ var errorsEl = $('errors');
     html += '<button type="button" class="key fn" id="backspaceKey">⌫</button>';
     html += '</div>';
     host.innerHTML = html;
+    // Layer indicator click handlers
+    host.querySelectorAll('[data-layer]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        kbLayer = btn.dataset.layer;
+        renderKeyboard();
+      });
+    });
     host.querySelectorAll('[data-family]').forEach(function (button) {
       onTap(button, function () { showOrders(button, button.dataset.family); });
       button.addEventListener('contextmenu', function (e) {
