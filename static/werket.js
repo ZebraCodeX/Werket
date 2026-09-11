@@ -96,7 +96,8 @@
   }
   function selectionOffsets() {
     var selection = window.getSelection();
-    if (!selection || !selection.rangeCount || !editor.contains(selection.anchorNode)) return {start: caretStart, end: caretEnd};
+    if (!selection || !selection.rangeCount) return null;
+    if (!editor.contains(selection.anchorNode)) return null;
     var range = selection.getRangeAt(0), before = range.cloneRange();
     before.selectNodeContents(editor);
     before.setEnd(range.startContainer, range.startOffset);
@@ -112,28 +113,68 @@
       if (offset < next) return {node: node, offset: Math.max(0, offset - count)};
       if (offset === next) {
         var container = node.parentElement;
-        if (container && /^(P|H1|H2|H3|DIV)$/i.test(container.nodeName) && container.nextElementSibling && /^(P|H1|H2|H3|DIV)$/i.test(container.nextElementSibling.nodeName)) {
-          return {node: container.nextElementSibling, offset: 0};
+        while (container && container !== root && !/^(P|H1|H2|H3|H4|H5|H6|DIV|LI)$/i.test(container.nodeName)) {
+          container = container.parentElement;
+        }
+        if (container && container !== root && container.nextElementSibling && /^(P|H1|H2|H3|H4|H5|H6|DIV|LI)$/i.test(container.nextElementSibling.nodeName)) {
+          var nextBlock = container.nextElementSibling;
+          var firstText = nextBlock.firstChild;
+          while (firstText && firstText.nodeType !== 3) firstText = firstText.firstChild;
+          return {node: firstText || nextBlock, offset: 0};
         }
         text = {node: node, offset: node.nodeValue.length};
       }
       count = next;
     }
-    return text || {node: root, offset: root.childNodes.length};
+    if (text) return text;
+    var firstText = root.firstChild;
+    while (firstText && firstText.nodeType !== 3) firstText = firstText.firstChild;
+    return {node: firstText || root, offset: 0};
   }
   function restoreSelection(start, end) {
+    if (start == null || end == null) return;
+    editor.focus({preventScroll: true});
     var startPoint = nodeAtOffset(editor, start), endPoint = nodeAtOffset(editor, end), range = document.createRange(), selection = window.getSelection();
     try {
       range.setStart(startPoint.node, startPoint.offset); range.setEnd(endPoint.node, endPoint.offset);
       selection.removeAllRanges(); selection.addRange(range);
       caretStart = start; caretEnd = end;
-    } catch (e) {}
+    } catch (e) {
+      try {
+        var fallback = document.createRange();
+        fallback.selectNodeContents(editor);
+        fallback.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(fallback);
+      } catch (_) {}
+    }
   }
   function replaceTextRange(start, end, text) {
-    var startPoint = nodeAtOffset(editor, start), endPoint = nodeAtOffset(editor, end), range = document.createRange();
+    var selection = window.getSelection();
+    var range;
+    if (selection && selection.rangeCount && editor.contains(selection.anchorNode)) {
+      range = selection.getRangeAt(0);
+      var before = range.cloneRange();
+      before.selectNodeContents(editor);
+      before.setEnd(range.startContainer, range.startOffset);
+      if (before.toString().length === start && range.collapsed) {
+        range.deleteContents();
+        var inserted = document.createTextNode(text);
+        range.insertNode(inserted);
+        range.setStartAfter(inserted);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        caretStart = caretEnd = start + text.length;
+        try { editor.dispatchEvent(new Event('input', {bubbles: true})); } catch (e) {}
+        return;
+      }
+    }
+    var startPoint = nodeAtOffset(editor, start), endPoint = nodeAtOffset(editor, end);
+    range = document.createRange();
     range.setStart(startPoint.node, startPoint.offset); range.setEnd(endPoint.node, endPoint.offset); range.deleteContents();
     var inserted = document.createTextNode(text); range.insertNode(inserted); range.setStartAfter(inserted); range.collapse(true);
-    var selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range); caretStart = caretEnd = start + text.length;
+    selection.removeAllRanges(); selection.addRange(range); caretStart = caretEnd = start + text.length;
     try { editor.dispatchEvent(new Event('input', {bubbles: true})); } catch (e) {}
   }
   function applyTheme(theme) {
@@ -256,8 +297,10 @@
   }
   function rememberCaret() {
     var offsets = selectionOffsets();
-    caretStart = offsets.start;
-    caretEnd = offsets.end;
+    if (offsets) {
+      caretStart = offsets.start;
+      caretEnd = offsets.end;
+    }
   }
   function restoreCaret() {
     restoreSelection(caretStart, caretEnd);
@@ -1373,22 +1416,67 @@ function importPdf(file) {
         sel.addRange(newRange);
         changed();
         rememberCaret();
-        // Ensure focus is maintained
         editor.focus({preventScroll: true});
         return;
       }
+      range.deleteContents();
+      var inserted = document.createTextNode(text);
+      range.insertNode(inserted);
+      range.setStartAfter(inserted);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      changed();
+      rememberCaret();
+      editor.focus({preventScroll: true});
+      return;
     }
     var offsets = selectionOffsets();
-    replaceTextRange(offsets.start, offsets.end, text);
+    if (offsets) {
+      replaceTextRange(offsets.start, offsets.end, text);
+    }
     changed();
     restoreCaret();
-    // Ensure focus is maintained after insert
     editor.focus({preventScroll: true});
   }
   function replaceSuggestion(word) {
     pushUndo();
-    var offsets = selectionOffsets(), left = editorText().slice(0, offsets.start), match = left.match(/[\u1200-\u135a]+$/), start = match ? offsets.start - match[0].length : offsets.start;
-    replaceTextRange(start, offsets.end, word + ' '); changed(); restoreCaret();
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) return;
+    var range = sel.getRangeAt(0);
+    var block = currentBlockNode();
+    if (!block) return;
+    var blockStart = getBlockTextStart(block);
+    var textBefore = editorText().slice(0, blockStart + getCaretOffsetInBlock(range, block));
+    var match = textBefore.match(/[\u1200-\u135a]+$/);
+    var startOffset = match ? (blockStart + getCaretOffsetInBlock(range, block) - match[0].length) : getGlobalOffset(range);
+    var endOffset = getGlobalOffset(range);
+    var text = editorText().slice(startOffset, endOffset);
+    var hasTrailingSpace = text.endsWith(' ') || text.endsWith('\n') || text.endsWith('\u00a0');
+    var replacement = hasTrailingSpace ? word : word + ' ';
+    replaceTextRange(startOffset, endOffset, replacement);
+    changed();
+    restoreCaret();
+  }
+  function getBlockTextStart(block) {
+    var walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT), node, count = 0;
+    while ((node = walker.nextNode())) {
+      if (block.contains(node)) return count;
+      count += node.nodeValue.length;
+    }
+    return 0;
+  }
+  function getCaretOffsetInBlock(range, block) {
+    var probe = document.createRange();
+    probe.selectNodeContents(block);
+    probe.setEnd(range.startContainer, range.startOffset);
+    return probe.toString().length;
+  }
+  function getGlobalOffset(range) {
+    var before = range.cloneRange();
+    before.selectNodeContents(editor);
+    before.setEnd(range.startContainer, range.startOffset);
+    return before.toString().length;
   }
   function findInDocument(direction) {
     var query = $('findInput').value;
@@ -1442,18 +1530,22 @@ function importPdf(file) {
   function markActiveLineSpelling(words) {
     var block = activeBlock();
     if (!block) return;
-    var offsets = selectionOffsets();
+    var sel = window.getSelection();
+    var savedRange = null;
+    var hasSelection = sel && sel.rangeCount && block.contains(sel.anchorNode);
+    if (hasSelection) {
+      try { savedRange = sel.getRangeAt(0).cloneRange(); } catch (e) {}
+    }
     var caret = 0;
-    try {
-      var range = document.createRange();
-      range.selectNodeContents(block);
-      var sel = window.getSelection();
-      if (sel && sel.rangeCount && block.contains(sel.anchorNode)) {
+    if (hasSelection && savedRange) {
+      try {
+        var range = document.createRange();
+        range.selectNodeContents(block);
         var before = range.cloneRange();
-        before.setEnd(sel.anchorNode, sel.anchorOffset);
+        before.setEnd(savedRange.startContainer, savedRange.startOffset);
         caret = before.toString().length;
-      }
-    } catch (e) {}
+      } catch (e) {}
+    }
     markingSpell = true;
     clearSpellMarks(block);
     (words || []).filter(function (item) { return !item.known; }).slice().reverse().forEach(function (item) {
@@ -1461,7 +1553,12 @@ function importPdf(file) {
       wrapSpellRange(block, item.start, item.end, item);
     });
     markingSpell = false;
-    restoreSelection(offsets.start, offsets.end);
+    if (hasSelection && savedRange) {
+      try {
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+      } catch (e) {}
+    }
   }
    function checkSpelling() {
      clearTimeout(spellTimer);
@@ -1478,23 +1575,42 @@ function importPdf(file) {
          }
          var summary = $('spellSummary');
          if (summary) summary.textContent = unknown.length ? unknown.length + ' misspelled word' + (unknown.length > 1 ? 's' : '') + '. Right-click to correct.' : 'All words in dictionary.';
-         var errorsEl = $('errors');
-         if (errorsEl) {
-           errorsEl.innerHTML = unknown.slice(0, 8).map(function (item) {
-             var btns = (item.suggestions || []).slice(0, 3).map(function (s) {
-               return '<button data-fix="' + escapeHtml(s.word) + '" data-start="' + item.start + '" data-end="' + item.end + '">' + escapeHtml(s.word) + '</button>';
-             }).join('');
-             var start = item.start, end = item.end;
-             return '<div class="spell-error-item"><span class="spell-wrong">' + escapeHtml(item.word) + '</span><span class="spell-actions">' + (btns || '<span class="empty">No match</span>') + '</span></div>';
-           }).join('');
-           errorsEl.querySelectorAll('[data-fix]').forEach(function (btn) {
-             btn.onclick = function () {
-               var start = Number(btn.dataset.start), end = Number(btn.dataset.end);
-               replaceTextRange(start, end, btn.dataset.fix);
-               changed(); restoreCaret(); checkSpelling();
-             };
-           });
-         }
+var errorsEl = $('errors');
+          if (errorsEl) {
+            errorsEl.innerHTML = unknown.slice(0, 8).map(function (item) {
+              var btns = (item.suggestions || []).slice(0, 3).map(function (s) {
+                return '<button data-fix="' + escapeHtml(s.word) + '" data-word="' + escapeHtml(item.word) + '">' + escapeHtml(s.word) + '</button>';
+              }).join('');
+              return '<div class="spell-error-item"><span class="spell-wrong">' + escapeHtml(item.word) + '</span><span class="spell-actions">' + (btns || '<span class="empty">No match</span>') + '</span></div>';
+            }).join('');
+            errorsEl.querySelectorAll('[data-fix]').forEach(function (btn) {
+              btn.onclick = function () {
+                var fix = btn.dataset.fix;
+                var word = btn.dataset.word;
+                var spellEl = editor.querySelector('.spell-error[data-word="' + word + '"]');
+                if (spellEl) {
+                  replaceSpellSpan(spellEl, fix);
+                } else {
+                  var sel = window.getSelection();
+                  if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
+                    var range = sel.getRangeAt(0);
+                    var text = range.toString();
+                    if (text === word) {
+                      range.deleteContents();
+                      var inserted = document.createTextNode(fix);
+                      range.insertNode(inserted);
+                      range.setStartAfter(inserted);
+                      range.collapse(true);
+                      sel.removeAllRanges();
+                      sel.addRange(range);
+                      changed();
+                      checkSpelling();
+                    }
+                  }
+                }
+              };
+            });
+          }
        }).catch(function () {});
        fetch('/api/check?text=' + encodeURIComponent(lineText)).then(function (r) { return r.json(); }).then(function (data) {
          markActiveLineSpelling(data.words || []);
@@ -1792,11 +1908,6 @@ function importPdf(file) {
     tapX = event.clientX;
     tapY = event.clientY;
   });
-  editor.addEventListener('pointerup', function (event) {
-    if (isTouchDevice() && !oskOpen && !deviceKeyboardMode && Date.now() - tapStart < 600 && Math.abs(event.clientX - tapX) < 12 && Math.abs(event.clientY - tapY) < 12) {
-      setOsk(true);
-    }
-  });
 
   $('saveBtn').onclick = function (event) {
     event.stopPropagation();
@@ -2055,7 +2166,6 @@ function importPdf(file) {
   var emptyWorkspace = workspace.files.every(function (f) { return !(f.text || '').trim(); });
   if (emptyWorkspace) showHome();
   else hideHome();
-  if (shouldOfferOnScreenKeyboard() && localStorage.getItem(oskPrefKey) === '1') setOsk(true);
 
   var queryNew = new URLSearchParams(window.location.search).get('new');
   if (queryNew) {
