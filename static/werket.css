@@ -638,6 +638,24 @@ body.sidebar-open .editor-area {
   background: var(--accent-soft);
 }
 
+#keyboardBtn {
+  font-size: 22px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+#keyboardBtn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+#keyboardBtn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
 /* Keyboard Panel — Frosted glass overlay */
 .keyboard-panel {
   position: fixed;

@@ -126,6 +126,8 @@
     }
     var themeMeta = document.querySelector('meta[name="theme-color"]');
     if (themeMeta) themeMeta.content = dark ? '#172019' : '#233b7a';
+    var schemeMeta = document.querySelector('meta[name="color-scheme"]');
+    if (schemeMeta) schemeMeta.content = dark ? 'dark' : 'light';
     localStorage.setItem('werket-theme', dark ? 'dark' : 'light');
   }
   function initTheme() {
@@ -138,7 +140,8 @@
     while (workspace.files.some(function (f) { return f.name === name; })) { name = stem + ' ' + n + ext; n++; }
     return name;
   }
-  function shouldOfferOnScreenKeyboard() { return 'ontouchstart' in window || (navigator.maxTouchPoints > 0); }
+  function shouldOfferOnScreenKeyboard() { return true; }
+  function isTouchDevice() { return 'ontouchstart' in window || (navigator.maxTouchPoints > 0); }
   function closeMenu() { $('newMenu').hidden = true; $('newBtn').setAttribute('aria-expanded', 'false'); }
   function closeContextMenu() { $('contextMenu').hidden = true; }
   function replaceSpellSpan(el, word) {
@@ -583,8 +586,6 @@
   function insertNewLine() {
     pushUndo();
     editor.focus({preventScroll: true});
-    var block = currentBlockNode();
-    if (!block) return;
     var sel = window.getSelection();
     if (!sel || !sel.rangeCount) return;
     var range = sel.getRangeAt(0);
@@ -595,7 +596,12 @@
       newBlock.textContent = '';
       newBlock.appendChild(afterNodes);
     }
-    block.parentNode.insertBefore(newBlock, block.nextSibling);
+    var block = currentBlockNode();
+    if (block) {
+      block.parentNode.insertBefore(newBlock, block.nextSibling);
+    } else {
+      range.insertNode(newBlock);
+    }
     var newRange = document.createRange();
     newRange.selectNodeContents(newBlock);
     newRange.collapse(true);
@@ -1071,7 +1077,7 @@
     tapY = event.clientY;
   });
   editor.addEventListener('pointerup', function (event) {
-    if (shouldOfferOnScreenKeyboard() && !oskOpen && !deviceKeyboardMode && Date.now() - tapStart < 600 && Math.abs(event.clientX - tapX) < 12 && Math.abs(event.clientY - tapY) < 12) {
+    if (isTouchDevice() && !oskOpen && !deviceKeyboardMode && Date.now() - tapStart < 600 && Math.abs(event.clientX - tapX) < 12 && Math.abs(event.clientY - tapY) < 12) {
       setOsk(true);
     }
   });
