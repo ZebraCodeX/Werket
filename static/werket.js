@@ -573,12 +573,28 @@
     pushUndo();
     editor.focus({preventScroll: true});
     var sel = window.getSelection();
-    if (!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) {
-      restoreCaret();
-      sel = window.getSelection();
+    var inserted = false;
+    if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
+      var offsets = selectionOffsets();
+      if (offsets.start !== undefined) {
+        replaceTextRange(offsets.start, offsets.end, text);
+        inserted = true;
+      }
     }
-    var offsets = selectionOffsets();
-    replaceTextRange(offsets.start, offsets.end, text);
+    if (!inserted) {
+      var range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      var tnode = document.createTextNode(text);
+      range.insertNode(tnode);
+      range.setStartAfter(tnode);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      caretStart = caretEnd = editorText().length;
+    }
     changed();
     restoreCaret();
   }
@@ -759,9 +775,23 @@
       hideOrders();
       pushUndo();
       editor.focus({preventScroll: true});
-      var offsets = selectionOffsets(), p = offsets.start, q = offsets.end;
-      if (q > p) replaceTextRange(p, q, '');
-      else if (p > 0) replaceTextRange(p - 1, p, '');
+      var sel = window.getSelection();
+      if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
+        var offsets = selectionOffsets(), p = offsets.start, q = offsets.end;
+        if (q > p) replaceTextRange(p, q, '');
+        else if (p > 0) replaceTextRange(p - 1, p, '');
+      } else {
+        var text = editorText();
+        if (text.length > 0) {
+          var range = document.createRange();
+          range.selectNodeContents(editor);
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+          editor.textContent = text.slice(0, -1);
+          caretStart = caretEnd = text.length - 1;
+        }
+      }
       changed();
       restoreCaret();
     });
