@@ -1,1 +1,59 @@
-const C='werket-v11';const S=['/','/manifest.json','/static/werket.css','/static/werket.js','/static/formats.js','/static/icon.svg','/static/icon-192.png','/static/icon-512.png','/static/icon-maskable-512.png','/static/apple-touch-icon.png','/static/template-blank.svg','/static/template-letter.svg','/static/template-journal.svg','/static/template-meeting.svg','/static/template-book.svg'];self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(S)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const u=new URL(e.request.url);if(u.pathname.startsWith('/api/'))return;e.respondWith(caches.match(e.request).then(x=>x||fetch(e.request).then(r=>{caches.open(C).then(c=>c.put(e.request,r.clone()));return r}))})
+const CACHE_NAME = 'werket-v12';
+const ASSETS = [
+  '/',
+  '/manifest.json',
+  '/static/werket.css',
+  '/static/werket.js',
+  '/static/formats.js',
+  '/static/icon.svg',
+  '/static/icon-192.png',
+  '/static/icon-512.png',
+  '/static/icon-maskable-512.png',
+  '/static/apple-touch-icon.png',
+  '/static/template-blank.svg',
+  '/static/template-letter.svg',
+  '/static/template-journal.svg',
+  '/static/template-meeting.svg',
+  '/static/template-book.svg'
+];
+
+self.addEventListener('install', function (event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(function (cache) {
+      return cache.addAll(ASSETS);
+    }).then(function () {
+      return self.skipWaiting();
+    })
+  );
+});
+
+self.addEventListener('activate', function (event) {
+  event.waitUntil(
+    caches.keys().then(function (keys) {
+      return Promise.all(keys.filter(function (key) {
+        return key !== CACHE_NAME;
+      }).map(function (key) {
+        return caches.delete(key);
+      }));
+    }).then(function () {
+      return self.clients.claim();
+    })
+  );
+});
+
+self.addEventListener('fetch', function (event) {
+  if (event.request.method !== 'GET') return;
+  var url = new URL(event.request.url);
+  if (url.pathname.indexOf('/api/') === 0) return;
+  event.respondWith(
+    caches.match(event.request).then(function (cached) {
+      if (cached) return cached;
+      return fetch(event.request).then(function (response) {
+        caches.open(CACHE_NAME).then(function (cache) {
+          cache.put(event.request, response.clone());
+        });
+        return response;
+      });
+    })
+  );
+});

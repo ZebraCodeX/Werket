@@ -52,7 +52,7 @@
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   }
   </script>
-  <link rel="stylesheet" href="/static/werket.css?v=11">
+  <link rel="stylesheet" href="/static/werket.css?v=12">
 </head>
 <body>
   <div class="app-shell">
@@ -76,7 +76,7 @@
           </div>
         </div>
         <button class="icon-btn" id="importBtn" title="Open">📂</button>
-        <input id="importFile" type="file" accept=".txt,.md,.text,.html,.htm,.pdf" hidden>
+        <input id="importFile" type="file" accept=".txt,.md,.markdown,.text,.html,.htm,.pdf,.docx,.doc,.odt,.epub,.rtf,.json,.csv,.xml,.log,.css,.js,.mjs,.ts,.jsx,.tsx,.py,.rb,.go,.rs,.java,.c,.h,.cpp,.yml,.yaml,.toml,.ini,.cfg" multiple hidden>
         <div class="menu-wrap">
           <button class="icon-btn" id="exportBtn" title="Export" aria-haspopup="true" aria-expanded="false">📤</button>
           <div id="exportMenu" class="menu" hidden>
@@ -92,6 +92,8 @@
             <div class="context-sep"></div>
             <button data-export="pdf">Print to PDF (.pdf)</button>
             <button data-export="pdffile">Save as PDF file (.pdf)</button>
+            <div class="context-sep"></div>
+            <button data-export="json">Backup workspace (.json)</button>
           </div>
         </div>
         <button class="icon-btn" id="printBtn" title="Print">🖨️</button>
@@ -264,6 +266,34 @@
     <button data-context="delete" role="menuitem" class="danger-action">Delete</button>
   </div>
   <dialog id="templateDialog" class="template-dialog"><div class="dialog-head"><div><b>Start a new project</b><span>Choose a structure and begin writing.</span></div><button id="closeTemplates">×</button></div><div id="templateGrid" class="template-grid"></div></dialog>
+  <dialog id="newDocDialog" class="newdoc-dialog">
+    <div class="newdoc-head"><div><b id="newDocPickedName">New document</b><span id="newDocPickedDesc">Choose a language and name your document.</span></div><button id="newDocCancel" class="newdoc-close" type="button" title="Cancel">×</button></div>
+    <form id="newDocForm" class="newdoc-form">
+    <div class="newdoc-body">
+      <div class="newdoc-section">
+        <label class="newdoc-label">1. Choose a language</label>
+        <div class="newdoc-langs">
+          <label class="newdoc-lang"><input type="radio" name="newDocLang" id="newDocLangAm" checked><span class="newdoc-lang-badge">አማ</span><b>Amharic</b><small>አማርኛ</small></label>
+          <label class="newdoc-lang"><input type="radio" name="newDocLang" id="newDocLangEn"><span class="newdoc-lang-badge">EN</span><b>English</b><small>English</small></label>
+        </div>
+      </div>
+      <div class="newdoc-section">
+        <label class="newdoc-label" for="newDocName" id="newDocNameLabel">2. Name your document</label>
+        <input id="newDocName" class="newdoc-name" type="text" placeholder="Untitled.md" autocomplete="off">
+        <div id="newDocError" class="newdoc-error" hidden></div>
+      </div>
+      <div class="newdoc-section">
+        <label class="newdoc-label">Template</label>
+        <div id="newDocTemplateGrid" class="newdoc-templates"></div>
+      </div>
+      <label id="newDocOskWrap" class="newdoc-osk">
+        <input type="checkbox" id="newDocOsk" checked>
+        <span>Show the on-screen Amharic keyboard <small>(አማርኛ ቁልፍ ሰሌዳ)</small></span>
+      </label>
+    </div>
+    <div class="newdoc-foot"><button id="newDocCreate" class="newdoc-create">Create document</button></div>
+    </form>
+  </dialog>
   <dialog id="authDialog" class="auth-dialog">
     <div class="auth-panel">
       <div class="auth-header">
@@ -332,7 +362,8 @@
       </div>
     </div>
   </dialog>
-  <script src="/static/werket.js?v=11"></script>
+  <script src="/static/formats.js?v=12"></script>
+  <script src="/static/werket.js?v=12"></script>
   <script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});</script>
 </body>
 </html>

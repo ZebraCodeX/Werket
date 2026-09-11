@@ -26,23 +26,28 @@
   var phon = {h:'ሀ',H:'ሐ',l:'ለ',m:'መ',s:'ሰ',r:'ረ',S:'ሠ',b:'በ',t:'ተ',c:'ቸ',C:'ጨ',q:'ቀ',k:'ከ',x:'ኀ',n:'ነ',N:'ኘ',a:'አ',w:'ወ',z:'ዘ',y:'የ',d:'ደ',j:'ጀ',g:'ገ',T:'ጠ',p:'ፐ',f:'ፈ',v:'ቨ',D:'ፀ'};
   var vowels = {e:0,u:1,i:2,a:3,ie:4,ee:4,'':5,o:6};
   var templates = [
-    {id:'blank', icon:'□', artwork:'blank', name:'Blank document', description:'A clean page for notes or free writing.', files:[['Untitled.md','']]},
-    {id:'letter', icon:'✉', artwork:'letter', name:'Letter', description:'Greeting, body, and closing for a formal note.', files:[['letter.md','<h1>Letter</h1><p>Date: </p><p>Dear </p><p>Write your message here.</p><p>Sincerely,</p>']]},
-    {id:'journal', icon:'◷', artwork:'journal', name:'Daily journal', description:'A focused page for reflection and daily notes.', files:[['journal.md','<h1>Daily journal</h1><h2>Today</h2><p>What happened today?</p><h2>Reflection</h2><p>What did I learn?</p>']]},
-    {id:'notes', icon:'✎', artwork:'meeting', name:'Meeting notes', description:'Agenda, notes, and next steps.', files:[['meeting.md','<h1>Meeting notes</h1><p>Date: </p><p>Attendees: </p><h2>Agenda</h2><ul><li></li></ul><h2>Notes</h2><p></p><h2>Next steps</h2><ul><li></li></ul>']]},
-    {id:'book', icon:'▤', artwork:'book', name:'Book project', description:'Outline, characters, research, and chapter files.', book:true}
+    {id:'blank', icon:'□', artwork:'blank', name:{en:'Blank document', am:'ባዶ ሰነድ'}, description:{en:'A clean page for notes or free writing.', am:'ለማስታወሻ ወይም ለነጻ ጽሕፈት ንጹህ ገጽ።'}, defaultName:{en:'Untitled.md', am:'አዲስ ሰነድ.md'}, files:{en:[['Untitled.md','']], am:[['አዲስ ሰነድ.md','']]}},
+    {id:'letter', icon:'✉', artwork:'letter', name:{en:'Letter', am:'ደብዳቤ'}, description:{en:'Greeting, body, and closing for a formal note.', am:'መንከባከቢያ ለመደበኛ ማስታወቂያ፤ መግቢያ፣ ይዘት እና መዝጊያ።'}, defaultName:{en:'Letter.md', am:'ደብዳቤ.md'}, files:{en:[['Letter.md','<h1>Letter</h1><p>[Date]</p><p>Dear [Name],</p><p>I hope this letter finds you well. [Write your message here.]</p><p>Thank you for your time and consideration.</p><p>Sincerely,</p><p>[Your name]</p>']], am:[['ደብዳቤ.md','<h1>ደብዳቤ</h1><p>[ቀን]</p><p>ውድ [ስም]፣</p><p>ይህ ደብዳቤ ደህንነትን እያመጣልህ/ሽ ተመንጄያለሁ። [መልእክትዎን እዚህ ይጻፉ።]</p><p>ለጊዜዎና ለትኩረትዎ እናመሰግናለን።</p><p>በአክብሮት፣</p><p>[ስምዎ]</p>']]}},
+    {id:'journal', icon:'◷', artwork:'journal', name:{en:'Daily journal', am:'የዕለታዊ ማስታወሻ'}, description:{en:'A focused page for reflection and daily notes.', am:'ለማሰላሰል እና ለዕለታዊ ማስታወሻ የተዘጋጀ ገጽ።'}, defaultName:{en:'Journal.md', am:'ማስታወሻ.md'}, files:{en:[['Journal.md','<h1>Daily journal</h1><p>Today’s date: [Date]</p><h2>What happened today?</h2><p>Describe your day, your feelings, and your thoughts.</p><h2>Gratitude</h2><p>Three things you are grateful for today:<br>1. <br>2. <br>3. </p><h2>Tomorrow</h2><p>What would you like to focus on tomorrow?</p>']], am:[['ማስታወሻ.md','<h1>የዕለታዊ ማስታወሻ</h1><p>የዛሬው ቀን፡ [ቀን]</p><h2>ዛሬ ምን ተከሰተ?</h2><p>ቀንዎን፣ ስሜቶችዎንና ሃሳቦችዎን ይግለጹ።</p><h2>ምስጋና</h2><p>ዛሬ ያመሰገናችሁት ሦስት ነገሮች፡<br>1. <br>2. <br>3. </p><h2>ነገ</h2><p>ነገ በምን ላይ ማተኮር ይፈልጋሉ?</p>']]}},
+    {id:'notes', icon:'✎', artwork:'meeting', name:{en:'Meeting notes', am:'የስብሰባ ማስታወሻ'}, description:{en:'Agenda, notes, and next steps.', am:'መርሃ ግብር፣ ማስታወሻ እና ቀጣይ እርምጃዎች።'}, defaultName:{en:'Meeting Notes.md', am:'ስብሰባ.md'}, files:{en:[['Meeting Notes.md','<h1>Meeting notes</h1><p>Date: [Date]</p><p>Attendees: [Names]</p><h2>Agenda</h2><ul><li>Topic 1</li><li>Topic 2</li><li>Topic 3</li></ul><h2>Discussion</h2><p>Key points and decisions from the meeting.</p><h2>Action Items</h2><ul><li>[Task — owner — due date]</li><li>[Task — owner — due date]</li></ul>']], am:[['ስብሰባ.md','<h1>የስብሰባ ማስታወሻ</h1><p>ቀን: [ቀን]</p><p>ተሳታፊዎች: [ስሞች]</p><h2>መርሃ ግብር</h2><ul><li>ርዕስ 1</li><li>ርዕስ 2</li><li>ርዕስ 3</li></ul><h2>ውይይት</h2><p>በስብሰባው የተወያዩባቸው ዋና ነጥቦች እና ውሳኔዎች።</p><h2>ተግባራት</h2><ul><li>[ተግባር — ተጠያቂ — ጊዜ]</li><li>[ተግባር — ተጠያቂ — ጊዜ]</li></ul>']]}},
+    {id:'book', icon:'▤', artwork:'book', name:{en:'Book project', am:'የመጽሐፍ ፕሮጀክት'}, description:{en:'Outline, characters, research, and chapter files.', am:'ዝርዝር ገለጻ፣ ገጸ-ባሕሪያት፣ ምርምር እና ምዕራፎች።'}, defaultName:{en:'Book.md', am:'መጽሐፍ.md'}, book:true}
   ];
 
   function safeLoad() { try { return JSON.parse(localStorage.getItem(workspaceKey) || 'null'); } catch (e) { return null; } }
   function newId() { return 'f-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7); }
-  function initialWorkspace() { return {projectName:'My documents', activeId:null, openIds:[], font:'Noto Sans Ethiopic', size:18, align:'left', files:[]}; }
+  function workspaceLang() { return (workspace.lang === 'en' ? 'en' : 'am'); }
+  function templateName(template, lang) { return ((template && template.name) || {}[lang]) || (template && template.name && template.name.en) || 'Document'; }
+  function templateDesc(template, lang) { return ((template && template.description) || {}[lang]) || (template && template.description && template.description.en) || ''; }
+  function templateDefaultName(template, lang) { return ((template && template.defaultName) || {})[lang] || 'Untitled.md'; }
+  function templateFiles(template, lang) { return ((template && template.files) || {})[lang] || ((template && template.files && template.files.en) || [['Untitled.md','']]); }
+  function initialWorkspace() { return {projectName:'My documents', activeId:null, openIds:[], font:'Noto Sans Ethiopic', size:18, align:'left', lang:'am', files:[]}; }
   var workspace = safeLoad() || initialWorkspace();
   if (!Array.isArray(workspace.files)) workspace.files = [];
   if (!workspace.files.length) workspace.files.push(file('Untitled.md', ''));
   if (!workspace.activeId || !workspace.files.some(function (f) { return f.id === workspace.activeId; })) workspace.activeId = workspace.files[0].id;
   if (!workspace.openIds || !workspace.openIds.length) workspace.openIds = [workspace.activeId];
 
-  function file(name, text, folder) { return {id:newId(), name:name, text:text || '', folder:folder || '', updated:Date.now()}; }
+  function file(name, text, folder) { return {id:newId(), name:name, text:text || '', folder:folder || '', lang: workspaceLang(), updated:Date.now()}; }
   function escapeHtml(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function activeFile() { return workspace.files.find(function (f) { return f.id === workspace.activeId; }) || null; }
   function saveWorkspace() { localStorage.setItem(workspaceKey, JSON.stringify(workspace)); }
@@ -324,7 +329,7 @@
   }
   function syncToCloud() {
     if (!currentUser) return;
-    var payload = {files: workspace.files, openIds: workspace.openIds, activeId: workspace.activeId, projectName: workspace.projectName, font: workspace.font, size: workspace.size, align: workspace.align};
+    var payload = {files: workspace.files, openIds: workspace.openIds, activeId: workspace.activeId, projectName: workspace.projectName, font: workspace.font, size: workspace.size, align: workspace.align, lang: workspace.lang};
     fetch('/api/files/save', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)})
       .then(function (r) { return r.json(); })
       .then(function (d) { if (d.ok) setStatus('Saved to account'); })
@@ -338,9 +343,10 @@
         workspace.openIds = data.openIds || [];
         workspace.activeId = data.activeId || (data.files[0] && data.files[0].id);
         workspace.projectName = data.projectName || 'My documents';
-        workspace.font = workspace.font || 'Noto Sans Ethiopic';
+        workspace.font = data.font || workspace.font || 'Noto Sans Ethiopic';
         workspace.size = data.size || 18;
         workspace.align = data.align || 'left';
+        if (data.lang) workspace.lang = data.lang;
         saveWorkspace();
         render();
         setStatus('Loaded from account');
@@ -526,18 +532,31 @@
   function exportFile(format) {
     var f = activeFile();
     if (!f) { setStatus('Open a document before exporting'); return; }
-    var base = f.name.replace(/\.[^.]+$/, '');
+    var base = f.name.replace(/\.[^.]+$/, '') || 'document';
     var html = editorHtml();
     if (format === 'pdf') { printExport(f); return; }
     if (format === 'pdffile') { pdfFileExport(f); return; }
-    if (format === 'md') { downloadBlob(htmlToMarkdown(html), base + '.md', 'text/markdown;charset=utf-8'); return; }
-    if (format === 'txt') { downloadBlob(WerketFormats.htmlToPlainText(html), base + '.txt', 'text/plain;charset=utf-8'); return; }
-    if (format === 'html') { downloadBlob(exportShell(f), base + '.html', 'text/html;charset=utf-8'); return; }
-    if (format === 'doc') { downloadBlob(exportShell(f, '<xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml>'.replace(/^<xml>/, '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->')), base + '.doc', 'application/msword'); return; }
+    if (format === 'md') { downloadBlob(htmlToMarkdown(html), base + '.md', 'text/markdown;charset=utf-8'); setStatus('Exported ' + base + '.md'); return; }
+    if (format === 'txt') { downloadBlob(WerketFormats.htmlToPlainText(html), base + '.txt', 'text/plain;charset=utf-8'); setStatus('Exported ' + base + '.txt'); return; }
+    if (format === 'html') { downloadBlob(exportShell(f), base + '.html', 'text/html;charset=utf-8'); setStatus('Exported ' + base + '.html'); return; }
+    if (format === 'doc') { downloadBlob(exportShell(f, '<xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml>'.replace(/^<xml>/, '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->')), base + '.doc', 'application/msword'); setStatus('Exported ' + base + '.doc'); return; }
     if (format === 'docx') { downloadBlob(new Blob([WerketFormats.buildDocx(html, {title: base})]), base + '.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'); setStatus('Exported ' + base + '.docx'); return; }
     if (format === 'odt') { downloadBlob(new Blob([WerketFormats.buildOdt(html, {title: base})]), base + '.odt', 'application/vnd.oasis.opendocument.text'); setStatus('Exported ' + base + '.odt'); return; }
     if (format === 'rtf') { downloadBlob(WerketFormats.buildRtf(html, {title: base}), base + '.rtf', 'application/rtf'); setStatus('Exported ' + base + '.rtf'); return; }
-    if (format === 'epub') { downloadBlob(new Blob([WerketFormats.buildEpub(html, {title: base, lang: 'am'})]), base + '.epub', 'application/epub+zip'); setStatus('Exported ' + base + '.epub'); return; }
+    if (format === 'epub') { downloadBlob(new Blob([WerketFormats.buildEpub(html, {title: base, lang: (f.lang || workspaceLang())})]), base + '.epub', 'application/epub+zip'); setStatus('Exported ' + base + '.epub'); return; }
+    if (format === 'json') {
+      var backup = {
+        exported: new Date().toISOString(),
+        projectName: workspace.projectName,
+        lang: f.lang || workspaceLang(),
+        files: workspace.files.map(function (item) {
+          return {name: item.name, folder: item.folder || '', lang: item.lang || '', text: item.text || ''};
+        })
+      };
+      downloadBlob(JSON.stringify(backup, null, 2), (workspace.projectName || 'werket') + '-backup.json', 'application/json;charset=utf-8');
+      setStatus('Exported workspace backup');
+      return;
+    }
     setStatus('Unknown export format');
   }
   function printExport(f) {
@@ -868,26 +887,322 @@
     }
     return text;
   }
-function importPdf(file) {
-    var reader = new FileReader();
-    reader.onload = function () {
-      var bytes = new Uint8Array(reader.result), text = '';
-      try { text = pdfExtractText(bytes); } catch (e) { text = ''; }
-      if (!text.trim()) { setStatus('Could not read text from this PDF'); return; }
-      var name = uniqueName(file.name.replace(/\.pdf$/i, '.md'));
-      // Preserve paragraph structure better - split on double newlines
-      var paragraphs = text.split(/\n{2,}/).map(function (para) {
-        var trimmed = para.trim();
-        if (!trimmed) return '';
-        return '<p>' + trimmed.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/\n/g, '<br>') + '</p>';
-      }).filter(Boolean).join('');
-      var f = file(name, paragraphs, '');
-      workspace.files.push(f);
-      openFile(f.id);
-      save();
-      setStatus('Imported ' + file.name + ' (' + text.length + ' chars)');
-    };
-    reader.readAsArrayBuffer(file);
+function addImportedFile(name, content) {
+    var f = file(uniqueName(name), content, '');
+    workspace.files.push(f);
+    workspace.activeId = f.id;
+    return f;
+  }
+  function isBinaryBytes(bytes) {
+    var n = Math.min(bytes.length, 2048);
+    for (var i = 0; i < n; i++) if (bytes[i] === 0) return true;
+    return false;
+  }
+  function bytesToUtf8(bytes) {
+    var decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8', {fatal: false}) : null;
+    if (decoder) { try { return decoder.decode(bytes); } catch (e) {} }
+    var out = '';
+    for (var i = 0; i < bytes.length; i++) out += String.fromCharCode(bytes[i]);
+    try { return decodeURIComponent(encodeURIComponent(out)); } catch (e2) { return out; }
+  }
+  function textToParagraphs(text) {
+    return String(text || '').split(/\r?\n/).map(function (line) {
+      var l = line.trim();
+      if (!l) return '<p><br></p>';
+      return '<p>' + escapeHtml(line.replace(/\u00a0/g, ' ')) + '</p>';
+    }).join('');
+  }
+  function sanitizeHtml(html) {
+    var doc = null;
+    try { doc = new DOMParser().parseFromString(String(html == null ? '' : html), 'text/html'); } catch (e) {}
+    if (!doc || !doc.body) return '';
+    ['script', 'style', 'link', 'meta', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'select', 'textarea', 'noscript', 'template'].forEach(function (tag) {
+      doc.querySelectorAll(tag).forEach(function (node) { node.remove(); });
+    });
+    doc.querySelectorAll('*').forEach(function (node) {
+      Array.prototype.slice.call(node.attributes).forEach(function (attr) {
+        var name = attr.name.toLowerCase();
+        if (/^on/.test(name) || (name === 'href' && /^javascript:/i.test(attr.value)) || (name === 'src' && (attr.value.indexOf('data:') === 0))) node.removeAttribute(attr.name);
+      });
+    });
+    return (doc.body.innerHTML || '').replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+  }
+  function parseXmlString(text) {
+    try {
+      var doc = new DOMParser().parseFromString(text, 'application/xml');
+      if (!doc || doc.querySelector('parsererror')) return null;
+      return doc;
+    } catch (e) { return null; }
+  }
+  function blocksToHtml(blocks) {
+    return blocks.map(function (block) {
+      if (!block.text) return '<p><br></p>';
+      if (block.type === 'pre') return '<pre class="import-code">' + escapeHtml(block.text) + '</pre>';
+      if (!/^(h[123]|p|ul|ol|li|blockquote|pre)$/.test(block.type)) block.type = 'p';
+      return '<' + block.type + '>' + escapeHtml(block.text) + '</' + block.type + '>';
+    }).join('');
+  }
+  function extractBodyBlocks(node, out) {
+    if (!node || !node.childNodes) return out;
+    for (var i = 0; i < node.childNodes.length; i++) {
+      var child = node.childNodes[i];
+      if (child.nodeType !== 1) continue;
+      var tag = (child.tagName || child.localName || '').toLowerCase();
+      if (/^(script|style|link|meta|head|title)$/.test(tag)) continue;
+      if (/^h[1-6]$/.test(tag)) {
+        var headingText = (child.textContent || '').trim();
+        if (headingText) out.push('<h' + Math.min(3, Number(tag[1])) + '>' + escapeHtml(headingText) + '</h' + Math.min(3, Number(tag[1])) + '>');
+        continue;
+      }
+      if (tag === 'p' || tag === 'blockquote' || tag === 'li' || tag === 'pre' || tag === 'dt' || tag === 'dd') {
+        var t = (child.textContent || '').trim();
+        if (t) {
+          if (tag === 'pre') out.push('<pre class="import-code">' + escapeHtml(t) + '</pre>');
+          else if (tag === 'blockquote') out.push('<blockquote><p>' + escapeHtml(t) + '</p></blockquote>');
+          else if (tag === 'li') out.push('<ul><li>' + escapeHtml(t) + '</li></ul>');
+          else out.push('<p>' + escapeHtml(t) + '</p>');
+        }
+        continue;
+      }
+      extractBodyBlocks(child, out);
+    }
+    return out;
+  }
+  function importDocx(name, bytes) {
+    var entries = WerketFormats.readZip(bytes) || [];
+    var entry = entries.filter(function (e) { return /word\/document\.xml$/i.test(e.name); })[0];
+    if (!entry) { setStatus('Could not open .docx: no document found'); return; }
+    var xml = WerketFormats.bytesToText(entry.data);
+    var doc = parseXmlString(xml);
+    if (!doc) { setStatus('Could not read .docx contents'); return; }
+    var out = [];
+    var propsHash = {};
+    var styles = entries.filter(function (e) { return /word\/styles\.xml$/i.test(e.name); })[0];
+    if (styles) {
+      var sdoc = parseXmlString(WerketFormats.bytesToText(styles.data));
+      if (sdoc) {
+        var sEls = sdoc.getElementsByTagName('w:style');
+        for (var i = 0; i < sEls.length; i++) {
+          var styleEl = sEls[i];
+          var sid = styleEl.getAttribute('w:styleId');
+          var styleNameEl = styleEl.getElementsByTagName('w:name')[0];
+          if (sid && styleNameEl) propsHash[sid] = styleNameEl.getAttribute('w:val') || '';
+        }
+      }
+    }
+    var pEls = doc.getElementsByTagName('w:p');
+    for (var pi = 0; pi < pEls.length; pi++) {
+      var pEl = pEls[pi];
+      var styleRef = '';
+      var pStyle = pEl.getElementsByTagName('w:pStyle')[0];
+      if (pStyle) styleRef = pStyle.getAttribute('w:val') || '';
+      var styleName = propsHash[styleRef] || '';
+      var heading = /heading\s*(\d)/i.exec(styleName);
+      var text = '';
+      var tEls = pEl.getElementsByTagName('w:t');
+      for (var ti = 0; ti < tEls.length; ti++) text += tEls[ti].textContent;
+      if (heading) out.push('<h' + Math.min(3, Number(heading[1])) + '>' + escapeHtml(text) + '</h' + Math.min(3, Number(heading[1])) + '>');
+      else out.push('<p>' + escapeHtml(text) + '</p>');
+    }
+    if (!out.length) { setStatus('.docx appears empty'); return; }
+    addImportedFile(name.replace(/\.docx$/i, '') + '.md', out.join(''));
+  }
+  function importOdt(name, bytes) {
+    var entries = WerketFormats.readZip(bytes) || [];
+    var entry = entries.filter(function (e) { return /content\.xml$/i.test(e.name); })[0];
+    if (!entry) { setStatus('Could not open .odt: no content found'); return; }
+    var doc = parseXmlString(WerketFormats.bytesToText(entry.data));
+    if (!doc) { setStatus('Could not read .odt contents'); return; }
+    var blocks = [];
+    var s = doc.getElementsByTagName('office:body')[0];
+    var root = (s || doc.documentElement);
+    (function walk(node) {
+      if (!node.childNodes) return;
+      for (var i = 0; i < node.childNodes.length; i++) {
+        var child = node.childNodes[i];
+        if (child.nodeType !== 1) continue;
+        var tag = (child.localName || '').toLowerCase();
+        if (tag === 'p') blocks.push({type: 'p', text: (child.textContent || '').trim()});
+        else if (tag === 'h') {
+          var lvl = parseInt(child.getAttribute('text:outline-level') || '1', 10) || 1;
+          blocks.push({type: 'h' + Math.min(3, lvl), text: (child.textContent || '').trim()});
+        } else walk(child);
+      }
+    })(root);
+    if (!blocks.length) { setStatus('.odt appears empty'); return; }
+    addImportedFile(name.replace(/\.odt$/i, '') + '.md', blocksToHtml(blocks));
+  }
+  function importEpub(name, bytes) {
+    var entries = WerketFormats.readZip(bytes) || [];
+    function findEntry(path) {
+      var normalized = String(path || '').replace(/^\/+/, '');
+      return entries.filter(function (e) {
+        var n = e.name.replace(/^\/+/, '').replace(/\\/g, '/');
+        return n === normalized || n === './' + normalized;
+      })[0];
+    }
+    var container = findEntry('META-INF/container.xml');
+    var opfPath = 'EPUB/content.opf';
+    if (container) {
+      var cdoc = parseXmlString(WerketFormats.bytesToText(container.data));
+      if (cdoc) {
+        var rootfile = cdoc.getElementsByTagName('rootfile')[0];
+        if (rootfile && rootfile.getAttribute('full-path')) opfPath = rootfile.getAttribute('full-path');
+      }
+    }
+    var opfEntry = findEntry(opfPath);
+    if (!opfEntry) { setStatus('Could not open .epub: no package found'); return; }
+    var odoc = parseXmlString(WerketFormats.bytesToText(opfEntry.data));
+    if (!odoc) { setStatus('Could not read .epub contents'); return; }
+    var hrefs = [];
+    var manifest = {};
+    var mItems = odoc.getElementsByTagName('item');
+    for (var i = 0; i < mItems.length; i++) manifest[mItems[i].getAttribute('id')] = mItems[i].getAttribute('href');
+    var spineItems = odoc.getElementsByTagName('itemref');
+    for (var si = 0; si < spineItems.length; si++) {
+      var idref = spineItems[si].getAttribute('idref');
+      if (manifest[idref]) hrefs.push(manifest[idref]);
+    }
+    if (!hrefs.length) {
+      hrefs = entries.filter(function (e) { return /\.x?html?$/i.test(e.name) && !/nav\.xhtml$/i.test(e.name); }).map(function (e) { return e.name; }).sort();
+    }
+    var opfDir = opfPath.replace(/\/[^\/]*$/, '');
+    function resolve(href) {
+      href = String(href || '').replace(/#.*$/, '');
+      if (!href) return '';
+      if (/^(https?:)?\//.test(href)) return href.replace(/^\/+/, '');
+      if (href.indexOf('../') === 0) {
+        var parts = (opfDir ? opfDir.split('/') : []).slice();
+        while (parts.length && href.indexOf('../') === 0) { parts.pop(); href = href.slice(3); }
+        return parts.concat([href]).join('/');
+      }
+      return (opfDir ? opfDir + '/' : '') + href;
+    }
+    var html = '';
+    hrefs.forEach(function (href) {
+      var path = resolve(href);
+      var entry = findEntry(path);
+      var content = entry ? bytesToUtf8(entry.data) : '';
+      var doc = null;
+      try { doc = new DOMParser().parseFromString(content, 'text/html'); } catch (e) {}
+      if (doc && doc.body) {
+        html += extractBodyBlocks(doc.body, []).join('\n') + '\n';
+      } else {
+        var raw = String(content).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').trim();
+        if (raw) html += textToParagraphs(raw);
+      }
+    });
+    if (!html.trim()) { setStatus('.epub appears empty'); return; }
+    addImportedFile(name.replace(/\.epub$/i, '') + '.md', html);
+  }
+  function rtfToText(rtf) {
+    var src = String(rtf || '');
+    src = src.replace(/\\u(-?\d+)\??/g, function (m, n) {
+      n = parseInt(n, 10);
+      if (n < 0) n += 65536;
+      return n <= 0xffff ? String.fromCharCode(n) : '';
+    });
+    src = src.replace(/\\'([0-9a-fA-F]{2})/g, function (m, h) { return String.fromCharCode(parseInt(h, 16)); });
+    src = src.replace(/\\par\b/gi, '\n');
+    src = src.replace(/\\line\b/gi, '\n');
+    src = src.replace(/\\tab\b/gi, '\t');
+    src = src.replace(/\\~+/g, ' ').replace(/\\_+/g, ' ');
+    src = src.replace(/\\[a-zA-Z]+\s?/g, ' ');
+    src = src.replace(/\\['{}*/\\]/g, ' ').replace(/[{}]/g, '');
+    var out = [];
+    src.split(/\n+/).forEach(function (line) {
+      var l = String(line || '').replace(/\s+/g, ' ').trim();
+      if (l) out.push('<p>' + escapeHtml(l) + '</p>');
+    });
+    return out.join('');
+  }
+  function importPdfBytes(name, bytes) {
+    var text = '';
+    try { text = pdfExtractText(bytes); } catch (e) { text = ''; }
+    if (!text.trim()) { setStatus('Could not read text from ' + name); return null; }
+    var paragraphs = text.split(/\n{2,}/).map(function (para) {
+      var trimmed = para.trim();
+      if (!trimmed) return '';
+      return '<p>' + trimmed.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') + '</p>';
+    }).filter(Boolean).join('');
+    return addImportedFile(name.replace(/\.pdf$/i, '.md'), paragraphs);
+  }
+  function importFile(file) {
+    var lower = (file.name || '').toLowerCase();
+    var ext = (lower.match(/\.([a-z0-9]+)$/) || ['', ''])[1];
+    var name = file.name;
+    if (lower.endsWith('.pdf')) {
+      return new Promise(function (resolvePromise) {
+        file.arrayBuffer().then(function (buf) {
+          var f = importPdfBytes(name, new Uint8Array(buf));
+          resolvePromise(f ? true : false);
+        }).catch(function () { setStatus('Could not read ' + name); resolvePromise(false); });
+      });
+    }
+    if (ext === 'docx' || ext === 'odt' || ext === 'epub') {
+      return new Promise(function (resolvePromise) {
+        file.arrayBuffer().then(function (buf) {
+          var bytes = new Uint8Array(buf);
+          try {
+            if (ext === 'docx') importDocx(name, bytes);
+            else if (ext === 'odt') importOdt(name, bytes);
+            else importEpub(name, bytes);
+            resolvePromise(true);
+          } catch (e) { setStatus('Could not open ' + name + ': ' + e.message); resolvePromise(false); }
+        }).catch(function () { setStatus('Could not read ' + name); resolvePromise(false); });
+      });
+    }
+    return new Promise(function (resolvePromise) {
+      file.arrayBuffer().then(function (buf) {
+        var bytes = new Uint8Array(buf);
+        if (isBinaryBytes(bytes)) {
+          setStatus('“' + name + '” is a binary file that Werket cannot edit.');
+          resolvePromise(false);
+          return;
+        }
+        var content = bytesToUtf8(bytes);
+        if (ext === 'html' || ext === 'htm') {
+          var sanitized = sanitizeHtml(content);
+          addImportedFile(name.replace(/\.html?$/i, '.html'), sanitized);
+          resolvePromise(true);
+          return;
+        }
+        if (ext === 'rtf') {
+          var f = addImportedFile(name.replace(/\.rtf$/i, '.md'), textToParagraphs(rtfToText(content)));
+          resolvePromise(!!f);
+          return;
+        }
+        if (ext === 'md' || ext === 'markdown') {
+          var f2 = addImportedFile(name, content);
+          resolvePromise(!!f2);
+          return;
+        }
+        if (ext === 'doc') {
+          var plain = content.replace(/[^\x20-\x7e\xe0-\xff]/g, ' ').replace(/\s+/g, ' ');
+          var f3 = addImportedFile(name.replace(/\.doc$/i, '.txt'), textToParagraphs(plain));
+          resolvePromise(!!f3);
+          return;
+        }
+        var f4 = addImportedFile(name, textToParagraphs(content));
+        resolvePromise(!!f4);
+      }).catch(function () { setStatus('Could not read ' + name); resolvePromise(false); });
+    });
+  }
+  function importFiles(files) {
+    if (!files || !files.length) return;
+    setStatus('Opening ' + files.length + ' file' + (files.length > 1 ? 's' : '') + '…');
+    var done = 0, ok = 0;
+    function finish() {
+      done++;
+      if (done === files.length) {
+        save();
+        if (workspace.activeId) openFile(workspace.activeId);
+        setStatus('Opened ' + ok + ' of ' + files.length + ' file' + (files.length > 1 ? 's' : ''));
+      }
+    }
+    files.forEach(function (fileItem) {
+      importFile(fileItem).then(function (success) { if (success) ok++; finish(); });
+    });
   }
 
   function focusEditor() {
@@ -967,11 +1282,17 @@ function importPdf(file) {
     var folders = {};
     workspace.files.forEach(function (f) { (folders[f.folder || '__root'] || (folders[f.folder || '__root'] = [])).push(f); });
     var html = '';
-    Object.keys(folders).sort(function (a) { return a === '__root' ? -1 : 1; }).forEach(function (folder) {
+    Object.keys(folders).sort(function (a, b) {
+      if (a === '__root') return -1;
+      if (b === '__root') return 1;
+      return String(a).localeCompare(String(b));
+    }).forEach(function (folder) {
       var items = folders[folder];
       if (folder !== '__root') html += '<div class="tree-folder"><div class="tree-folder-label"><span>▾</span><span>▱</span>' + escapeHtml(folder) + '</div>';
       items.sort(function (a,b) { return a.name.localeCompare(b.name); }).forEach(function (f) {
-        html += '<button class="tree-file ' + (f.id === workspace.activeId ? 'active' : '') + '" data-file="' + f.id + '"><span class="file-icon">' + (f.name.endsWith('.md') ? '◇' : '□') + '</span>' + escapeHtml(f.name) + '</button>';
+        var lowerName = f.name.toLowerCase();
+        var icon = /\.(md|markdown)$/.test(lowerName) ? '◇' : /\.(pdf|docx|doc|odt|rtf|epub)$/.test(lowerName) ? '⬕' : '□';
+        html += '<button class="tree-file ' + (f.id === workspace.activeId ? 'active' : '') + '" data-file="' + f.id + '"><span class="file-icon">' + icon + '</span>' + escapeHtml(f.name) + '</button>';
       });
       if (folder !== '__root') html += '</div>';
     });
@@ -1030,10 +1351,10 @@ function importPdf(file) {
 
   function renderHome() {
     $('homeTemplates').innerHTML = templates.map(function (template) {
-      return '<button class="home-card" data-template="' + template.id + '"><span class="home-card-preview artwork-' + template.artwork + '"><span>' + template.icon + '</span></span><b>' + escapeHtml(template.name) + '</b><span>' + escapeHtml(template.description) + '</span></button>';
+      return '<button class="home-card" data-template="' + template.id + '"><span class="home-card-preview artwork-' + template.artwork + '"><span>' + template.icon + '</span></span><b>' + escapeHtml(template.name.en) + '</b><span>' + escapeHtml((template.name.am || '') + ' · ' + template.description.en) + '</span></button>';
     }).join('');
     $('homeTemplates').querySelectorAll('[data-template]').forEach(function (button) {
-      button.onclick = function () { createTemplate(templates.find(function (item) { return item.id === button.dataset.template; })); };
+      button.onclick = function () { openNewDocDialog(button.dataset.template); };
     });
     var recent = workspace.files.slice().sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); }).slice(0, 8);
     $('homeRecent').innerHTML = recent.length ? recent.map(function (f) {
@@ -1091,7 +1412,10 @@ function importPdf(file) {
     editor.style.fontFamily = workspace.font || 'Noto Sans Ethiopic';
     editor.style.fontSize = (workspace.size || 18) + 'px';
     editor.style.textAlign = workspace.align || 'left';
-    $('fileStatus').textContent = f.name + ' · UTF-8';
+    editor.dataset.lang = f.lang || workspaceLang();
+    var ph = f.lang === 'am' ? 'አማርኛ መጻፍ ይጀምሩ...' : 'Start writing in English...';
+    if (editor.dataset.placeholder !== ph) editor.dataset.placeholder = ph;
+    $('fileStatus').textContent = f.name + ' · UTF-8 · ' + (editor.dataset.lang === 'am' ? 'አማርኛ' : 'English');
     updateStats(); refreshSuggestions(); checkSpelling();
   }
   function updateStats() {
@@ -1629,45 +1953,139 @@ function importPdf(file) {
     el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   }
 
-  function bookFiles() { return [file('outline.md', '<h1>Book outline</h1><h2>Premise</h2><p>Write the central idea here.</p><h2>Structure</h2><ul><li>Beginning</li><li>Middle</li><li>End</li></ul>', ''), file('characters.md', '<h1>Characters</h1><h2>Main character</h2><p>Name, desire, conflict, and change.</p>', ''), file('chapter-01.md', '<h1>Chapter 01</h1><p>Begin the first scene here.</p>', 'chapters'), file('chapter-02.md', '<h1>Chapter 02</h1><p>Continue the story here.</p>', 'chapters'), file('research.md', '<h1>Research notes</h1><p>Keep references and ideas here.</p>', '')]; }
+  function bookFiles(lang) {
+    var am = lang === 'am';
+    if (am) return [
+      file('ዝርዝር.md', '<h1>የመጽሐፍ ዝርዝር</h1><h2>መነሻ ሃሳብ</h2><p>ዋናውን ሃሳብ እዚህ ይጻፉ።</p><h2>አወቃቀር</h2><ul><li>መግቢያ</li><li>የመሀል ክፍል</li><li>መደምደሚያ</li></ul>', ''),
+      file('ገጸ-ባሕሪያት.md', '<h1>ገጸ-ባሕሪያት</h1><h2>ዋና ተዋናይ</h2><p>ስም፣ ምኞት፣ ግጭት እና ለውጥ።</p>', ''),
+      file('ምዕራፍ-01.md', '<h1>ምዕራፍ 01</h1><p>ገጽ ታሪኩን እዚህ ይጀምሩ።</p>', 'ምዕራፎች'),
+      file('ምዕራፍ-02.md', '<h1>ምዕራፍ 02</h1><p>ታሪኩን እዚህ ይቀጥሉ።</p>', 'ምዕራፎች'),
+      file('ምርምር.md', '<h1>የምርምር ማስታወሻዎች</h1><p>ማጣቀሻዎችን እና ሃሳቦችን እዚህ ያስቀምጡ።</p>', '')
+    ];
+    return [
+      file('outline.md', '<h1>Book outline</h1><h2>Premise</h2><p>Write the central idea here.</p><h2>Structure</h2><ul><li>Beginning</li><li>Middle</li><li>End</li></ul>', ''),
+      file('characters.md', '<h1>Characters</h1><h2>Main character</h2><p>Name, desire, conflict, and change.</p>', ''),
+      file('chapter-01.md', '<h1>Chapter 01</h1><p>Begin the first scene here.</p>', 'chapters'),
+      file('chapter-02.md', '<h1>Chapter 02</h1><p>Continue the story here.</p>', 'chapters'),
+      file('research.md', '<h1>Research notes</h1><p>Keep references and ideas here.</p>', '')
+    ];
+  }
+  function ensureExt(name, ext) {
+    var s = String(name == null ? '' : name).trim();
+    if (!s) return ext || '.md';
+    return /(\.[^.]+)$/.test(s) ? s : s + (ext || '.md');
+  }
   function addCreatedFiles(created, projectName) {
     created.forEach(function (f) { workspace.files.push(f); });
     workspace.activeId = created[0].id;
     workspace.openIds = created.map(function (f) { return f.id; }).concat(workspace.openIds || []).filter(function (id, index, all) { return all.indexOf(id) === index; });
     if (projectName) workspace.projectName = projectName;
     closeTemplates();
+    closeNewDocDialog();
     hideHome();
     saveWorkspace();
     render();
     setStatus('Document created');
     focusEditor();
   }
-  function createTemplate(template) {
-    if (!template) return;
-    var created = template.book ? bookFiles() : template.files.map(function (item) { return file(uniqueName(item[0]), item[1], ''); });
-    addCreatedFiles(created, template.id === 'book' ? 'New book' : workspace.projectName);
+  function createFromNewDoc(template, lang, name, useOsk) {
+    lang = lang === 'en' ? 'en' : 'am';
+    workspace.lang = lang;
+    var created;
+    if (template && template.book) {
+      created = bookFiles(lang);
+      var project = String(name || '').trim().replace(/\.md$/i, '') || templateDefaultName(template, lang).replace(/\.md$/i, '');
+      addCreatedFiles(created, project);
+    } else if (template) {
+      var src = templateFiles(template, lang);
+      created = src.map(function (item, idx) {
+        var nm = idx === 0 ? ensureExt(name, '.md') : item[0];
+        return file(uniqueName(nm), item[1] || '', '');
+      });
+      addCreatedFiles(created, workspace.projectName);
+    } else {
+      created = [file(uniqueName(ensureExt(name, '.md')), '', '')];
+      addCreatedFiles(created, workspace.projectName);
+    }
+    if (lang === 'am' && useOsk) {
+      setTimeout(function () { setOsk(true); }, 300);
+    }
+    return created;
   }
+  var newDocTemplateId = 'blank';
+  function selectedNewDocTemplate() { return templates.find(function (t) { return t.id === newDocTemplateId; }) || templates[0]; }
+  function setNewDocLangControl() {
+    var lang = $('newDocLangAm').checked ? 'am' : 'en';
+    $('newDocOskWrap').style.display = lang === 'am' ? 'flex' : 'none';
+    var t = selectedNewDocTemplate();
+    $('newDocName').placeholder = templateDefaultName(t, lang);
+    var book = t && t.book;
+    $('newDocNameLabel').textContent = book ? (lang === 'am' ? 'የፕሮጀክት ስም (Project name)' : 'Project name') : (lang === 'am' ? 'የፋይል ስም (File name)' : 'File name');
+    $('newDocCreate').textContent = book ? (lang === 'am' ? 'ፕሮጀክቱን ይፍጠሩ' : 'Create project') : (lang === 'am' ? 'ሰነዱን ይፍጠሩ' : 'Create document');
+  }
+  function openNewDocDialog(templateId, presetLang) {
+    closeMenu(); closeSaveMenu(); closeExportMenu();
+    newDocTemplateId = templateId || 'blank';
+    var t = selectedNewDocTemplate();
+    var lang = presetLang || workspaceLang();
+    $('newDocLangAm').checked = lang !== 'en';
+    $('newDocLangEn').checked = lang === 'en';
+    $('newDocName').value = '';
+    $('newDocError').hidden = true;
+    $('newDocPickedName').textContent = t.name.am + ' · ' + t.name.en;
+    $('newDocPickedDesc').textContent = templateDesc(t, lang);
+    $('newDocTemplateGrid').querySelectorAll('[data-ndtp]').forEach(function (chip) {
+      chip.classList.toggle('active', chip.dataset.ndtp === newDocTemplateId);
+    });
+    setNewDocLangControl();
+    var dialog = $('newDocDialog');
+    if (dialog.showModal) dialog.showModal(); else dialog.setAttribute('open', '');
+    if ($('newDocLangAm').checked) $('newDocOsk').checked = true;
+    setTimeout(function () { var inp = $('newDocName'); inp.focus(); var def = templateDefaultName(t, lang); if (!inp.value) inp.value = def; inp.select(); }, 120);
+  }
+  function closeNewDocDialog() {
+    var dialog = $('newDocDialog');
+    if (dialog.open) dialog.close(); else dialog.removeAttribute('open');
+  }
+  function submitNewDoc(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    var name = $('newDocName').value;
+    if (!name || !name.trim()) { $('newDocError').textContent = 'Please name your document.'; $('newDocError').hidden = false; return; }
+    var lang = $('newDocLangAm').checked ? 'am' : 'en';
+    createFromNewDoc(selectedNewDocTemplate(), lang, name, $('newDocOsk').checked);
+    setStatus((lang === 'am' ? 'New Amharic document created' : 'New document created'));
+  }
+  function createTemplate(template) { openNewDocDialog(template && template.id ? template.id : 'blank', workspaceLang()); }
   function closeTemplates() {
     var dialog = $('templateDialog');
     if (dialog.open) dialog.close();
     else dialog.removeAttribute('open');
   }
-  function showTemplates() {
-    closeMenu();
-    var dialog = $('templateDialog');
-    $('templateGrid').innerHTML = templates.map(function (template) { return '<button class="template-card" data-template="' + template.id + '"><span class="template-art artwork-' + template.artwork + '"><span>' + template.icon + '</span></span><b>' + template.name + '</b><span>' + template.description + '</span></button>'; }).join('');
-    $('templateGrid').querySelectorAll('[data-template]').forEach(function (button) { button.onclick = function () { createTemplate(templates.find(function (item) { return item.id === button.dataset.template; })); }; });
-    if (dialog.showModal) dialog.showModal(); else dialog.setAttribute('open', '');
-  }
-  function createBlank() { createTemplate(templates[0]); }
-  function createFile() {
-    closeMenu();
-    var name = window.prompt('File name', uniqueName('notes.md'));
-    if (!name) return;
-    var f = file(uniqueName(name), '', '');
-    workspace.files.push(f);
-    openFile(f.id);
-    save();
+  function showTemplates() { openNewDocDialog('blank', workspaceLang()); }
+  function createBlank() { openNewDocDialog('blank', workspaceLang()); }
+  function createFile() { openNewDocDialog('blank', workspaceLang()); }
+  function renderNewDocTemplates() {
+    $('newDocTemplateGrid').innerHTML = templates.map(function (template) {
+      return '<button type="button" class="newdoc-tpl" data-ndtp="' + template.id + '" title="' + escapeHtml(template.name.en) + '"><span class="template-art artwork-' + template.artwork + '"><span>' + template.icon + '</span></span><b>' + escapeHtml(template.name.en) + '<small>' + escapeHtml(template.name.am) + '</small></b></button>';
+    }).join('');
+    $('newDocTemplateGrid').querySelectorAll('[data-ndtp]').forEach(function (chip) {
+      chip.onclick = function () {
+        newDocTemplateId = chip.dataset.ndtp;
+        var t = selectedNewDocTemplate();
+        var lang = $('newDocLangAm').checked ? 'am' : 'en';
+        $('newDocPickedName').textContent = t.name.am + ' · ' + t.name.en;
+        $('newDocPickedDesc').textContent = templateDesc(t, lang);
+        $('newDocName').value = '';
+        $('newDocName').placeholder = templateDefaultName(t, lang);
+        $('newDocNameLabel').textContent = t.book ? (lang === 'am' ? 'የፕሮጀክት ስም (Project name)' : 'Project name') : (lang === 'am' ? 'የፋይል ስም (File name)' : 'File name');
+        $('newDocName').focus();
+        var def = templateDefaultName(t, lang);
+        $('newDocName').value = def;
+        $('newDocName').select();
+        $('newDocTemplateGrid').querySelectorAll('[data-ndtp]').forEach(function (other) { other.classList.toggle('active', other === chip); });
+        setNewDocLangControl();
+      };
+    });
   }
   function renameFile() { var current = activeFile(); if (!current) return; var name = window.prompt('Rename file', current.name); if (name && name.trim()) { current.name = name.trim(); save(); render(); } }
   function duplicateFile() { var current = activeFile(); if (!current) return; var copy = file(uniqueName(current.name.replace(/(\.[^.]+)?$/, ' copy$1')), current.text, current.folder); workspace.files.push(copy); openFile(copy.id); save(); }
@@ -1736,13 +2154,19 @@ function importPdf(file) {
         else { showAuth('login'); }
       }
       else if (target === 'download') {
-        var f = activeFile();
-        if (f) {
+        var f2 = activeFile();
+        if (f2) {
+          var lower = f2.name.toLowerCase();
+          var isMd = /\.md$/i.test(lower) || /\.markdown$/i.test(lower);
+          var content = isMd ? htmlToMarkdown(editorHtml()) : editorText();
+          var type = isMd ? 'text/markdown;charset=utf-8' : 'text/plain;charset=utf-8';
+          var dlName = /\.([^.]+)$/.test(f2.name) ? f2.name : f2.name + '.txt';
           var link = document.createElement('a');
-          link.href = URL.createObjectURL(new Blob([editorText()], {type:'text/plain;charset=utf-8'}));
-          link.download = f.name.replace(/\.md$/, '') + '.txt';
+          link.href = URL.createObjectURL(new Blob([content], {type: type}));
+          link.download = dlName;
           link.click();
           URL.revokeObjectURL(link.href);
+          setStatus('Downloaded ' + dlName);
         }
       }
     };
@@ -1763,8 +2187,8 @@ function importPdf(file) {
   $('authStayLocal').onclick = closeAuth;
   $('authDialog').onclick = function (event) { if (event.target === $('authDialog')) closeAuth(); };
   document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape') { hideOrders(); closeMenu(); closeContextMenu(); if ($('templateDialog').open) closeTemplates(); }
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'n') { event.preventDefault(); showHome(); }
+    if (event.key === 'Escape') { hideOrders(); closeMenu(); closeContextMenu(); if ($('newDocDialog').open) closeNewDocDialog(); if ($('templateDialog').open) closeTemplates(); }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'n') { event.preventDefault(); openNewDocDialog('blank', workspaceLang()); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') { event.preventDefault(); hideHome(); $('findBar').classList.add('open'); $('findInput').focus(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); if (event.shiftKey) redo(); else undo(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') { event.preventDefault(); redo(); }
@@ -1811,7 +2235,7 @@ function importPdf(file) {
   $('newMenu').querySelectorAll('[data-new]').forEach(function (button) {
     button.onclick = function () {
       closeMenu();
-      createTemplate(templates.find(function (item) { return item.id === button.dataset.new; }));
+      openNewDocDialog(button.dataset.new, workspaceLang());
     };
   });
   $('newFromTemplate').onclick = function () { closeMenu(); showTemplates(); };
@@ -1820,6 +2244,12 @@ function importPdf(file) {
   $('templatesBtn').onclick = showTemplates;
   $('sidebarToggle').onclick = toggleExplorer;
   $('closeTemplates').onclick = closeTemplates;
+  $('newDocCancel').onclick = closeNewDocDialog;
+  $('newDocForm').onsubmit = submitNewDoc;
+  $('newDocLangAm').onchange = setNewDocLangControl;
+  $('newDocLangEn').onchange = setNewDocLangControl;
+  $('newDocDialog').addEventListener('click', function (event) { if (event.target === $('newDocDialog')) closeNewDocDialog(); });
+  renderNewDocTemplates();
   $('keyboardBtn').onclick = function () { deviceKeyboardMode = false; setOsk(!oskOpen); };
   $('closeKeyboard').onclick = function () { setOsk(false); };
   $('deviceKbBtn').onclick = function () {
@@ -1984,25 +2414,10 @@ function importPdf(file) {
   document.querySelectorAll('[data-command]').forEach(function (button) { button.onclick = function () { applyFormat(button.dataset.command, button.dataset.value); }; });
   $('importBtn').onclick = function () { $('importFile').click(); };
   $('importFile').onchange = function (event) {
-    var selected = event.target.files[0]; if (!selected) return;
+    var selected = Array.prototype.slice.call(event.target.files || []);
+    if (!selected.length) return;
     event.target.value = '';
-    var lower = selected.name.toLowerCase();
-    if (lower.endsWith('.pdf')) { importPdf(selected); return; }
-    var reader = new FileReader();
-    reader.onload = function () {
-      var content = String(reader.result || '');
-      var name = selected.name;
-      if (lower.endsWith('.html') || lower.endsWith('.htm')) {
-        var tmp = document.createElement('div'); tmp.innerHTML = content;
-        content = tmp.textContent || '';
-        name = name.replace(/\.html?$/i, '.md');
-      }
-      var f = file(uniqueName(name), content, '');
-      workspace.files.push(f);
-      openFile(f.id);
-      save();
-    };
-    reader.readAsText(selected);
+    importFiles(selected);
   };
   $('exportBtn').onclick = function () { showExportMenu(); };
   $('assistantBtn').onclick = function () {
@@ -2060,7 +2475,8 @@ function importPdf(file) {
   var queryNew = new URLSearchParams(window.location.search).get('new');
   if (queryNew) {
     var tmpl = templates.find(function (t) { return t.id === queryNew; });
-    if (tmpl) { createTemplate(tmpl); history.replaceState(null, '', '/'); }
+    history.replaceState(null, '', '/');
+    if (tmpl) openNewDocDialog(tmpl.id); else openNewDocDialog('blank');
   }
 
   window.__werketTest = { pdfInflate: pdfInflate, pdfExtractText: pdfExtractText, insert: insert, htmlToMarkdown: htmlToMarkdown };
