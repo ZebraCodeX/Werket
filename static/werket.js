@@ -18,7 +18,6 @@
   var currentUser = null;
   var saveMenuOpen = false;
   var exportMenuOpen = false;
-  var assistantOpen = false;
   var families = ['ሀ','ለ','ሐ','መ','ሠ','ረ','ሰ','ሸ','ቀ','በ','ተ','ቸ','ኀ','ነ','ኘ','አ','ከ','ኸ','ወ','ዐ','ዘ','ዠ','የ','ደ','ጀ','ገ','ጠ','ጨ','ጰ','ጸ','ፀ'];
   var roman = ['h','l','H','m','S','r','s','sh','q','b','t','c','x','n','N','a','k','K','w','E','z','Z','y','d','j','g','T','C','P','S','D'];
   var orders = ['e','u','i','a','ie','silent','o'];
@@ -373,151 +372,6 @@
     closeSaveMenu();
   }
   function closeExportMenu() { exportMenuOpen = false; var m = $('exportMenu'); if (m) m.hidden = true; var b = $('exportBtn'); if (b) b.setAttribute('aria-expanded', 'false'); }
-
-  function showAssistant() {
-    assistantOpen = true;
-    $('assistantPanel').hidden = false;
-    $('assistantBtn').classList.add('active');
-    $('assistantBtn').setAttribute('aria-expanded', 'true');
-  }
-  function closeAssistant() {
-    assistantOpen = false;
-    $('assistantPanel').hidden = true;
-    $('assistantBtn').classList.remove('active');
-    $('assistantBtn').setAttribute('aria-expanded', 'false');
-  }
-
-  function switchAssistantTab(tab) {
-    document.querySelectorAll('.assistant-tab').forEach(function (btn) {
-      btn.classList.toggle('active', btn.dataset.tab === tab);
-    });
-    document.querySelectorAll('.assistant-tab-panel').forEach(function (panel) {
-      panel.hidden = panel.id !== 'tab-' + tab;
-    });
-  }
-
-  function insertBibleVerse(ref, text) {
-    var html = '<blockquote><p>' + escapeHtml(text) + '</p><cite>— ' + escapeHtml(ref) + '</cite></blockquote>';
-    insert(html);
-    closeAssistant();
-  }
-  window.insertBibleVerse = insertBibleVerse;
-
-  function searchBible() {
-    var query = $('bibleSearch').value.trim();
-    if (!query) return;
-    var resultsEl = $('bibleResults');
-    resultsEl.innerHTML = '<div class="assistant-loading">Searching...</div>';
-    fetch('/api/bible/search?q=' + encodeURIComponent(query) + '&k=10')
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (!data.results || !data.results.length) {
-          resultsEl.innerHTML = '<div class="assistant-empty">No verses found</div>';
-          return;
-        }
-        resultsEl.innerHTML = data.results.map(function (item) {
-          return '<div class="assistant-verse" data-ref="' + escapeHtml(item.ref) + '"><span class="verse-ref">' + escapeHtml(item.ref) + '</span><span class="verse-text">' + escapeHtml(item.text) + '</span><button class="assistant-insert" onclick="insertBibleVerse(\'' + escapeHtml(item.ref).replace(/'/g, "\\'") + '\', \'' + escapeHtml(item.text).replace(/'/g, "\\'") + '\')">Insert</button></div>';
-        }).join('');
-      })
-      .catch(function () { resultsEl.innerHTML = '<div class="assistant-error">Error searching</div>'; });
-  }
-
-  function getRandomVerse() {
-    var resultsEl = $('bibleResults');
-    resultsEl.innerHTML = '<div class="assistant-loading">Loading...</div>';
-    fetch('/api/bible/random')
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (data.error) { resultsEl.innerHTML = '<div class="assistant-error">' + escapeHtml(data.error) + '</div>'; return; }
-        resultsEl.innerHTML = '<div class="assistant-verse"><span class="verse-ref">' + escapeHtml(data.ref) + '</span><span class="verse-text">' + escapeHtml(data.text) + '</span><button class="assistant-insert" onclick="insertBibleVerse(\'' + escapeHtml(data.ref).replace(/'/g, "\\'") + '\', \'' + escapeHtml(data.text).replace(/'/g, "\\'") + '\')">Insert</button></div>';
-      })
-      .catch(function () { resultsEl.innerHTML = '<div class="assistant-error">Error loading verse</div>'; });
-  }
-
-  function generateBibleRewrite() {
-    var topic = $('rewriteTopic').value.trim();
-    var chapters = parseInt($('rewriteChapters').value) || 5;
-    if (!topic) { alert('Enter a topic or book name'); return; }
-    var progressEl = $('rewriteProgress');
-    var outputEl = $('rewriteOutput');
-    progressEl.hidden = false;
-    progressEl.innerHTML = 'Generating chapter 1 of ' + chapters + '...';
-    outputEl.innerHTML = '';
-    var allContent = '';
-    var currentChapter = 0;
-
-    function generateNextChapter() {
-      currentChapter++;
-      if (currentChapter > chapters) {
-        progressEl.hidden = true;
-        progressEl.innerHTML = 'Complete!';
-        // Create book project
-        createBibleBook(topic, allContent);
-        return;
-      }
-      progressEl.innerHTML = 'Generating chapter ' + currentChapter + ' of ' + chapters + '...';
-      // Get relevant verses
-      fetch('/api/bible/search?q=' + encodeURIComponent(topic + ' chapter ' + currentChapter) + '&k=5')
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          var verses = (data.results || []).map(function (r) { return r.text; }).join(' ');
-          var prompt = 'የ' + escapeHtml(topic) + ' ምዕራፍ ' + currentChapter + 'ን በአማርኛ ጻፍ። የተለየ ጥቅሶች: ' + escapeHtml(verses.slice(0, 500));
-          // Use completion API
-          return fetch('/api/complete?text=' + encodeURIComponent(prompt));
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          var suggestions = (data.sentences || []).join(' ') || (data.next || []).map(function (n) { return n[0]; }).join(' ') || 'ይህ ምዕራፍ ተጽፎአል።';
-          var chapterHtml = '<h2>Chapter ' + currentChapter + '</h2><p>' + escapeHtml(suggestions) + '</p>';
-          allContent += chapterHtml;
-          outputEl.innerHTML += '<div class="generated-chapter">' + chapterHtml + '</div>';
-          generateNextChapter();
-        })
-        .catch(function () {
-          outputEl.innerHTML += '<div class="generated-chapter"><h2>Chapter ' + currentChapter + '</h2><p>Error generating content</p></div>';
-          generateNextChapter();
-        });
-    }
-    generateNextChapter();
-  }
-
-  function createBibleBook(topic, content) {
-    // Use the book template
-    var bookFiles = [
-      file('outline.md', '<h1>Book Outline: ' + escapeHtml(topic) + '</h1><p>Generated from Bible verses about ' + escapeHtml(topic) + '</p>', ''),
-      file('chapter-01.md', content, 'chapters'),
-      file('research.md', '<h1>Research Notes</h1><p>Bible verses used for: ' + escapeHtml(topic) + '</p>', '')
-    ];
-    addCreatedFiles(bookFiles, topic + ' - Bible Rewrite');
-    closeAssistant();
-    setStatus('Created Bible rewrite book: ' + topic);
-  }
-
-  function getCompletions() {
-    var text = $('completeInput').value.trim();
-    if (!text) return;
-    var outputEl = $('completeOutput');
-    outputEl.innerHTML = '<div class="assistant-loading">Getting suggestions...</div>';
-    fetch('/api/complete?text=' + encodeURIComponent(text))
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var html = '';
-        if (data.sentences && data.sentences.length) {
-          html += '<div class="assistant-section-title">Sentence Completions</div>';
-          html += data.sentences.map(function (s) { return '<button class="assistant-suggestion" onclick="insert(\'' + escapeHtml(s).replace(/'/g, "\\'") + '\')">' + escapeHtml(s) + '</button>'; }).join('');
-        }
-        if (data.next && data.next.length) {
-          html += '<div class="assistant-section-title">Next Words</div>';
-          html += data.next.map(function (n) { return '<button class="assistant-suggestion" onclick="insert(\'' + escapeHtml(n[0]).replace(/'/g, "\\'") + '\')">' + escapeHtml(n[0]) + '</button>'; }).join('');
-        }
-        if (data.words && data.words.length) {
-          html += '<div class="assistant-section-title">Word Suggestions</div>';
-          html += data.words.map(function (w) { return '<button class="assistant-suggestion" onclick="insert(\'' + escapeHtml(w[0]).replace(/'/g, "\\'") + '\')">' + escapeHtml(w[0]) + '</button>'; }).join('');
-        }
-        outputEl.innerHTML = html || '<div class="assistant-empty">No suggestions</div>';
-      })
-      .catch(function () { outputEl.innerHTML = '<div class="assistant-error">Error getting suggestions</div>'; });
-  }
 
   function exportShell(f, extraHead) {
     return '<!doctype html><html><head><meta charset="utf-8"><title>' + escapeHtml(f.name) + '</title><style>@page { size: A4; margin: 2cm; } body { max-width: 18cm; margin: 0 auto; padding: 2em; font-family: "Noto Sans Ethiopic", "Nyala", "Abyssinica SIL", Georgia, serif; font-size: 12pt; line-height: 1.6; color: #111; } h1{font-size:24pt} h2{font-size:18pt} h3{font-size:14pt} ul,ol{margin:.4em 0 .4em 1.5em;padding-left:1em} blockquote{margin:.8em 0;padding:.2em 1em;border-left:4px solid #c8c8c8;color:#444;font-style:italic} .editor-bullet{margin:.3em 0 0 1.5em} .editor-number{margin:.3em 0 0 1.5em} .editor-check{margin:.3em 0} s{opacity:.75}</style>' + (extraHead || '') + '</head><body>' + editorHtml() + '</body></html>';
@@ -2420,19 +2274,6 @@ function addImportedFile(name, content) {
     importFiles(selected);
   };
   $('exportBtn').onclick = function () { showExportMenu(); };
-  $('assistantBtn').onclick = function () {
-    if (assistantOpen) closeAssistant(); else showAssistant();
-  };
-  $('closeAssistant').onclick = closeAssistant;
-  document.querySelectorAll('.assistant-tab').forEach(function (btn) {
-    btn.onclick = function () { switchAssistantTab(btn.dataset.tab); };
-  });
-  $('bibleSearchBtn').onclick = searchBible;
-  $('bibleRandomBtn').onclick = getRandomVerse;
-  $('rewriteGenerateBtn').onclick = generateBibleRewrite;
-  $('completeBtn').onclick = getCompletions;
-  $('bibleSearch').addEventListener('keydown', function (e) { if (e.key === 'Enter') searchBible(); });
-  $('completeInput').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); getCompletions(); } });
   document.querySelectorAll('#exportMenu [data-export]').forEach(function (button) { button.onclick = function () { closeExportMenu(); exportFile(button.dataset.export); }; });
   $('brandHome').onclick = showHome;
   $('themeBtn').onclick = function () { applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'); };

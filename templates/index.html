@@ -170,7 +170,6 @@
               <option value="1.25">125%</option>
             </select>
             <button class="tool" id="findBtn" title="Find in document">🔍</button>
-            <button class="tool" id="assistantBtn" title="Writing Assistant (Bible & AI)">📖</button>
           </div>
         </section>
         <section class="document-stage">
@@ -211,46 +210,7 @@
             </div>
 <div id="errors" class="spell-error-list"></div>
          </section>
-         <section id="assistantPanel" class="assistant-panel" hidden>
-           <div class="assistant-header">
-             <span>📖 Writing Assistant</span>
-             <button id="closeAssistant" class="small-btn">×</button>
-           </div>
-           <div class="assistant-tabs">
-             <button class="assistant-tab active" data-tab="bible">Bible Verses</button>
-             <button class="assistant-tab" data-tab="rewrite">Bible Rewrite</button>
-             <button class="assistant-tab" data-tab="complete">Auto-complete</button>
-           </div>
-           <div class="assistant-content">
-             <div id="tab-bible" class="assistant-tab-panel">
-               <div class="assistant-section">
-                 <input id="bibleSearch" placeholder="Search Bible verses (e.g., love, faith, creation)..." class="assistant-input">
-                 <button id="bibleSearchBtn" class="assistant-btn">Search</button>
-                 <button id="bibleRandomBtn" class="assistant-btn secondary">Random Verse</button>
-               </div>
-               <div id="bibleResults" class="assistant-results"></div>
-             </div>
-             <div id="tab-rewrite" class="assistant-tab-panel" hidden>
-               <div class="assistant-section">
-                 <label>Book/Topic:</label>
-                 <input id="rewriteTopic" placeholder="e.g., Genesis, Psalms, John, love, creation..." class="assistant-input">
-                 <label>Chapters to generate:</label>
-                 <input id="rewriteChapters" type="number" value="5" min="1" max="20" class="assistant-input-small">
-                 <button id="rewriteGenerateBtn" class="assistant-btn">Generate Book</button>
-               </div>
-               <div id="rewriteProgress" class="assistant-progress" hidden></div>
-               <div id="rewriteOutput" class="assistant-results"></div>
-             </div>
-             <div id="tab-complete" class="assistant-tab-panel" hidden>
-               <div class="assistant-section">
-                 <label>Type a partial sentence:</label>
-                 <textarea id="completeInput" rows="3" placeholder="Start typing in Amharic..."></textarea>
-                 <button id="completeBtn" class="assistant-btn">Get Suggestions</button>
-               </div>
-               <div id="completeOutput" class="assistant-results"></div>
-             </div>
-           </div>
-         </section>
+
        </main>
   </div>
   <div id="contextMenu" class="context-menu" hidden role="menu">
