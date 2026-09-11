@@ -3,4 +3,5 @@ services:
     name: werket
     runtime: docker
     plan: free
+    Auto-Deploy: On Commit
     healthCheckPath: /
