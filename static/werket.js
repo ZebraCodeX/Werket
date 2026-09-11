@@ -220,16 +220,11 @@
   }
 
   function suppressNativeKeyboard() {
-    editor.setAttribute('inputmode', 'none');
-    editor.setAttribute('virtualkeyboardpolicy', 'manual');
     if (navigator.virtualKeyboard && navigator.virtualKeyboard.hide) {
       try { navigator.virtualKeyboard.hide(); } catch (e) {}
     }
   }
-  function allowNativeKeyboard() {
-    editor.setAttribute('inputmode', 'text');
-    editor.removeAttribute('virtualkeyboardpolicy');
-  }
+  function allowNativeKeyboard() {}
   function rememberCaret() {
     var offsets = selectionOffsets();
     caretStart = offsets.start;
@@ -573,36 +568,11 @@
     pushUndo();
     editor.focus({preventScroll: true});
     if (text === '\n' || text === '\r\n') {
-      document.execCommand('insertLineBreak');
-      changed();
-      restoreCaret();
-      return;
-    }
-    var sel = window.getSelection();
-    var inserted = false;
-    if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
-      var offsets = selectionOffsets();
-      if (offsets.start !== undefined) {
-        replaceTextRange(offsets.start, offsets.end, text);
-        inserted = true;
-      }
-    }
-    if (!inserted) {
-      var range = document.createRange();
-      range.selectNodeContents(editor);
-      range.collapse(false);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      var tnode = document.createTextNode(text);
-      range.insertNode(tnode);
-      range.setStartAfter(tnode);
-      range.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(range);
-      caretStart = caretEnd = editorText().length;
+      document.execCommand('insertLineBreak', false, null);
+    } else {
+      document.execCommand('insertText', false, text);
     }
     changed();
-    restoreCaret();
   }
   function replaceSuggestion(word) {
     pushUndo();
@@ -782,24 +752,12 @@
       pushUndo();
       editor.focus({preventScroll: true});
       var sel = window.getSelection();
-      if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
-        var offsets = selectionOffsets(), p = offsets.start, q = offsets.end;
-        if (q > p) replaceTextRange(p, q, '');
-        else if (p > 0) replaceTextRange(p - 1, p, '');
+      if (sel && sel.rangeCount && !sel.getRangeAt(0).collapsed) {
+        document.execCommand('delete');
       } else {
-        var text = editorText();
-        if (text.length > 0) {
-          var range = document.createRange();
-          range.selectNodeContents(editor);
-          range.collapse(false);
-          sel.removeAllRanges();
-          sel.addRange(range);
-          editor.textContent = text.slice(0, -1);
-          caretStart = caretEnd = text.length - 1;
-        }
+        document.execCommand('delete');
       }
       changed();
-      restoreCaret();
     });
   }
 
