@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import secrets
+import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -11,10 +12,55 @@ from urllib.parse import parse_qs, urlparse
 from nlp import check, suggest
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+
+# Amharic NLP integration
+try:
+    # Add amharic_nlp to path if not already there
+    _amharic_nlp_path = os.path.join(os.path.dirname(ROOT), 'amharic_nlp')
+    _amharic_nlp_chatbot_path = os.path.join(os.path.dirname(ROOT), 'amharic-nlp-chatbot')
+    if _amharic_nlp_path not in sys.path:
+        sys.path.insert(0, _amharic_nlp_path)
+    if _amharic_nlp_chatbot_path not in sys.path:
+        sys.path.insert(0, _amharic_nlp_chatbot_path)
+    
+    from amharic_nlp import BibleCorpus, AmharicNormalizer, AmharicTokenizer, AmharicStemmer, StopWordFilter, DocumentIndex, TfidfVectorizer
+    from amharic_nlp.corpus import bible as bible_corpus_reader
+    _HAS_AMHARIC_NLP = True
+except ImportError as e:
+    print('Amharic NLP not available:', e)
+    _HAS_AMHARIC_NLP = False
+
 PORT = int(os.environ.get('PORT', '8765'))
 DATA_DIR = os.path.join(ROOT, 'data')
 USERS_DIR = os.path.join(DATA_DIR, 'users')
 os.makedirs(USERS_DIR, exist_ok=True)
+
+# Initialize Bible corpus for verse retrieval
+BIBLE_CORPUS = None
+BIBLE_INDEX = None
+
+def _init_bible_corpus():
+    global BIBLE_CORPUS, BIBLE_INDEX
+    if not _HAS_AMHARIC_NLP:
+        return
+    # Try multiple possible locations for the Bible file
+    bible_paths = [
+        os.path.join(ROOT, 'data', 'amharic_bible.json'),
+        os.path.join(os.path.dirname(ROOT), 'amharic_nlp', 'corpora', 'books', 'amharic_bible.json'),
+        os.path.join(os.path.dirname(ROOT), 'amharic-nlp-chatbot', 'amharic_nlp', 'corpora', 'books', 'amharic_bible.json'),
+    ]
+    for bible_path in bible_paths:
+        if os.path.exists(bible_path):
+            try:
+                BIBLE_CORPUS = BibleCorpus(bible_path).load()
+                BIBLE_CORPUS.build_index()
+                print('Bible corpus loaded from:', bible_path, '-', BIBLE_CORPUS.n_documents, 'verses')
+                return
+            except Exception as e:
+                print('Failed to load Bible corpus from', bible_path, ':', e)
+    print('No Bible corpus found at any expected location')
+
+_init_bible_corpus()
 
 def _hash_password(password, salt=None):
     if salt is None:
@@ -99,6 +145,41 @@ class WerketHandler(BaseHTTPRequestHandler):
         if path == '/api/me':
             user = _get_user(self)
             self._send(json.dumps({'user': user}, ensure_ascii=False), 'application/json; charset=utf-8'); return
+        if path == '/api/bible/search':
+            if not BIBLE_CORPUS:
+                self._send(json.dumps({'error': 'Bible corpus not available', 'results': []}), 'application/json; charset=utf-8'); return
+            query = parse_qs(parsed.query).get('q', [''])[0]
+            k = int(parse_qs(parsed.query).get('k', ['5'])[0])
+            if not query.strip():
+                self._send(json.dumps({'results': []}), 'application/json; charset=utf-8'); return
+            results = BIBLE_CORPUS.search(query, k=k)
+            self._send(json.dumps({'results': [{'score': round(score, 3), 'ref': ref, 'text': text} for score, (ref, text) in results]}, ensure_ascii=False), 'application/json; charset=utf-8'); return
+        if path == '/api/bible/random':
+            if not BIBLE_CORPUS or not BIBLE_CORPUS.verses:
+                self._send(json.dumps({'error': 'Bible corpus not available'}), 'application/json; charset=utf-8'); return
+            import random
+            ref, text = random.choice(BIBLE_CORPUS.verses)
+            self._send(json.dumps({'ref': ref, 'text': text}, ensure_ascii=False), 'application/json; charset=utf-8'); return
+        if path == '/api/bible/verses':
+            if not BIBLE_CORPUS:
+                self._send(json.dumps({'error': 'Bible corpus not available', 'verses': []}), 'application/json; charset=utf-8'); return
+            book = parse_qs(parsed.query).get('book', [''])[0]
+            chapter = parse_qs(parsed.query).get('chapter', [''])[0]
+            verses = []
+            for ref, text in BIBLE_CORPUS.verses:
+                if book and not ref.startswith(book):
+                    continue
+                if chapter and not ref.split(':')[0].endswith(' ' + chapter):
+                    continue
+                verses.append({'ref': ref, 'text': text})
+                if len(verses) >= 50:
+                    break
+            self._send(json.dumps({'verses': verses}, ensure_ascii=False), 'application/json; charset=utf-8'); return
+        if path == '/api/complete':
+            # Sentence completion using n-gram model from suggest
+            text = parse_qs(parsed.query).get('text', [''])[0]
+            suggestions = suggest(text)
+            self._send(json.dumps({'text': text, 'words': suggestions.get('words', []), 'next': suggestions.get('next', []), 'sentences': suggestions.get('sentences', [])}, ensure_ascii=False), 'application/json; charset=utf-8'); return
         if path == '/api/files':
             user = _get_user(self)
             if not user:

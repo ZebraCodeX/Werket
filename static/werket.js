@@ -10,12 +10,15 @@
   var undoStack = [], redoStack = [], applyingHistory = false;
   var oskOpen = false;
   var deviceKeyboardMode = localStorage.getItem(oskPrefKey) === '0';
+  var kbLayer = 'fidel';
   var tapStart = 0, tapX = 0, tapY = 0;
   var caretStart = 0, caretEnd = 0;
   var contextFileId = null;
   var markingSpell = false;
   var currentUser = null;
   var saveMenuOpen = false;
+  var exportMenuOpen = false;
+  var assistantOpen = false;
   var families = ['ሀ','ለ','ሐ','መ','ሠ','ረ','ሰ','ሸ','ቀ','በ','ተ','ቸ','ኀ','ነ','ኘ','አ','ከ','ኸ','ወ','ዐ','ዘ','ዠ','የ','ደ','ጀ','ገ','ጠ','ጨ','ጰ','ጸ','ፀ'];
   var roman = ['h','l','H','m','S','r','s','sh','q','b','t','c','x','n','N','a','k','K','w','E','z','Z','y','d','j','g','T','C','P','S','D'];
   var orders = ['e','u','i','a','ie','silent','o'];
@@ -64,20 +67,32 @@
   function stripMarkdownNoise(text) {
     return String(text || '').replace(/^\s*#{1,6}\s+/, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/(^|\s)_([^_]+)_/g, '$1$2');
   }
-  function markdownToHtml(value) {
-    return escapeHtml(String(value || ''))
-      .replace(/^### (.*)$/gm, '<h3>$1</h3>')
-      .replace(/^## (.*)$/gm, '<h2>$1</h2>')
-      .replace(/^# (.*)$/gm, '<h1>$1</h1>')
-      .replace(/^\- (.*)$/gm, '<div class="editor-bullet">• $1</div>')
-      .replace(/^\d+\. (.*)$/gm, '<div class="editor-number">$1</div>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/_([^_]+)_/g, '<em>$1</em>')
-      .replace(/\n/g, '<br>');
-  }
+  function markdownToHtml(value) { return WerketFormats.markdownToHtml(value); }
+  function htmlToMarkdown(html) { return WerketFormats.htmlToMarkdown(html); }
+  var BLOCK_RE = /^(P|H[1-6]|DIV|UL|OL|LI|BLOCKQUOTE|TABLE)$/i;
   function setEditorContent(value) {
     var source = String(value || '');
-    editor.innerHTML = /^\s*<(?:h[1-6]|p|div|strong|em|ul|ol|br)\b/i.test(source) ? source : markdownToHtml(source);
+    editor.innerHTML = /^\s*<(?:h[1-6]|p|div|strong|em|ul|ol|li|br|blockquote)\b/i.test(source) ? source : markdownToHtml(source);
+    normalizeEditorBlocks();
+  }
+  function normalizeEditorBlocks() {
+    var offsets = selectionOffsets();
+    var run = [], changed = false;
+    function flush() {
+      if (!run.length) return;
+      var p = document.createElement('p');
+      run[0].parentNode.insertBefore(p, run[0]);
+      run.forEach(function (node) { p.appendChild(node); });
+      run = [];
+      changed = true;
+    }
+    Array.prototype.slice.call(editor.childNodes).forEach(function (child) {
+      if (child.nodeType === 1 && BLOCK_RE.test(child.nodeName)) { flush(); return; }
+      run.push(child);
+    });
+    flush();
+    if (changed) { restoreSelection(offsets.start, offsets.end); editor.normalize(); }
+    return changed;
   }
   function selectionOffsets() {
     var selection = window.getSelection();
@@ -91,13 +106,20 @@
     return {start: before.toString().length, end: selected.toString().length};
   }
   function nodeAtOffset(root, offset) {
-    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), node, count = 0;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), node, count = 0, text = null;
     while ((node = walker.nextNode())) {
       var next = count + node.nodeValue.length;
-      if (offset <= next) return {node: node, offset: Math.max(0, offset - count)};
+      if (offset < next) return {node: node, offset: Math.max(0, offset - count)};
+      if (offset === next) {
+        var container = node.parentElement;
+        if (container && /^(P|H1|H2|H3|DIV)$/i.test(container.nodeName) && container.nextElementSibling && /^(P|H1|H2|H3|DIV)$/i.test(container.nextElementSibling.nodeName)) {
+          return {node: container.nextElementSibling, offset: 0};
+        }
+        text = {node: node, offset: node.nodeValue.length};
+      }
       count = next;
     }
-    return {node: root, offset: root.childNodes.length};
+    return text || {node: root, offset: root.childNodes.length};
   }
   function restoreSelection(start, end) {
     var startPoint = nodeAtOffset(editor, start), endPoint = nodeAtOffset(editor, end), range = document.createRange(), selection = window.getSelection();
@@ -336,6 +358,537 @@
     }
   }
   function closeSaveMenu() { saveMenuOpen = false; var m = $('saveMenu'); if (m) m.hidden = true; var b = $('saveBtn'); if (b) b.setAttribute('aria-expanded', 'false'); }
+  function showExportMenu() {
+    var menu = $('exportMenu');
+    var btn = $('exportBtn');
+    exportMenuOpen = !exportMenuOpen;
+    menu.hidden = !exportMenuOpen;
+    if (btn) btn.setAttribute('aria-expanded', exportMenuOpen ? 'true' : 'false');
+    closeSaveMenu();
+  }
+  function closeExportMenu() { exportMenuOpen = false; var m = $('exportMenu'); if (m) m.hidden = true; var b = $('exportBtn'); if (b) b.setAttribute('aria-expanded', 'false'); }
+
+  function showAssistant() {
+    assistantOpen = true;
+    $('assistantPanel').hidden = false;
+    $('assistantBtn').classList.add('active');
+    $('assistantBtn').setAttribute('aria-expanded', 'true');
+  }
+  function closeAssistant() {
+    assistantOpen = false;
+    $('assistantPanel').hidden = true;
+    $('assistantBtn').classList.remove('active');
+    $('assistantBtn').setAttribute('aria-expanded', 'false');
+  }
+
+  function switchAssistantTab(tab) {
+    document.querySelectorAll('.assistant-tab').forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    document.querySelectorAll('.assistant-tab-panel').forEach(function (panel) {
+      panel.hidden = panel.id !== 'tab-' + tab;
+    });
+  }
+
+  function insertBibleVerse(ref, text) {
+    var html = '<blockquote><p>' + escapeHtml(text) + '</p><cite>— ' + escapeHtml(ref) + '</cite></blockquote>';
+    insert(html);
+    closeAssistant();
+  }
+  window.insertBibleVerse = insertBibleVerse;
+
+  function searchBible() {
+    var query = $('bibleSearch').value.trim();
+    if (!query) return;
+    var resultsEl = $('bibleResults');
+    resultsEl.innerHTML = '<div class="assistant-loading">Searching...</div>';
+    fetch('/api/bible/search?q=' + encodeURIComponent(query) + '&k=10')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.results || !data.results.length) {
+          resultsEl.innerHTML = '<div class="assistant-empty">No verses found</div>';
+          return;
+        }
+        resultsEl.innerHTML = data.results.map(function (item) {
+          return '<div class="assistant-verse" data-ref="' + escapeHtml(item.ref) + '"><span class="verse-ref">' + escapeHtml(item.ref) + '</span><span class="verse-text">' + escapeHtml(item.text) + '</span><button class="assistant-insert" onclick="insertBibleVerse(\'' + escapeHtml(item.ref).replace(/'/g, "\\'") + '\', \'' + escapeHtml(item.text).replace(/'/g, "\\'") + '\')">Insert</button></div>';
+        }).join('');
+      })
+      .catch(function () { resultsEl.innerHTML = '<div class="assistant-error">Error searching</div>'; });
+  }
+
+  function getRandomVerse() {
+    var resultsEl = $('bibleResults');
+    resultsEl.innerHTML = '<div class="assistant-loading">Loading...</div>';
+    fetch('/api/bible/random')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.error) { resultsEl.innerHTML = '<div class="assistant-error">' + escapeHtml(data.error) + '</div>'; return; }
+        resultsEl.innerHTML = '<div class="assistant-verse"><span class="verse-ref">' + escapeHtml(data.ref) + '</span><span class="verse-text">' + escapeHtml(data.text) + '</span><button class="assistant-insert" onclick="insertBibleVerse(\'' + escapeHtml(data.ref).replace(/'/g, "\\'") + '\', \'' + escapeHtml(data.text).replace(/'/g, "\\'") + '\')">Insert</button></div>';
+      })
+      .catch(function () { resultsEl.innerHTML = '<div class="assistant-error">Error loading verse</div>'; });
+  }
+
+  function generateBibleRewrite() {
+    var topic = $('rewriteTopic').value.trim();
+    var chapters = parseInt($('rewriteChapters').value) || 5;
+    if (!topic) { alert('Enter a topic or book name'); return; }
+    var progressEl = $('rewriteProgress');
+    var outputEl = $('rewriteOutput');
+    progressEl.hidden = false;
+    progressEl.innerHTML = 'Generating chapter 1 of ' + chapters + '...';
+    outputEl.innerHTML = '';
+    var allContent = '';
+    var currentChapter = 0;
+
+    function generateNextChapter() {
+      currentChapter++;
+      if (currentChapter > chapters) {
+        progressEl.hidden = true;
+        progressEl.innerHTML = 'Complete!';
+        // Create book project
+        createBibleBook(topic, allContent);
+        return;
+      }
+      progressEl.innerHTML = 'Generating chapter ' + currentChapter + ' of ' + chapters + '...';
+      // Get relevant verses
+      fetch('/api/bible/search?q=' + encodeURIComponent(topic + ' chapter ' + currentChapter) + '&k=5')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var verses = (data.results || []).map(function (r) { return r.text; }).join(' ');
+          var prompt = 'የ' + escapeHtml(topic) + ' ምዕራፍ ' + currentChapter + 'ን በአማርኛ ጻፍ። የተለየ ጥቅሶች: ' + escapeHtml(verses.slice(0, 500));
+          // Use completion API
+          return fetch('/api/complete?text=' + encodeURIComponent(prompt));
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var suggestions = (data.sentences || []).join(' ') || (data.next || []).map(function (n) { return n[0]; }).join(' ') || 'ይህ ምዕራፍ ተጽፎአል።';
+          var chapterHtml = '<h2>Chapter ' + currentChapter + '</h2><p>' + escapeHtml(suggestions) + '</p>';
+          allContent += chapterHtml;
+          outputEl.innerHTML += '<div class="generated-chapter">' + chapterHtml + '</div>';
+          generateNextChapter();
+        })
+        .catch(function () {
+          outputEl.innerHTML += '<div class="generated-chapter"><h2>Chapter ' + currentChapter + '</h2><p>Error generating content</p></div>';
+          generateNextChapter();
+        });
+    }
+    generateNextChapter();
+  }
+
+  function createBibleBook(topic, content) {
+    // Use the book template
+    var bookFiles = [
+      file('outline.md', '<h1>Book Outline: ' + escapeHtml(topic) + '</h1><p>Generated from Bible verses about ' + escapeHtml(topic) + '</p>', ''),
+      file('chapter-01.md', content, 'chapters'),
+      file('research.md', '<h1>Research Notes</h1><p>Bible verses used for: ' + escapeHtml(topic) + '</p>', '')
+    ];
+    addCreatedFiles(bookFiles, topic + ' - Bible Rewrite');
+    closeAssistant();
+    setStatus('Created Bible rewrite book: ' + topic);
+  }
+
+  function getCompletions() {
+    var text = $('completeInput').value.trim();
+    if (!text) return;
+    var outputEl = $('completeOutput');
+    outputEl.innerHTML = '<div class="assistant-loading">Getting suggestions...</div>';
+    fetch('/api/complete?text=' + encodeURIComponent(text))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var html = '';
+        if (data.sentences && data.sentences.length) {
+          html += '<div class="assistant-section-title">Sentence Completions</div>';
+          html += data.sentences.map(function (s) { return '<button class="assistant-suggestion" onclick="insert(\'' + escapeHtml(s).replace(/'/g, "\\'") + '\')">' + escapeHtml(s) + '</button>'; }).join('');
+        }
+        if (data.next && data.next.length) {
+          html += '<div class="assistant-section-title">Next Words</div>';
+          html += data.next.map(function (n) { return '<button class="assistant-suggestion" onclick="insert(\'' + escapeHtml(n[0]).replace(/'/g, "\\'") + '\')">' + escapeHtml(n[0]) + '</button>'; }).join('');
+        }
+        if (data.words && data.words.length) {
+          html += '<div class="assistant-section-title">Word Suggestions</div>';
+          html += data.words.map(function (w) { return '<button class="assistant-suggestion" onclick="insert(\'' + escapeHtml(w[0]).replace(/'/g, "\\'") + '\')">' + escapeHtml(w[0]) + '</button>'; }).join('');
+        }
+        outputEl.innerHTML = html || '<div class="assistant-empty">No suggestions</div>';
+      })
+      .catch(function () { outputEl.innerHTML = '<div class="assistant-error">Error getting suggestions</div>'; });
+  }
+
+  function exportShell(f, extraHead) {
+    return '<!doctype html><html><head><meta charset="utf-8"><title>' + escapeHtml(f.name) + '</title><style>@page { size: A4; margin: 2cm; } body { max-width: 18cm; margin: 0 auto; padding: 2em; font-family: "Noto Sans Ethiopic", "Nyala", "Abyssinica SIL", Georgia, serif; font-size: 12pt; line-height: 1.6; color: #111; } h1{font-size:24pt} h2{font-size:18pt} h3{font-size:14pt} ul,ol{margin:.4em 0 .4em 1.5em;padding-left:1em} blockquote{margin:.8em 0;padding:.2em 1em;border-left:4px solid #c8c8c8;color:#444;font-style:italic} .editor-bullet{margin:.3em 0 0 1.5em} .editor-number{margin:.3em 0 0 1.5em} .editor-check{margin:.3em 0} s{opacity:.75}</style>' + (extraHead || '') + '</head><body>' + editorHtml() + '</body></html>';
+  }
+  function downloadBlob(content, name, type) {
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([content], { type: type }));
+    link.download = name;
+    link.click();
+    setTimeout(function () { URL.revokeObjectURL(link.href); }, 1000);
+  }
+  function exportFile(format) {
+    var f = activeFile();
+    if (!f) { setStatus('Open a document before exporting'); return; }
+    var base = f.name.replace(/\.[^.]+$/, '');
+    var html = editorHtml();
+    if (format === 'pdf') { printExport(f); return; }
+    if (format === 'pdffile') { pdfFileExport(f); return; }
+    if (format === 'md') { downloadBlob(htmlToMarkdown(html), base + '.md', 'text/markdown;charset=utf-8'); return; }
+    if (format === 'txt') { downloadBlob(WerketFormats.htmlToPlainText(html), base + '.txt', 'text/plain;charset=utf-8'); return; }
+    if (format === 'html') { downloadBlob(exportShell(f), base + '.html', 'text/html;charset=utf-8'); return; }
+    if (format === 'doc') { downloadBlob(exportShell(f, '<xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml>'.replace(/^<xml>/, '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->')), base + '.doc', 'application/msword'); return; }
+    if (format === 'docx') { downloadBlob(new Blob([WerketFormats.buildDocx(html, {title: base})]), base + '.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'); setStatus('Exported ' + base + '.docx'); return; }
+    if (format === 'odt') { downloadBlob(new Blob([WerketFormats.buildOdt(html, {title: base})]), base + '.odt', 'application/vnd.oasis.opendocument.text'); setStatus('Exported ' + base + '.odt'); return; }
+    if (format === 'rtf') { downloadBlob(WerketFormats.buildRtf(html, {title: base}), base + '.rtf', 'application/rtf'); setStatus('Exported ' + base + '.rtf'); return; }
+    if (format === 'epub') { downloadBlob(new Blob([WerketFormats.buildEpub(html, {title: base, lang: 'am'})]), base + '.epub', 'application/epub+zip'); setStatus('Exported ' + base + '.epub'); return; }
+    setStatus('Unknown export format');
+  }
+  function printExport(f) {
+    var w = window.open('', '_blank');
+    if (!w) { setStatus('Allow pop-ups to export PDF'); return; }
+    w.document.write(exportShell(f));
+    w.document.close();
+    w.focus();
+    setTimeout(function () { w.print(); }, 300);
+    setStatus('In print dialog, choose “Save as PDF”');
+  }
+
+  function dataUrlToBytes(dataUrl) {
+    var base64 = dataUrl.split(',')[1] || '';
+    var binary = atob(base64), out = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+    return out;
+  }
+  var PDF_FONT = '"Noto Sans Ethiopic", "Abyssinica SIL", Nyala, Georgia, serif';
+  function pdfFileExport(f) {
+    var blocks = WerketFormats.htmlToBlocks(editorHtml());
+    if (!blocks.length) { setStatus('Nothing to export'); return; }
+    var scale = 2, pageW = 595.28 * scale, pageH = 841.89 * scale;
+    var margin = 56 * scale, x = margin, y = margin;
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+    var pages = [];
+    var listItem = 0, lastListKind = '';
+    function newPage() {
+      canvas.width = Math.round(pageW); canvas.height = Math.round(pageH);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = '#111111';
+      y = margin;
+    }
+    function pushPage() {
+      pages.push({jpeg: dataUrlToBytes(canvas.toDataURL('image/jpeg', 0.92)), width: pageW, height: pageH});
+    }
+    function fontFor(size, bold, italic) {
+      return (italic ? 'italic ' : '') + (bold ? '700 ' : '400 ') + size + 'px ' + PDF_FONT;
+    }
+    function drawWords(text, size, bold, italic, color) {
+      ctx.font = fontFor(size, bold, italic);
+      ctx.fillStyle = color || '#111111';
+      var words = text.split(/(\s+)/);
+      for (var i = 0; i < words.length; i++) {
+        var piece = words[i];
+        if (!piece) continue;
+        var w = ctx.measureText(piece).width;
+        if (piece.trim() && x + w > pageW - margin) { x = margin + currentIndent; y += size * 1.55; }
+        if (y + size * 1.55 > pageH - margin) { pushPage(); newPage(); x = margin + currentIndent; }
+        ctx.fillText(piece, x, y + size);
+        x += w;
+      }
+    }
+    var currentIndent = 0;
+    blocks.forEach(function (block) {
+      if (block.empty) { y += 22 * scale * 1.4; return; }
+      if (block.type !== 'li') listItem = 0;
+      var size = 22 * scale, bold = false, italic = false;
+      currentIndent = 0;
+      if (block.type === 'h1') { size = 40 * scale; bold = true; }
+      else if (block.type === 'h2') { size = 32 * scale; bold = true; }
+      else if (block.type === 'h3') { size = 27 * scale; bold = true; }
+      else if (block.type === 'li') { currentIndent = 44 * scale; if (block.list !== lastListKind) listItem = 0; }
+      else if (block.type === 'check') { currentIndent = 40 * scale; }
+      if (block.quote) { italic = true; currentIndent += 56 * scale; }
+      if (y + size * 2.2 > pageH - margin) { pushPage(); newPage(); }
+      if (block.type === 'h1' || block.type === 'h2' || block.type === 'h3') y += size * 0.45;
+      x = margin + currentIndent;
+      if (block.type === 'li') {
+        lastListKind = block.list;
+        drawWords(block.list === 'number' ? (++listItem) + '. ' : '\u2022 ', size, bold, italic, '#333333');
+      } else if (block.type === 'check') {
+        drawWords(block.checked ? '\u2611 ' : '\u2610 ', size, bold, italic, '#333333');
+      }
+      (block.runs || []).forEach(function (run) {
+        if (run.br) { x = margin + currentIndent; y += size * 1.55; if (y + size * 1.55 > pageH - margin) { pushPage(); newPage(); } return; }
+        var color = block.quote ? '#444444' : (run.strike ? '#777777' : '#111111');
+        drawWords(run.text, size, bold || run.bold, italic || run.italic, color);
+      });
+      x = margin;
+      y += size * 1.55;
+      if (block.type === 'h1' || block.type === 'h2' || block.type === 'h3') y += size * 0.3;
+    });
+    pushPage();
+    var pdf = WerketFormats.buildPdf(pages, {title: f.name.replace(/\.[^.]+$/, ''), pageWidth: 595.28, pageHeight: 841.89});
+    downloadBlob(new Blob([pdf], {type: 'application/pdf'}), f.name.replace(/\.[^.]+$/, '') + '.pdf', 'application/pdf');
+    setStatus('Exported PDF (' + pages.length + ' page' + (pages.length > 1 ? 's' : '') + ')');
+  }
+
+  function pdfInflate(data, start) {
+    var bitPos = 0;
+    function readBits(n) {
+      var v = 0;
+      for (var i = 0; i < n; i++) {
+        var idx = (start + (bitPos >> 3));
+        var bit = ((data[idx] || 0) >> (bitPos & 7)) & 1;
+        v |= bit << i;
+        bitPos++;
+      }
+      return v;
+    }
+    function readBit() { return readBits(1); }
+    function tree(lengths) {
+      var nodes = [{ b0: -1, b1: -1, s: -1 }], bl = new Int16Array(16), next = new Int16Array(16), c = 0, i, k;
+      for (i = 0; i < lengths.length; i++) if (lengths[i]) bl[lengths[i]]++;
+      for (i = 1; i <= 15; i++) { c = (c + bl[i - 1]) << 1; next[i] = c; }
+      for (i = 0; i < lengths.length; i++) {
+        if (!lengths[i]) continue;
+        var bc = next[lengths[i]]++, node = 0;
+        for (k = lengths[i] - 1; k >= 0; k--) {
+          var key = ((bc >> k) & 1) ? 'b1' : 'b0';
+          if (nodes[node][key] < 0) { nodes.push({ b0: -1, b1: -1, s: -1 }); nodes[node][key] = nodes.length - 1; }
+          node = nodes[node][key];
+        }
+        nodes[node].s = i;
+      }
+      return nodes;
+    }
+    function dec(t) {
+      var node = 0;
+      for (var depth = 0; depth < 32; depth++) {
+        var n = t[node], nx = n[readBit() ? 'b1' : 'b0'];
+        if (nx < 0) return -1;
+        if (t[nx].s >= 0 && t[nx].b0 < 0 && t[nx].b1 < 0) return t[nx].s;
+        node = nx;
+      }
+      return -1;
+    }
+    var lit = [], dist = [], i;
+    for (i = 0; i < 144; i++) lit.push(8); for (i = 144; i < 256; i++) lit.push(9); for (i = 256; i < 280; i++) lit.push(7); for (i = 280; i < 288; i++) lit.push(8);
+    for (i = 0; i < 30; i++) dist.push(5);
+    var tLit = tree(lit), tDist = tree(dist);
+    var lenB = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+    var lenE = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+    var dBase = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+    var dExtra = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+    var out = [], cap = 6 * 1024 * 1024;
+    function byte(b) { if (out.length < cap) out.push(b); }
+    var last;
+    do {
+      last = readBit();
+      var btype = readBits(2);
+      if (btype === 3) return null;
+      if (btype === 0) {
+        var aligned = (bitPos + 7) & ~7;
+        bitPos = aligned;
+        var len = readBits(16); readBits(16);
+        for (i = 0; i < len; i++) byte(data[start + (bitPos >> 3) + i] || 0);
+        bitPos += len * 8;
+      } else {
+        var tl, td;
+        if (btype === 1) { tl = tLit; td = tDist; }
+        else {
+          var hlit = readBits(5) + 257, hdist = readBits(5) + 1, hclen = readBits(4) + 4;
+          var order = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+          var cl = new Array(19).fill(0);
+          for (i = 0; i < hclen; i++) cl[order[i]] = readBits(3);
+          var tCL = tree(cl);
+          var lens = new Array(hlit + hdist).fill(0), li = 0;
+          while (li < lens.length) {
+            var sym = dec(tCL);
+            if (sym < 0) return null;
+            if (sym < 16) lens[li++] = sym;
+            else if (sym === 16) { var r = 3 + readBits(2); while (r--) lens[li++] = lens[li - 1]; }
+            else if (sym === 17) { var r2 = 3 + readBits(3); while (r2--) lens[li++] = 0; }
+            else { var r3 = 11 + readBits(7); while (r3--) lens[li++] = 0; }
+          }
+          tl = tree(lens.slice(0, hlit));
+          td = tree(lens.slice(hlit));
+        }
+        for (var guard = 0; ; guard++) {
+          if (guard > 20000000) return null;
+          var s2 = dec(tl);
+          if (s2 < 0) return null;
+          if (s2 < 256) { byte(s2); continue; }
+          if (s2 === 256) break;
+          if (s2 > 285) return null;
+          var le = s2 - 257, ln = lenB[le] + (lenE[le] ? readBits(lenE[le]) : 0);
+          if (!(ln >= 3 && ln <= 258)) return null;
+          var ds = dec(td);
+          if (ds < 0 || ds >= 30) return null;
+          var dd = dBase[ds] + (dExtra[ds] ? readBits(dExtra[ds]) : 0);
+          if (dd < 1 || dd > out.length) return null;
+          while (ln--) { byte(out[out.length - dd]); }
+        }
+      }
+    } while (!last);
+    return new Uint8Array(out);
+  }
+  function pdfLiteralToString(tok) {
+    var inner = tok.slice(1, -1), out = '';
+    for (var i = 0; i < inner.length; i++) {
+      var ch = inner[i];
+      if (ch !== '\\') { out += ch; continue; }
+      var nx = inner[++i];
+      if (nx === 'n') out += '\n';
+      else if (nx === 'r') out += '\r';
+      else if (nx === 't') out += '\t';
+      else if (nx === 'b') out += '\b';
+      else if (nx === 'f') out += '\f';
+      else if (nx === '(') out += '(';
+      else if (nx === ')') out += ')';
+      else if (nx === '\\') out += '\\';
+      else if (/\d/.test(nx)) { var code = nx; while (code.length < 3 && /\d/.test(inner[i + 1])) code += inner[++i]; out += String.fromCharCode(parseInt(code, 8) & 0xff); }
+      else { out += nx; }
+    }
+    return out;
+  }
+  function pdfHexToString(tok, cidMap) {
+    var hex = tok.slice(1, -1).replace(/\s+/g, '');
+    if (hex.length % 2) hex += '0';
+    if (cidMap && Object.keys(cidMap).length) {
+      var mapped = pdfMapHexCodes(hex, 2, cidMap);
+      if (mapped.hits === 0) mapped = pdfMapHexCodes(hex, 1, cidMap);
+      if (mapped.hits > 0) return mapped.text;
+    }
+    if (/^feff/i.test(hex)) {
+      var s = '';
+      for (var i = 4; i < hex.length; i += 4) s += String.fromCharCode(parseInt(hex.slice(i, i + 4), 16));
+      return s;
+    }
+    var t = '';
+    for (var j = 0; j < hex.length; j += 2) t += String.fromCharCode(parseInt(hex.slice(j, j + 2), 16));
+    return t;
+  }
+  function pdfMapHexCodes(hex, width, cidMap) {
+    var out = '', hits = 0;
+    for (var i = 0; i + width * 2 <= hex.length; i += width * 2) {
+      var code = parseInt(hex.slice(i, i + width * 2), 16);
+      if (Object.prototype.hasOwnProperty.call(cidMap, code)) { out += cidMap[code]; hits++; }
+      else out += String.fromCharCode(code);
+    }
+    return {text: out, hits: hits};
+  }
+  function pdfParseToUnicode(text) {
+    var map = {}, m;
+    var bfcharRe = /beginbfchar([\s\S]*?)endbfchar/g;
+    while ((m = bfcharRe.exec(text))) {
+      var pairRe = /<([0-9A-Fa-f\s]+)>\s*<([0-9A-Fa-f\s]+)>/g, p;
+      while ((p = pairRe.exec(m[1]))) {
+        var src = parseInt(p[1].replace(/\s+/g, ''), 16);
+        var dstHex = p[2].replace(/\s+/g, '');
+        while (dstHex.length % 4) dstHex += '0';
+        var dst = '';
+        for (var i = 0; i < dstHex.length; i += 4) dst += String.fromCharCode(parseInt(dstHex.slice(i, i + 4), 16));
+        map[src] = dst;
+      }
+    }
+    var rangeRe = /<([0-9A-Fa-f\s]+)>\s*<([0-9A-Fa-f\s]+)>\s*(\[[\s\S]*?\]|<[0-9A-Fa-f\s]+>)/g, r;
+    while ((r = rangeRe.exec(text))) {
+      var lo = parseInt(r[1].replace(/\s+/g, ''), 16);
+      var hi = parseInt(r[2].replace(/\s+/g, ''), 16);
+      if (!(hi >= lo) || hi - lo > 65535) continue;
+      var third = r[3];
+      if (third[0] === '[') {
+        var dsts = third.match(/<([0-9A-Fa-f\s]+)>/g) || [];
+        for (var c = lo; c <= hi; c++) {
+          var idx = c - lo;
+          if (idx >= dsts.length) break;
+          var dHex = dsts[idx].replace(/[<>\s]/g, '');
+          while (dHex.length % 4) dHex += '0';
+          var dStr = '';
+          for (var k = 0; k < dHex.length; k += 4) dStr += String.fromCharCode(parseInt(dHex.slice(k, k + 4), 16));
+          map[c] = dStr;
+        }
+      } else {
+        var baseHex = third.replace(/[<>\s]/g, '');
+        while (baseHex.length % 4) baseHex += '0';
+        var baseCode = parseInt(baseHex.slice(0, 4), 16) || 0;
+        var extra = baseHex.length > 4 ? parseInt(baseHex.slice(4), 16) || 0 : 0;
+        for (var c2 = lo; c2 <= hi; c2++) {
+          var units = '';
+          var value = baseCode + (c2 - lo);
+          units += String.fromCharCode(value & 0xffff);
+          if (extra) units += String.fromCharCode(extra);
+          map[c2] = units;
+        }
+      }
+    }
+    return map;
+  }
+  function extractPdfTextOps(decoded, cidMap) {
+    var clean = decoded.replace(/%.*?(?:[\r\n]|$)/g, '').replace(/^\s+/, '');
+    var re = /\((?:\\.|[^\\()])*\)|<[0-9A-Fa-f\s]+>|\bT[cdD*]\b|\bTj\b|\bTJ\b|\bET\b|\bBT\b/g, m, lines = [], current = '';
+    while ((m = re.exec(clean))) {
+      var tok = m[0];
+      if (tok === 'Td' || tok === 'TD' || tok === 'T*') { if (current.trim()) lines.push(current.trim()); current = ''; }
+      else if (tok === 'BT') current = '';
+      else if (tok === 'ET') { if (current.trim()) lines.push(current.trim()); current = ''; }
+      else if (tok === 'Tj' || tok === 'TJ') {}
+      else if (tok[0] === '(') current += pdfLiteralToString(tok);
+      else if (tok[0] === '<') current += pdfHexToString(tok, cidMap || {});
+    }
+    if (current.trim()) lines.push(current.trim());
+    return lines.join('\n');
+  }
+  function pdfExtractText(bytes) {
+    var src = '';
+    for (var i = 0; i < bytes.length; i++) src += String.fromCharCode(bytes[i]);
+    var streams = [], re = /stream\r?\n([\s\S]*?)\r?\nendstream/g, m, s;
+    while ((m = re.exec(src))) streams.push(m[1]);
+    if (!streams.length) { re = /stream\s+([\s\S]*?)endstream/g; while ((m = re.exec(src))) streams.push(m[1]); }
+    var decodeds = [];
+    var cidMap = {};
+    for (i = 0; i < streams.length; i++) {
+      s = streams[i];
+      var data = new Uint8Array(s.length);
+      for (var j = 0; j < s.length; j++) data[j] = s.charCodeAt(j) & 0xff;
+      var decoded = null;
+      if (data.length > 4) {
+        try { decoded = pdfInflate(data, (data[0] & 0x0f) === 8 ? 2 : 0); } catch (e) { decoded = null; }
+        if (!decoded) try { decoded = pdfInflate(data, 0); } catch (e2) {}
+      }
+      var textForm = decoded ? String.fromCharCode.apply(null, Array.prototype.slice.call(decoded, 0, Math.min(decoded.length, 65536))) : s;
+      if (/beginbf(char|range)/.test(textForm)) {
+        var streamMap = pdfParseToUnicode(textForm);
+        for (var code in streamMap) cidMap[code] = streamMap[code];
+      }
+      decodeds.push(decoded ? textForm : null);
+    }
+    var text = '';
+    for (i = 0; i < streams.length; i++) {
+      var t = decodeds[i] !== null ? extractPdfTextOps(decodeds[i], cidMap) : extractPdfTextOps(streams[i], cidMap);
+      if (t && /\S/.test(t)) text += (text ? '\n' : '') + t;
+    }
+    return text;
+  }
+function importPdf(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var bytes = new Uint8Array(reader.result), text = '';
+      try { text = pdfExtractText(bytes); } catch (e) { text = ''; }
+      if (!text.trim()) { setStatus('Could not read text from this PDF'); return; }
+      var name = uniqueName(file.name.replace(/\.pdf$/i, '.md'));
+      // Preserve paragraph structure better - split on double newlines
+      var paragraphs = text.split(/\n{2,}/).map(function (para) {
+        var trimmed = para.trim();
+        if (!trimmed) return '';
+        return '<p>' + trimmed.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/\n/g, '<br>') + '</p>';
+      }).filter(Boolean).join('');
+      var f = file(name, paragraphs, '');
+      workspace.files.push(f);
+      openFile(f.id);
+      save();
+      setStatus('Imported ' + file.name + ' (' + text.length + ' chars)');
+    };
+    reader.readAsArrayBuffer(file);
+  }
 
   function focusEditor() {
     if (document.activeElement === editor) {
@@ -588,32 +1141,120 @@
   }
   function save() { saveWorkspace(); renderTree(); setStatus('Saved locally'); }
 
+  function caretBlockOffset(range, block) {
+    var probe = document.createRange();
+    probe.selectNodeContents(block);
+    try { probe.setEnd(range.startContainer, range.startOffset); } catch (e) { return 0; }
+    return probe.toString().length;
+  }
+  function caretAtBlockEnd(range, block) {
+    return caretBlockOffset(range, block) >= block.textContent.length;
+  }
+  function caretAtBlockStart(range, block) {
+    return caretBlockOffset(range, block) === 0;
+  }
+  function placeCaretAtBlockStart(block) {
+    var sel = window.getSelection();
+    var range = document.createRange();
+    range.selectNodeContents(block);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+  function ensureBlockPlaceholder(block) {
+    if (!block.childNodes.length) block.innerHTML = '<br>';
+  }
   function insertNewLine() {
     pushUndo();
-    editor.focus({preventScroll: true});
+    normalizeEditorBlocks();
     var sel = window.getSelection();
     if (!sel || !sel.rangeCount) return;
     var range = sel.getRangeAt(0);
-    var newBlock = document.createElement('p');
-    newBlock.innerHTML = '<br>';
-    var afterNodes = range.extractContents();
-    if (afterNodes.childNodes.length > 0) {
-      newBlock.textContent = '';
-      newBlock.appendChild(afterNodes);
-    }
+    range.deleteContents();
     var block = currentBlockNode();
-    if (block) {
-      block.parentNode.insertBefore(newBlock, block.nextSibling);
-    } else {
-      range.insertNode(newBlock);
+    if (!block) {
+      var starter = document.createElement('p');
+      starter.innerHTML = '<br>';
+      editor.appendChild(starter);
+      placeCaretAtBlockStart(starter);
+      rememberCaret();
+      changed();
+      editor.focus({preventScroll: true});
+      return;
     }
-    var newRange = document.createRange();
-    newRange.selectNodeContents(newBlock);
-    newRange.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(newRange);
+    if (block.nodeName === 'UL' || block.nodeName === 'OL') {
+      var child = block.childNodes[Math.min(range.startOffset, block.childNodes.length - 1)] || block.lastChild;
+      if (child) {
+        var inner = document.createRange();
+        inner.selectNodeContents(child);
+        inner.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(inner);
+        range = inner;
+        block = child;
+      }
+    }
+    var tag = block.nodeName.toUpperCase();
+    var isListItem = tag === 'LI' || (block.classList && (block.classList.contains('editor-bullet') || block.classList.contains('editor-number')));
+    var isHeading = /^H[1-6]$/.test(tag);
+    var isEmpty = isEmptyBlock(block);
+    var wasAtStart = caretAtBlockStart(range, block);
+    var wasAtEnd = caretAtBlockEnd(range, block);
+    var afterFragment = range.extractContents();
+    var afterHasContent = afterFragment.childNodes.length > 0 && (afterFragment.textContent || '').length > 0;
+
+    if (isListItem && isEmpty) {
+      var listHost = tag === 'LI' ? block.parentNode : block.parentNode;
+      var exit = document.createElement('p');
+      exit.innerHTML = '<br>';
+      if (listHost && listHost !== editor && /^(UL|OL)$/i.test(listHost.nodeName)) {
+        listHost.parentNode.insertBefore(exit, listHost.nextSibling);
+        if (!listHost.querySelector('li')) listHost.remove();
+        else block.remove();
+      } else {
+        block.parentNode.insertBefore(exit, block.nextSibling);
+        block.remove();
+      }
+      placeCaretAtBlockStart(exit);
+      rememberCaret();
+      changed();
+      editor.focus({preventScroll: true});
+      return;
+    }
+
+    var newTag;
+    if (isListItem) newTag = tag === 'LI' ? 'li' : 'div';
+    else if (isHeading && wasAtEnd && block.textContent.trim()) newTag = 'p';
+    else newTag = (isHeading || tag === 'P') ? tag.toLowerCase() : 'p';
+
+    var newBlock = document.createElement(newTag);
+    if (isListItem && tag !== 'LI' && block.className) newBlock.className = block.className;
+    if (afterFragment.childNodes.length) newBlock.appendChild(afterFragment);
+    ensureBlockPlaceholder(newBlock);
+    ensureBlockPlaceholder(block);
+    block.parentNode.insertBefore(newBlock, block.nextSibling);
+
+    // Word/Pages behavior: Enter at the very start of a block leaves the empty
+    // block above and the caret moves into it; otherwise the caret starts the
+    // new block below.
+    var caretBlock = (wasAtStart && afterHasContent) ? block : newBlock;
+    placeCaretAtBlockStart(caretBlock);
     rememberCaret();
     changed();
+    // Ensure editor has focus and caret is visible
+    editor.focus({preventScroll: true});
+    // Scroll caret into view if needed
+    try {
+      var sel2 = window.getSelection();
+      if (sel2 && sel2.rangeCount) {
+        var range2 = sel2.getRangeAt(0);
+        var rect = range2.getBoundingClientRect();
+        var editorRect = editor.getBoundingClientRect();
+        if (rect.bottom > editorRect.bottom - 20) {
+          editor.scrollTop += rect.bottom - editorRect.bottom + 20;
+        }
+      }
+    } catch (e) {}
   }
   function insertSoftBreak() {
     pushUndo();
@@ -707,14 +1348,42 @@
     changed();
     return true;
   }
+  function isEmptyBlock(block) {
+    if (!block || !/^(P|H1|H2|H3|DIV|LI)$/i.test(block.nodeName)) return false;
+    if (block.textContent.trim()) return false;
+    return Array.prototype.every.call(block.childNodes, function (child) {
+      return child.nodeType === 3 ? child.nodeValue.trim() === '' : child.nodeName === 'BR';
+    });
+  }
   function insert(text) {
     pushUndo();
     editor.focus({preventScroll: true});
     if (text === '\n' || text === '\r\n') { insertNewLine(); return; }
+    var sel = window.getSelection(), range = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+    if (sel && range && editor.contains(range.startContainer)) {
+      var block = range.collapsed ? currentBlockNode() : null;
+      if (range.collapsed && block && isEmptyBlock(block)) {
+        while (block.firstChild) block.removeChild(block.firstChild);
+        var textNode = document.createTextNode(text);
+        block.appendChild(textNode);
+        var newRange = document.createRange();
+        newRange.setStart(textNode, text.length);
+        newRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+        changed();
+        rememberCaret();
+        // Ensure focus is maintained
+        editor.focus({preventScroll: true});
+        return;
+      }
+    }
     var offsets = selectionOffsets();
     replaceTextRange(offsets.start, offsets.end, text);
     changed();
     restoreCaret();
+    // Ensure focus is maintained after insert
+    editor.focus({preventScroll: true});
   }
   function replaceSuggestion(word) {
     pushUndo();
@@ -896,9 +1565,32 @@
   }
 
   function renderKeyboard() {
-    var host = $('keyboard'), layout = [7, 8, 8, 8], cursor = 0, html = '';
-    layout.forEach(function (size) { html += '<div class="keys">'; families.slice(cursor, cursor + size).forEach(function (family, offset) { html += '<button type="button" class="key" data-family="' + family + '"><span>' + family + '</span><small>' + roman[cursor + offset] + '</small></button>'; }); html += '</div>'; cursor += size; });
-    html += '<div class="keys">' + symbols.slice(0, 9).map(function (symbol) { return '<button type="button" class="key fn" data-symbol="' + symbol + '">' + symbol + '</button>'; }).join('') + '<button type="button" class="key fn space" data-symbol=" ">SPACE</button><button type="button" class="key fn" data-symbol="\\n">⏎</button><button type="button" class="key fn" id="backspaceKey">⌫</button></div>';
+    var host = $('keyboard'), html = '';
+    if (kbLayer === 'num') {
+      [['1','2','3','4','5','6','7','8','9','0'],['፩','፪','፫','፬','፭','፮','፯','፰','፱','፲'],['፤','፥','፦','፧','፨','?','!','(',')','-']].forEach(function (row) {
+        html += '<div class="keys">';
+        row.forEach(function (ch) { html += '<button type="button" class="key fn num" data-symbol="' + ch + '">' + ch + '</button>'; });
+        html += '</div>';
+      });
+    } else {
+      var layout = [7, 8, 8, 8], cursor = 0;
+      layout.forEach(function (size) {
+        html += '<div class="keys">';
+        families.slice(cursor, cursor + size).forEach(function (family, offset) {
+          html += '<button type="button" class="key" data-family="' + family + '"><span>' + family + '</span><small>' + roman[cursor + offset] + '</small></button>';
+        });
+        html += '</div>';
+        cursor += size;
+      });
+    }
+    html += '<div class="keys action-row">';
+    html += '<button type="button" class="key fn layer" id="layerToggle">' + (kbLayer === 'fidel' ? '123' : 'abc') + '</button>';
+    html += '<button type="button" class="key fn" data-symbol="' + (kbLayer === 'fidel' ? '፣' : '@') + '">' + (kbLayer === 'fidel' ? '፣' : '@') + '</button>';
+    html += '<button type="button" class="key fn space" data-symbol=" ">space</button>';
+    html += '<button type="button" class="key fn" data-symbol="' + (kbLayer === 'fidel' ? '።' : '.') + '">' + (kbLayer === 'fidel' ? '።' : '.') + '</button>';
+    html += '<button type="button" class="key fn enter" data-symbol="\\n">⏎</button>';
+    html += '<button type="button" class="key fn" id="backspaceKey">⌫</button>';
+    html += '</div>';
     host.innerHTML = html;
     host.querySelectorAll('[data-family]').forEach(function (button) {
       onTap(button, function () { showOrders(button, button.dataset.family); });
@@ -906,16 +1598,35 @@
     host.querySelectorAll('[data-symbol]').forEach(function (button) {
       onTap(button, function () { hideOrders(); insert(button.dataset.symbol === '\\n' ? '\n' : button.dataset.symbol); });
     });
-    onTap($('backspaceKey'), function () {
+    onTap($('layerToggle'), function () { kbLayer = kbLayer === 'fidel' ? 'num' : 'fidel'; renderKeyboard(); });
+    setupBackspace($('backspaceKey'));
+  }
+  function setupBackspace(el) {
+    if (!el) return;
+    var timer = null;
+    function del() {
       hideOrders();
-      pushUndo();
       editor.focus({preventScroll: true});
+      if (backspaceAtBlockStart()) { restoreCaret(); return; }
       var offsets = selectionOffsets(), p = offsets.start, q = offsets.end;
       if (q > p) replaceTextRange(p, q, '');
       else if (p > 0) replaceTextRange(p - 1, p, '');
       changed();
       restoreCaret();
-    });
+    }
+    function start(event) {
+      if (event.cancelable) event.preventDefault();
+      pushUndo();
+      del();
+      if (timer) clearInterval(timer);
+      timer = setInterval(function () { pushUndo(); del(); }, 70);
+    }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+    el.addEventListener('pointerdown', start);
+    el.addEventListener('pointerup', stop);
+    el.addEventListener('pointercancel', stop);
+    el.addEventListener('pointerleave', stop);
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   }
 
   function bookFiles() { return [file('outline.md', '<h1>Book outline</h1><h2>Premise</h2><p>Write the central idea here.</p><h2>Structure</h2><ul><li>Beginning</li><li>Middle</li><li>End</li></ul>', ''), file('characters.md', '<h1>Characters</h1><h2>Main character</h2><p>Name, desire, conflict, and change.</p>', ''), file('chapter-01.md', '<h1>Chapter 01</h1><p>Begin the first scene here.</p>', 'chapters'), file('chapter-02.md', '<h1>Chapter 02</h1><p>Continue the story here.</p>', 'chapters'), file('research.md', '<h1>Research notes</h1><p>Keep references and ideas here.</p>', '')]; }
@@ -968,7 +1679,7 @@
 
   $('projectName').oninput = function () { workspace.projectName = $('projectName').value; saveWorkspace(); };
   document.addEventListener('pointerdown', function (event) {
-    if (!event.target.closest('.menu-wrap')) { closeMenu(); closeSaveMenu(); }
+    if (!event.target.closest('.menu-wrap')) { closeMenu(); closeSaveMenu(); closeExportMenu(); }
     if (!event.target.closest('.context-menu')) closeContextMenu();
     if (!event.target.closest('.key[data-family]') && !event.target.closest('.orders') && !event.target.closest('.keyboard-panel')) hideOrders();
   });
@@ -1274,20 +1985,40 @@
   $('importBtn').onclick = function () { $('importFile').click(); };
   $('importFile').onchange = function (event) {
     var selected = event.target.files[0]; if (!selected) return;
-    var reader = new FileReader();
-    reader.onload = function () { var f = file(selected.name, String(reader.result || ''), ''); workspace.files.push(f); openFile(f.id); save(); };
-    reader.readAsText(selected);
     event.target.value = '';
+    var lower = selected.name.toLowerCase();
+    if (lower.endsWith('.pdf')) { importPdf(selected); return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      var content = String(reader.result || '');
+      var name = selected.name;
+      if (lower.endsWith('.html') || lower.endsWith('.htm')) {
+        var tmp = document.createElement('div'); tmp.innerHTML = content;
+        content = tmp.textContent || '';
+        name = name.replace(/\.html?$/i, '.md');
+      }
+      var f = file(uniqueName(name), content, '');
+      workspace.files.push(f);
+      openFile(f.id);
+      save();
+    };
+    reader.readAsText(selected);
   };
-  $('exportBtn').onclick = function () {
-    var f = activeFile();
-    if (!f) { setStatus('Open a document before exporting'); return; }
-    var link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([editorText()], {type:'text/plain;charset=utf-8'}));
-    link.download = f.name.replace(/\.md$/, '') + '.txt';
-    link.click();
-    URL.revokeObjectURL(link.href);
+  $('exportBtn').onclick = function () { showExportMenu(); };
+  $('assistantBtn').onclick = function () {
+    if (assistantOpen) closeAssistant(); else showAssistant();
   };
+  $('closeAssistant').onclick = closeAssistant;
+  document.querySelectorAll('.assistant-tab').forEach(function (btn) {
+    btn.onclick = function () { switchAssistantTab(btn.dataset.tab); };
+  });
+  $('bibleSearchBtn').onclick = searchBible;
+  $('bibleRandomBtn').onclick = getRandomVerse;
+  $('rewriteGenerateBtn').onclick = generateBibleRewrite;
+  $('completeBtn').onclick = getCompletions;
+  $('bibleSearch').addEventListener('keydown', function (e) { if (e.key === 'Enter') searchBible(); });
+  $('completeInput').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); getCompletions(); } });
+  document.querySelectorAll('#exportMenu [data-export]').forEach(function (button) { button.onclick = function () { closeExportMenu(); exportFile(button.dataset.export); }; });
   $('brandHome').onclick = showHome;
   $('themeBtn').onclick = function () { applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'); };
 
@@ -1331,4 +2062,6 @@
     var tmpl = templates.find(function (t) { return t.id === queryNew; });
     if (tmpl) { createTemplate(tmpl); history.replaceState(null, '', '/'); }
   }
+
+  window.__werketTest = { pdfInflate: pdfInflate, pdfExtractText: pdfExtractText, insert: insert, htmlToMarkdown: htmlToMarkdown };
 })();

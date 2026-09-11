@@ -52,7 +52,7 @@
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   }
   </script>
-  <link rel="stylesheet" href="/static/werket.css?v=10">
+  <link rel="stylesheet" href="/static/werket.css?v=11">
 </head>
 <body>
   <div class="app-shell">
@@ -76,8 +76,24 @@
           </div>
         </div>
         <button class="icon-btn" id="importBtn" title="Open">📂</button>
-        <input id="importFile" type="file" accept=".txt,.md,.text" hidden>
-        <button class="icon-btn" id="exportBtn" title="Export">📤</button>
+        <input id="importFile" type="file" accept=".txt,.md,.text,.html,.htm,.pdf" hidden>
+        <div class="menu-wrap">
+          <button class="icon-btn" id="exportBtn" title="Export" aria-haspopup="true" aria-expanded="false">📤</button>
+          <div id="exportMenu" class="menu" hidden>
+            <button data-export="md">Markdown (.md)</button>
+            <button data-export="html">Web page (.html)</button>
+            <button data-export="txt">Plain text (.txt)</button>
+            <div class="context-sep"></div>
+            <button data-export="doc">Word document (.doc)</button>
+            <button data-export="docx">Word document (.docx)</button>
+            <button data-export="odt">OpenDocument (.odt)</button>
+            <button data-export="rtf">Rich Text (.rtf)</button>
+            <button data-export="epub">E-book (.epub)</button>
+            <div class="context-sep"></div>
+            <button data-export="pdf">Print to PDF (.pdf)</button>
+            <button data-export="pdffile">Save as PDF file (.pdf)</button>
+          </div>
+        </div>
         <button class="icon-btn" id="printBtn" title="Print">🖨️</button>
         <div class="menu-wrap">
           <button class="icon-btn primary" id="saveBtn" title="Save" aria-haspopup="true" aria-expanded="false">💾</button>
@@ -152,6 +168,7 @@
               <option value="1.25">125%</option>
             </select>
             <button class="tool" id="findBtn" title="Find in document">🔍</button>
+            <button class="tool" id="assistantBtn" title="Writing Assistant (Bible & AI)">📖</button>
           </div>
         </section>
         <section class="document-stage">
@@ -190,9 +207,49 @@
                 <span class="kbd-hint"><kbd>Ctrl+Z</kbd> undo</span>
               </div>
             </div>
-           <div id="errors" class="spell-error-list"></div>
-        </section>
-      </main>
+<div id="errors" class="spell-error-list"></div>
+         </section>
+         <section id="assistantPanel" class="assistant-panel" hidden>
+           <div class="assistant-header">
+             <span>📖 Writing Assistant</span>
+             <button id="closeAssistant" class="small-btn">×</button>
+           </div>
+           <div class="assistant-tabs">
+             <button class="assistant-tab active" data-tab="bible">Bible Verses</button>
+             <button class="assistant-tab" data-tab="rewrite">Bible Rewrite</button>
+             <button class="assistant-tab" data-tab="complete">Auto-complete</button>
+           </div>
+           <div class="assistant-content">
+             <div id="tab-bible" class="assistant-tab-panel">
+               <div class="assistant-section">
+                 <input id="bibleSearch" placeholder="Search Bible verses (e.g., love, faith, creation)..." class="assistant-input">
+                 <button id="bibleSearchBtn" class="assistant-btn">Search</button>
+                 <button id="bibleRandomBtn" class="assistant-btn secondary">Random Verse</button>
+               </div>
+               <div id="bibleResults" class="assistant-results"></div>
+             </div>
+             <div id="tab-rewrite" class="assistant-tab-panel" hidden>
+               <div class="assistant-section">
+                 <label>Book/Topic:</label>
+                 <input id="rewriteTopic" placeholder="e.g., Genesis, Psalms, John, love, creation..." class="assistant-input">
+                 <label>Chapters to generate:</label>
+                 <input id="rewriteChapters" type="number" value="5" min="1" max="20" class="assistant-input-small">
+                 <button id="rewriteGenerateBtn" class="assistant-btn">Generate Book</button>
+               </div>
+               <div id="rewriteProgress" class="assistant-progress" hidden></div>
+               <div id="rewriteOutput" class="assistant-results"></div>
+             </div>
+             <div id="tab-complete" class="assistant-tab-panel" hidden>
+               <div class="assistant-section">
+                 <label>Type a partial sentence:</label>
+                 <textarea id="completeInput" rows="3" placeholder="Start typing in Amharic..."></textarea>
+                 <button id="completeBtn" class="assistant-btn">Get Suggestions</button>
+               </div>
+               <div id="completeOutput" class="assistant-results"></div>
+             </div>
+           </div>
+         </section>
+       </main>
   </div>
   <div id="contextMenu" class="context-menu" hidden role="menu">
     <button data-context="cut" role="menuitem">✂ Cut</button>
@@ -210,7 +267,43 @@
   <dialog id="authDialog" class="auth-dialog">
     <div class="auth-panel">
       <div class="auth-header">
-        <span class="brand-mark" style="width:40px;height:40px;font:24px sans-serif;border-radius:10px;background:#078930;color:#fff;display:grid;place-items:center">ፈ</span>
+        <svg class="brand-mark" viewBox="0 0 512 512" width="40" height="40" aria-hidden="true">
+          <defs>
+            <linearGradient id="lionGradSmall" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#f5d06e;stop-opacity:1" />
+              <stop offset="50%" style="stop-color:#e8b84d;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#d4a03a;stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="maneGradSmall" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#c4741e;stop-opacity:1" />
+              <stop offset="50%" style="stop-color:#a85d18;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#8b4513;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <!-- Mane back -->
+          <path fill="url(#maneGradSmall)" d="M140 120 Q100 100 80 140 Q60 180 100 220 Q140 260 180 260 Q220 260 260 220 Q300 180 280 140 Q260 100 220 120 Q180 140 140 120 Z"/>
+          <!-- Face -->
+          <ellipse cx="256" cy="200" rx="110" ry="100" fill="url(#lionGradSmall)"/>
+          <!-- Mane front -->
+          <path fill="url(#maneGradSmall)" d="M160 140 Q120 120 100 160 Q80 200 120 240 Q160 280 200 280 Q240 280 280 240 Q320 200 300 160 Q280 120 240 140 Q200 160 160 140 Z"/>
+          <!-- Ears -->
+          <ellipse cx="150" cy="110" rx="25" ry="35" fill="url(#lionGradSmall)" transform="rotate(-20 150 110)"/>
+          <ellipse cx="362" cy="110" rx="25" ry="35" fill="url(#lionGradSmall)" transform="rotate(20 362 110)"/>
+          <!-- Eyes -->
+          <ellipse cx="200" cy="180" rx="18" ry="22" fill="#fff"/>
+          <ellipse cx="200" cy="180" rx="8" ry="10" fill="#1a1a2e"/>
+          <ellipse cx="312" cy="180" rx="18" ry="22" fill="#fff"/>
+          <ellipse cx="312" cy="180" rx="8" ry="10" fill="#1a1a2e"/>
+          <!-- Nose -->
+          <ellipse cx="256" cy="210" rx="20" ry="16" fill="#2d1810"/>
+          <!-- Mouth (roaring) -->
+          <path fill="#1a0f08" d="M256 225 Q240 240 230 265 Q240 290 256 310 Q272 290 282 265 Q272 240 256 225 Z"/>
+          <!-- Tongue -->
+          <ellipse cx="256" cy="275" rx="15" ry="12" fill="#c0392b"/>
+          <!-- Crown -->
+          <path fill="none" stroke="#f5d06e" stroke-width="2" stroke-dasharray="8,4" d="M256 70 Q200 80 180 130 Q160 180 200 220 Q240 260 256 280"/>
+          <circle cx="256" cy="70" r="6" fill="#f5d06e"/>
+        </svg>
         <div><b id="authTitle">Sign in to Werket</b><span class="auth-sub">Save your work across devices</span></div>
         <button id="closeAuth" class="auth-close">×</button>
       </div>
@@ -239,7 +332,7 @@
       </div>
     </div>
   </dialog>
-  <script src="/static/werket.js?v=10"></script>
+  <script src="/static/werket.js?v=11"></script>
   <script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});</script>
 </body>
 </html>
