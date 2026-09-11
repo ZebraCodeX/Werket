@@ -471,7 +471,7 @@ body.sidebar-open .editor-area {
   color: var(--ink);
   font-family: 'Noto Sans Ethiopic', Georgia, 'Times New Roman', serif;
   font-size: 18px;
-  line-height: 2;
+  line-height: 1.5;
   direction: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -493,7 +493,7 @@ body.sidebar-open .editor-area {
   font-size: 2em;
   font-weight: 700;
   line-height: 1.3;
-  margin: 0 0 0.5em;
+  margin: 0 0 0.3em;
   color: var(--ink);
 }
 
@@ -501,7 +501,7 @@ body.sidebar-open .editor-area {
   font-size: 1.5em;
   font-weight: 600;
   line-height: 1.35;
-  margin: 0 0 0.5em;
+  margin: 0 0 0.3em;
   color: var(--ink);
 }
 
@@ -509,12 +509,12 @@ body.sidebar-open .editor-area {
   font-size: 1.25em;
   font-weight: 600;
   line-height: 1.4;
-  margin: 0 0 0.5em;
+  margin: 0 0 0.3em;
   color: var(--ink);
 }
 
 .document-editor p {
-  margin: 0 0 0.5em;
+  margin: 0 0 0.3em;
 }
 
 .document-editor strong {
@@ -527,7 +527,7 @@ body.sidebar-open .editor-area {
 
 .document-editor ul, .document-editor ol {
   padding-left: 1.5em;
-  margin: 0 0 0.5em;
+  margin: 0 0 0.3em;
 }
 
 .document-editor li {

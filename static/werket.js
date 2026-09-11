@@ -601,6 +601,98 @@
     rememberCaret();
     changed();
   }
+  function insertSoftBreak() {
+    pushUndo();
+    editor.focus({preventScroll: true});
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    range.deleteContents();
+    var br = document.createElement('br');
+    range.insertNode(br);
+    var newRange = document.createRange();
+    if (!br.nextSibling || (br.nextSibling.nodeType === 3 && br.nextSibling.textContent === '')) {
+      var zero = document.createTextNode('\u200B');
+      br.parentNode.insertBefore(zero, br.nextSibling);
+      newRange.setStartAfter(zero);
+    } else {
+      newRange.setStartAfter(br);
+    }
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+    rememberCaret();
+    changed();
+  }
+  function backspaceAtBlockStart() {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return false;
+    var range = sel.getRangeAt(0);
+    if (!range.collapsed) return false;
+    var block = currentBlockNode();
+    if (!block) return false;
+    var node = range.startContainer;
+    var offset = range.startOffset;
+    if (node !== block && (node.nodeType !== 3 || offset !== 0)) return false;
+    if (node.nodeType === 3 && offset !== 0) return false;
+    if (node === block && offset !== 0) return false;
+    var prev = block.previousElementSibling;
+    if (!prev || !/^(P|H1|H2|H3|DIV)$/i.test(prev.nodeName)) return false;
+    pushUndo();
+    var anchorOffset = prev.textContent.length;
+    while (prev.lastChild) prev.removeChild(prev.lastChild);
+    while (block.firstChild) prev.appendChild(block.firstChild);
+    block.parentNode.removeChild(block);
+    var textNode = prev;
+    while (textNode.nodeType !== 3 && textNode.firstChild) textNode = textNode.firstChild;
+    var newRange = document.createRange();
+    if (textNode.nodeType === 3) {
+      newRange.setStart(textNode, Math.min(anchorOffset, textNode.textContent.length));
+    } else {
+      newRange.selectNodeContents(prev);
+      newRange.collapse(false);
+    }
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+    rememberCaret();
+    changed();
+    return true;
+  }
+  function deleteAtBlockEnd() {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return false;
+    var range = sel.getRangeAt(0);
+    if (!range.collapsed) return false;
+    var block = currentBlockNode();
+    if (!block) return false;
+    var node = range.startContainer;
+    var offset = range.startOffset;
+    if (node.nodeType === 3 && offset !== node.textContent.length) return false;
+    if (node === block && offset !== block.childNodes.length) return false;
+    if (node.nodeType === 1 && offset !== node.childNodes.length) return false;
+    var next = block.nextElementSibling;
+    if (!next || !/^(P|H1|H2|H3|DIV)$/i.test(next.nodeName)) return false;
+    pushUndo();
+    var anchorOffset = block.textContent.length;
+    while (next.firstChild) block.appendChild(next.firstChild);
+    next.parentNode.removeChild(next);
+    var textNode = block;
+    while (textNode.nodeType !== 3 && textNode.firstChild) textNode = textNode.firstChild;
+    var newRange = document.createRange();
+    if (textNode.nodeType === 3) {
+      newRange.setStart(textNode, Math.min(anchorOffset, textNode.textContent.length));
+    } else {
+      newRange.selectNodeContents(block);
+      newRange.collapse(false);
+    }
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+    rememberCaret();
+    changed();
+    return true;
+  }
   function insert(text) {
     pushUndo();
     editor.focus({preventScroll: true});
@@ -790,7 +882,7 @@
   }
 
   function renderKeyboard() {
-    var host = $('keyboard'), layout = [7, 8, 8, 8], cursor = 0, html = '<div class="keyboard-hint">Tap a family for its seven orders · the small label is its phonetic key</div>';
+    var host = $('keyboard'), layout = [7, 8, 8, 8], cursor = 0, html = '';
     layout.forEach(function (size) { html += '<div class="keys">'; families.slice(cursor, cursor + size).forEach(function (family, offset) { html += '<button type="button" class="key" data-family="' + family + '"><span>' + family + '</span><small>' + roman[cursor + offset] + '</small></button>'; }); html += '</div>'; cursor += size; });
     html += '<div class="keys">' + symbols.slice(0, 9).map(function (symbol) { return '<button type="button" class="key fn" data-symbol="' + symbol + '">' + symbol + '</button>'; }).join('') + '<button type="button" class="key fn space" data-symbol=" ">SPACE</button><button type="button" class="key fn" data-symbol="\\n">⏎</button><button type="button" class="key fn" id="backspaceKey">⌫</button></div>';
     host.innerHTML = html;
@@ -964,7 +1056,9 @@
    editor.addEventListener('keydown', function (event) {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); save(); }
     else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') { event.preventDefault(); window.print(); }
-    else if (event.key === 'Enter') { event.preventDefault(); insertNewLine(); }
+    else if (event.key === 'Enter') { event.preventDefault(); if (event.shiftKey) insertSoftBreak(); else insertNewLine(); }
+    else if (event.key === 'Backspace') { if (!backspaceAtBlockStart()) phoneticKey(event); }
+    else if (event.key === 'Delete') { if (!deleteAtBlockEnd()) phoneticKey(event); }
     else { phoneticKey(event); }
   });
   editor.addEventListener('focus', function () {});

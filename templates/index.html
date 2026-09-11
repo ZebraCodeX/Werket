@@ -167,27 +167,28 @@
           </div>
         </section>
         <div class="editor-status"><span id="fileStatus">Plain text · UTF-8</span><span id="editorStats">0 words · 0 dictionary words · 0 characters</span><button class="tool" id="keyboardBtn" title="Toggle keyboard">⌨️</button></div>
-        <section id="keyboardPanel" class="keyboard-panel" hidden>
+         <section id="keyboardPanel" class="keyboard-panel" hidden>
           <div class="keyboard-grab" aria-hidden="true"></div>
-          <div class="keyboard-panel-head">
-            <div><b>Amharic keyboard</b><span>Tap a family, then choose its order</span></div>
-            <div><label class="switch-label"><input id="phoneticToggle" type="checkbox" checked><span>Phonetic QWERTY</span></label><button id="closeKeyboard" class="small-btn">Hide</button></div>
-          </div>
           <div id="keyboardSuggestions" class="keyboard-suggest-row"><span class="keyboard-suggest-label">Suggestions</span><span class="empty">Type to see dictionary words</span></div>
           <div id="keyboard" class="keyboard"></div>
            <div class="keyboard-info-row">
-             <div class="keyboard-info-section">
-               <span class="keyboard-info-badge" id="spellBadge">CLEAN</span>
-               <span id="spellSummary" class="keyboard-info-text">All words checked</span>
-             </div>
-             <div class="keyboard-info-divider"></div>
-             <div class="keyboard-info-section keyboard-shortcuts">
-               <span class="kbd-hint"><kbd>Tab</kbd> suggest</span>
-               <span class="kbd-hint"><kbd>Ctrl+Click</kbd> correct</span>
-               <span class="kbd-hint"><kbd>Ctrl+B</kbd> bold</span>
-               <span class="kbd-hint"><kbd>Ctrl+Z</kbd> undo</span>
-             </div>
-           </div>
+              <div class="keyboard-info-section">
+                <label class="switch-label"><input id="phoneticToggle" type="checkbox" checked><span>Phonetic</span></label>
+                <button id="closeKeyboard" class="small-btn">Hide</button>
+              </div>
+              <div class="keyboard-info-divider"></div>
+              <div class="keyboard-info-section">
+                <span class="keyboard-info-badge" id="spellBadge">CLEAN</span>
+                <span id="spellSummary" class="keyboard-info-text">All words checked</span>
+              </div>
+              <div class="keyboard-info-divider"></div>
+              <div class="keyboard-info-section keyboard-shortcuts">
+                <span class="kbd-hint"><kbd>Tab</kbd> suggest</span>
+                <span class="kbd-hint"><kbd>Ctrl+Click</kbd> correct</span>
+                <span class="kbd-hint"><kbd>Ctrl+B</kbd> bold</span>
+                <span class="kbd-hint"><kbd>Ctrl+Z</kbd> undo</span>
+              </div>
+            </div>
            <div id="errors" class="spell-error-list"></div>
         </section>
       </main>
