@@ -23,5 +23,22 @@ body{background:#f5f5f7;color:var(--ink)}.topbar{background:rgba(255,255,255,.94
 .has-physical-keyboard .osk-only,.has-physical-keyboard #keyboardBtn,.has-physical-keyboard #keyboardPanel{display:none!important}
 .keyboard{position:relative}.orders{position:fixed;z-index:80;display:flex;gap:3px;padding:6px;background:#fff;border-radius:10px;box-shadow:0 8px 22px #1d294966,0 1px 3px #0002;transform:none;left:0;top:0;bottom:auto}.orders button{width:40px;height:44px;border:0;border-radius:8px;background:#e8eaed;color:#202124;font:18px "Noto Sans Ethiopic",sans-serif}.orders button.base{background:#5d6ec4;color:#fff}.orders button:hover,.orders button:focus{background:#d7dce8}.key{touch-action:manipulation;-webkit-user-select:none;user-select:none}
 body.osk-open #editor{caret-color:#4158b3}
+/* Floating on-screen keyboard: overlays the document instead of taking layout space */
+.keyboard-panel{position:fixed;left:0;right:0;bottom:0;z-index:100;max-height:none;margin:0;background:rgba(240,242,247,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid rgba(0,0,0,.08);border-radius:18px 18px 0 0;box-shadow:0 -12px 40px rgba(23,35,70,.22);padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px));overflow:hidden;animation:keyboardIn .2s cubic-bezier(.2,.8,.3,1)}
+.keyboard-panel .keyboard-panel-head{padding:2px 4px 8px}
+.keyboard-grab{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:42px;height:5px;border-radius:3px;background:#c3c9d6}
+.keyboard-panel .keyboard{max-width:820px;margin:auto}
+body.osk-open .document-stage{padding-bottom:280px}
+body.osk-open .editor-status{padding-bottom:0}
+@keyframes keyboardIn{from{transform:translateY(100%);opacity:.6}to{transform:none;opacity:1}}
+/* Install prompt + footer polish */
+.install-banner{display:none;align-items:center;gap:10px;margin:18px auto 0;max-width:560px;padding:12px 16px;background:#233b7a;color:#fff;border-radius:12px;box-shadow:0 10px 26px #1d2b5533}
+.install-banner.show{display:flex}
+.install-banner span{flex:1;font-size:13px}
+.install-banner button{border:0;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
+.install-banner .ib-yes{background:#fff;color:#233b7a}
+.install-banner .ib-no{background:transparent;color:#fff}
+.app-footer{margin:34px auto 0;max-width:920px;text-align:center;color:#8a94a5;font-size:11px;line-height:1.6}
+.app-footer a{color:#5d6ec4;text-decoration:none}
 @media(max-width:900px){.file-nav .top-btn#printBtn,.file-nav .top-btn#exportBtn{display:none}.home-hero h1{font-size:22px}.home-screen{padding:18px 12px 32px}}
-@media(max-width:760px){.topbar{flex-wrap:wrap;height:auto;min-height:52px;padding:7px 9px}.file-nav{margin-left:auto}.file-nav .top-btn{padding:6px 8px}.top-actions{margin-left:0}.home-templates{grid-template-columns:1fr 1fr}.keyboard-panel.open{display:block}}
+@media(max-width:760px){.topbar{flex-wrap:wrap;height:auto;min-height:52px;padding:7px 9px}.file-nav{margin-left:auto}.file-nav .top-btn{padding:6px 8px}.top-actions{margin-left:0}.home-templates{grid-template-columns:1fr 1fr}.keyboard-panel.open{display:block}.keyboard-panel{max-height:58vh;overflow:auto}.keyboard-panel .keyboard-panel-head{position:sticky;top:0;z-index:2}}

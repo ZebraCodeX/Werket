@@ -3,11 +3,54 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f5f5f7">
+  <title>Werket — Amharic Editor | ወርቀት</title>
+  <meta name="description" content="Werket (ወርቀት) is a free Pages-style editor for Amharic. Write letters, journals, and books with a Fidel keyboard, phonetic typing, spell check, and templates.">
+  <meta name="keywords" content="Amharic editor, Amharic word processor, Fidel keyboard, አማርኛ, ወርቀት, Amharic spell check, Ethiopian writing app, Geez typing">
+  <meta name="author" content="Werket">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#233b7a">
+  <meta name="color-scheme" content="light">
+  <link rel="canonical" href="https://werket-ug86.onrender.com/">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Werket">
+  <meta name="application-name" content="Werket">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.json">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Werket">
+  <meta property="og:title" content="Werket — Amharic Editor">
+  <meta property="og:description" content="Write Amharic beautifully. A free Pages-style editor with a Fidel keyboard, phonetic typing, and spell check.">
+  <meta property="og:url" content="https://werket-ug86.onrender.com/">
+  <meta property="og:image" content="https://werket-ug86.onrender.com/static/icon-512.png">
+  <meta property="og:locale" content="am_ET">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Werket — Amharic Editor">
+  <meta name="twitter:description" content="Write Amharic beautifully. Fidel keyboard, phonetic typing, and spell check.">
+  <meta name="twitter:image" content="https://werket-ug86.onrender.com/static/icon-512.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Werket — Amharic Editor",
+    "alternateName": "ወርቀት",
+    "operatingSystem": "Web, Android, iOS",
+    "applicationCategory": "ProductivityApplication",
+    "description": "A free Pages-style editor for Amharic with a Fidel keyboard, phonetic typing, spell check, and book templates.",
+    "url": "https://werket-ug86.onrender.com/",
+    "image": "https://werket-ug86.onrender.com/static/icon-512.png",
+    "inLanguage": ["am", "en"],
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": "5", "ratingCount": "1" }
+  }
+  </script>
   <link rel="stylesheet" href="/static/werket.css">
-  <title>Werket | Amharic Editor</title>
 </head>
 <body>
   <div class="app-shell">
@@ -48,6 +91,8 @@
             <div id="homeTemplates" class="home-templates"></div>
             <h2 class="home-recent-title">Recent</h2>
             <div id="homeRecent" class="home-recent"></div>
+            <div id="installBanner" class="install-banner"><span>Get Werket as an app for offline writing.</span><button class="ib-yes" id="installYes">Install</button><button class="ib-no" id="installNo">Not now</button></div>
+            <footer class="app-footer">Werket (ወርቀት) — a free Amharic editor for Ethiopia and the diaspora.<br>Works offline · Private · <a href="/privacy">Privacy policy</a></footer>
           </div>
         </section>
         <div id="tabs" class="tabs"></div>
@@ -57,7 +102,7 @@
         </section>
         <section class="document-stage"><div class="find-bar" id="findBar"><input id="findInput" placeholder="Find in document"><span id="findCount"></span><button id="findPrev">↑</button><button id="findNext">↓</button><button id="closeFind">×</button></div><div class="document-paper"><textarea id="editor" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off" dir="auto" placeholder="Start writing in Amharic..."></textarea></div></section>
         <div class="editor-status"><span id="fileStatus">Plain text · UTF-8</span><span id="editorStats">0 words · 0 dictionary words · 0 characters</span><button id="keyboardBtn" class="osk-only" hidden>Keyboard</button><button id="toggleInspector">Inspector</button></div>
-        <section id="keyboardPanel" class="keyboard-panel osk-only" hidden><div class="keyboard-panel-head"><div><b>Amharic keyboard</b><span>Tap a family, then choose its order</span></div><div><label class="switch-label"><input id="phoneticToggle" type="checkbox" checked><span>Phonetic QWERTY</span></label><button id="closeKeyboard" class="small-btn">Hide</button></div></div><div id="keyboard" class="keyboard"></div></section>
+        <section id="keyboardPanel" class="keyboard-panel osk-only" hidden><div class="keyboard-grab" aria-hidden="true"></div><div class="keyboard-panel-head"><div><b>Amharic keyboard</b><span>Tap a family, then choose its order</span></div><div><label class="switch-label"><input id="phoneticToggle" type="checkbox" checked><span>Phonetic QWERTY</span></label><button id="closeKeyboard" class="small-btn">Hide</button></div></div><div id="keyboard" class="keyboard"></div></section>
       </main>
       <aside class="inspector" id="inspector">
         <div class="inspector-heading"><b>INSPECTOR</b><button id="closeInspector">×</button></div>

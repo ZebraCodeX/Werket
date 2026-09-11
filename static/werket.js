@@ -561,6 +561,28 @@
   };
   $('brandHome').onclick = showHome;
 
+  var deferredInstall = null;
+  window.addEventListener('beforeinstallprompt', function (event) {
+    event.preventDefault();
+    deferredInstall = event;
+    var banner = $('installBanner');
+    if (banner && !localStorage.getItem('werket-install-dismissed')) banner.classList.add('show');
+  });
+  window.addEventListener('appinstalled', function () {
+    deferredInstall = null;
+    var banner = $('installBanner');
+    if (banner) banner.classList.remove('show');
+    setStatus('App installed');
+  });
+  $('installYes').onclick = function () {
+    $('installBanner').classList.remove('show');
+    if (deferredInstall) { deferredInstall.prompt(); deferredInstall.userChoice.then(function () { deferredInstall = null; }); }
+  };
+  $('installNo').onclick = function () {
+    $('installBanner').classList.remove('show');
+    localStorage.setItem('werket-install-dismissed', '1');
+  };
+
   window.addEventListener('resize', layoutChrome);
   window.addEventListener('orientationchange', layoutChrome);
 
@@ -571,4 +593,10 @@
   if (emptyWorkspace) showHome();
   else hideHome();
   if (shouldOfferOnScreenKeyboard() && localStorage.getItem(oskPrefKey) === '1') setOsk(true);
+
+  var queryNew = new URLSearchParams(window.location.search).get('new');
+  if (queryNew) {
+    var tmpl = templates.find(function (t) { return t.id === queryNew; });
+    if (tmpl) { createTemplate(tmpl); history.replaceState(null, '', '/'); }
+  }
 })();

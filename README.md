@@ -25,8 +25,12 @@ The home screen and **New** menu offer Blank document, Letter, Daily journal,
 Meeting notes, and Book project templates. The Book project creates an outline,
 characters file, research notes, and chapter files in a `chapters/` folder.
 Font family and size are adjustable in the editor toolbar. On phones, an
-optional Amharic keyboard can replace the device keyboard; laptops with a
-physical keyboard do not show that control.
+optional Amharic keyboard floats over the document (with the device keyboard
+suppressed); laptops with a physical keyboard do not show that control.
+
+Werket is installable as a PWA and ready for app-store packaging via PWABuilder
+(icons, maskable icons, Apple touch icon, and screenshots are included), and is
+indexed for search engines via `robots.txt`, `sitemap.xml`, and structured data.
 
 ## Input
 

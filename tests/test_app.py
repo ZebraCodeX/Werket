@@ -26,7 +26,9 @@ class WerketHttpTest(unittest.TestCase):
             return response.status, response.read()
 
     def test_editor_assets_are_served(self):
-        for path in ('/', '/manifest.json', '/sw.js', '/static/werket.js', '/static/werket.css'):
+        for path in ('/', '/manifest.json', '/sw.js', '/robots.txt', '/sitemap.xml', '/privacy',
+                     '/static/werket.js', '/static/werket.css', '/static/icon-192.png',
+                     '/static/icon-512.png', '/static/icon-maskable-512.png', '/static/apple-touch-icon.png'):
             status, body = self.get(path)
             self.assertEqual(status, 200, path)
             self.assertTrue(body, path)
@@ -35,9 +37,18 @@ class WerketHttpTest(unittest.TestCase):
         status, body = self.get('/')
         html = body.decode('utf-8')
         self.assertEqual(status, 200)
-        for marker in ('fileTree', 'templateDialog', 'fontFamily', 'fontSize', 'keyboardPanel', 'homeScreen', 'newBtn', 'newMenu'):
+        for marker in ('fileTree', 'templateDialog', 'fontFamily', 'fontSize', 'keyboardPanel',
+                       'homeScreen', 'newBtn', 'newMenu', 'installBanner', 'og:title',
+                       'application/ld+json'):
             self.assertIn(marker, html)
         self.assertNotIn('id="lineNumbers"', html)
+
+    def test_manifest_has_store_icons(self):
+        status, body = self.get('/manifest.json')
+        payload = json.loads(body)
+        self.assertEqual(payload['name'], 'Werket — Amharic Editor')
+        self.assertTrue(payload['icons'])
+        self.assertTrue(payload['screenshots'])
 
     def test_suggestions_and_spell_api(self):
         encoded = urllib.parse.quote('ሰላም እንዳ')

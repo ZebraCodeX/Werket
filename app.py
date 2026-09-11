@@ -13,7 +13,8 @@ PORT = int(os.environ.get('PORT', '8765'))
 class WerketHandler(BaseHTTPRequestHandler):
     MIME = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
             '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
-            '.svg': 'image/svg+xml'}
+            '.svg': 'image/svg+xml', '.png': 'image/png', '.xml': 'application/xml; charset=utf-8',
+            '.txt': 'text/plain; charset=utf-8'}
 
     def _send(self, body, content_type='text/plain; charset=utf-8', code=200):
         if isinstance(body, str): body = body.encode('utf-8')
@@ -29,6 +30,9 @@ class WerketHandler(BaseHTTPRequestHandler):
             self._send(json.dumps({'text': text, 'words': check(text)}, ensure_ascii=False), 'application/json; charset=utf-8'); return
         if path == '/manifest.json': path = '/static/manifest.json'
         if path == '/sw.js': path = '/static/sw.js'
+        if path == '/robots.txt': path = '/static/robots.txt'
+        if path == '/sitemap.xml': path = '/static/sitemap.xml'
+        if path == '/privacy': path = '/static/privacy.html'
         rel = 'templates/index.html' if path == '/' else path.lstrip('/')
         if rel.startswith('../') or os.path.isabs(rel): self._send('forbidden', code=403); return
         full = os.path.join(ROOT, rel)
@@ -36,7 +40,10 @@ class WerketHandler(BaseHTTPRequestHandler):
             with open(full, 'rb') as f: body = f.read()
         except OSError: self._send('not found', code=404); return
         ext = os.path.splitext(full)[1]
-        self._send(body, self.MIME.get(ext, 'application/octet-stream'))
+        ctype = self.MIME.get(ext, 'application/octet-stream')
+        if ext == '.html':
+            ctype = 'text/html; charset=utf-8'
+        self._send(body, ctype)
 
     def log_message(self, fmt, *args): pass
 

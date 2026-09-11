@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef1f8"/>
+      <stop offset="1" stop-color="#f7f5ef"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#bg)"/>
+  <rect x="70" y="70" width="940" height="1780" rx="48" fill="#fff" stroke="#e4e7ee"/>
+  <rect x="70" y="70" width="940" height="96" rx="48" fill="#fff"/>
+  <rect x="70" y="118" width="940" height="48" fill="#fff"/>
+  <circle cx="150" cy="118" r="18" fill="#6c78c6"/>
+  <text x="182" y="126" font-family="Noto Sans, sans-serif" font-size="28" font-weight="700" fill="#2c3a52">Werket</text>
+  <text x="300" y="126" font-family="Noto Sans, sans-serif" font-size="20" fill="#8b93a3">Amharic editor</text>
+  <rect x="140" y="220" width="800" height="1180" rx="18" fill="#fffefa" stroke="#ece7df"/>
+  <text x="200" y="320" font-family="Noto Sans Ethiopic, Noto Sans, sans-serif" font-size="42" fill="#26344b">ሰላም እንደምን አለህ?</text>
+  <text x="200" y="400" font-family="Noto Sans Ethiopic, Noto Sans, sans-serif" font-size="32" fill="#526078">Write letters, journals, and books</text>
+  <text x="200" y="460" font-family="Noto Sans, sans-serif" font-size="28" fill="#7a8496">with a Fidel keyboard and spell check.</text>
+  <rect x="200" y="540" width="220" height="56" rx="12" fill="#eef0ff"/>
+  <text x="230" y="576" font-family="Noto Sans Ethiopic, sans-serif" font-size="26" fill="#445ab0">ሰላም</text>
+  <rect x="440" y="540" width="180" height="56" rx="12" fill="#eef0ff"/>
+  <text x="470" y="576" font-family="Noto Sans Ethiopic, sans-serif" font-size="26" fill="#445ab0">እንደምን</text>
+  <rect x="200" y="1480" width="800" height="260" rx="24" fill="#eceff5"/>
+  <rect x="230" y="1510" width="90" height="70" rx="12" fill="#fff"/>
+  <text x="248" y="1556" font-family="Noto Sans Ethiopic, sans-serif" font-size="32" fill="#33425e">ሀ</text>
+  <rect x="340" y="1510" width="90" height="70" rx="12" fill="#fff"/>
+  <text x="358" y="1556" font-family="Noto Sans Ethiopic, sans-serif" font-size="32" fill="#33425e">ለ</text>
+  <rect x="450" y="1510" width="90" height="70" rx="12" fill="#fff"/>
+  <text x="468" y="1556" font-family="Noto Sans Ethiopic, sans-serif" font-size="32" fill="#33425e">መ</text>
+  <rect x="560" y="1510" width="90" height="70" rx="12" fill="#5d6ec4"/>
+  <text x="578" y="1556" font-family="Noto Sans Ethiopic, sans-serif" font-size="32" fill="#fff">ሰ</text>
+  <text x="540" y="1860" text-anchor="middle" font-family="Noto Sans, sans-serif" font-size="34" fill="#5d6ec4">Amharic documents, beautifully.</text>
+</svg>
