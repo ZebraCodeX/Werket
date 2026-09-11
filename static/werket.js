@@ -91,7 +91,7 @@
       run.push(child);
     });
     flush();
-    if (changed) { restoreSelection(offsets.start, offsets.end); editor.normalize(); }
+    if (changed) { if (offsets) restoreSelection(offsets.start, offsets.end); editor.normalize(); }
     return changed;
   }
   function selectionOffsets() {
@@ -1144,7 +1144,7 @@ function importPdf(file) {
   }
   function snapshot() {
     var offsets = selectionOffsets();
-    return {id: workspace.activeId, html: editor.innerHTML, text: editorText(), start: offsets.start, end: offsets.end};
+    return {id: workspace.activeId, html: editor.innerHTML, text: editorText(), start: offsets ? offsets.start : caretStart, end: offsets ? offsets.end : caretEnd};
   }
   function pushUndo() {
     if (applyingHistory) return;
@@ -1481,7 +1481,9 @@ function importPdf(file) {
   function findInDocument(direction) {
     var query = $('findInput').value;
     if (!query) { $('findCount').textContent = ''; return; }
-    var source = editorText().toLocaleLowerCase(), needle = query.toLocaleLowerCase(), start = selectionOffsets().end;
+    var offsets = selectionOffsets();
+    var start = offsets ? offsets.end : editorText().length;
+    var source = editorText().toLocaleLowerCase(), needle = query.toLocaleLowerCase();
     var index = direction < 0 ? source.lastIndexOf(needle, Math.max(0, start - 1)) : source.indexOf(needle, start);
     if (index < 0) index = direction < 0 ? source.lastIndexOf(needle) : source.indexOf(needle);
     if (index >= 0) { focusEditor(); restoreSelection(index, index + query.length); $('findCount').textContent = 'Found'; }
@@ -1632,7 +1634,9 @@ var errorsEl = $('errors');
   }
   function phoneticKey(event) {
     if (!$('phoneticToggle').checked || event.ctrlKey || event.metaKey || event.altKey) return false;
-    var key = event.key, offsets = selectionOffsets(), position = offsets.start;
+    var offsets = selectionOffsets();
+    if (!offsets) return false;
+    var key = event.key, position = offsets.start;
     if (key === 'Tab') { var ks = document.getElementById('keyboardSuggestions'); var suggestion = ks ? ks.querySelector('[data-word]') : null; if (suggestion) { event.preventDefault(); replaceSuggestion(suggestion.dataset.word); return true; } return false; }
     if (offsets.end !== position) { phoneticBuffer = ''; return false; }
     if (/^[A-Za-z]$/.test(key)) {
@@ -1736,7 +1740,9 @@ var errorsEl = $('errors');
       hideOrders();
       editor.focus({preventScroll: true});
       if (backspaceAtBlockStart()) { restoreCaret(); return; }
-      var offsets = selectionOffsets(), p = offsets.start, q = offsets.end;
+      var offsets = selectionOffsets();
+      if (!offsets) return;
+      var p = offsets.start, q = offsets.end;
       if (q > p) replaceTextRange(p, q, '');
       else if (p > 0) replaceTextRange(p - 1, p, '');
       changed();
