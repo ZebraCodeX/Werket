@@ -28,7 +28,8 @@ class WerketHttpTest(unittest.TestCase):
     def test_editor_assets_are_served(self):
         for path in ('/', '/manifest.json', '/sw.js', '/robots.txt', '/sitemap.xml', '/privacy',
                      '/static/werket.js', '/static/werket.css', '/static/icon-192.png',
-                     '/static/icon-512.png', '/static/icon-maskable-512.png', '/static/apple-touch-icon.png'):
+                     '/static/icon-512.png', '/static/icon-maskable-512.png', '/static/apple-touch-icon.png',
+                     '/static/template-book.svg'):
             status, body = self.get(path)
             self.assertEqual(status, 200, path)
             self.assertTrue(body, path)
@@ -41,6 +42,8 @@ class WerketHttpTest(unittest.TestCase):
                        'homeScreen', 'newBtn', 'newMenu', 'installBanner', 'og:title',
                        'application/ld+json', 'themeBtn', 'hero-kicker'):
             self.assertIn(marker, html)
+        self.assertIn('contenteditable="true"', html)
+        self.assertIn('contextMenu', html)
         self.assertIn('aria-pressed', html)
         self.assertNotIn('aggregateRating', html)
         self.assertIn('https://werket.onrender.com/', html)

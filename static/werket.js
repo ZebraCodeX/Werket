@@ -10,6 +10,7 @@
   var undoStack = [], redoStack = [], applyingHistory = false;
   var oskOpen = false;
   var caretStart = 0, caretEnd = 0;
+  var contextFileId = null;
   var families = ['ሀ','ለ','ሐ','መ','ሠ','ረ','ሰ','ሸ','ቀ','በ','ተ','ቸ','ኀ','ነ','ኘ','አ','ከ','ኸ','ወ','ዐ','ዘ','ዠ','የ','ደ','ጀ','ገ','ጠ','ጨ','ጰ','ጸ','ፀ'];
   var roman = ['h','l','H','m','S','r','s','sh','q','b','t','c','x','n','N','a','k','K','w','E','z','Z','y','d','j','g','T','C','P','S','D'];
   var orders = ['e','u','i','a','ie','silent','o'];
@@ -17,11 +18,11 @@
   var phon = {h:'ሀ',H:'ሐ',l:'ለ',m:'መ',s:'ሰ',r:'ረ',S:'ሠ',b:'በ',t:'ተ',c:'ቸ',C:'ጨ',q:'ቀ',k:'ከ',x:'ኀ',n:'ነ',N:'ኘ',a:'አ',w:'ወ',z:'ዘ',y:'የ',d:'ደ',j:'ጀ',g:'ገ',T:'ጠ',p:'ፐ',f:'ፈ',v:'ቨ',D:'ፀ'};
   var vowels = {e:0,u:1,i:2,a:3,ie:4,ee:4,'':5,o:6};
   var templates = [
-    {id:'blank', icon:'□', name:'Blank document', description:'A clean page for notes or free writing.', files:[['Untitled.md','']]},
-    {id:'letter', icon:'✉', name:'Letter', description:'Greeting, body, and closing for a formal note.', files:[['letter.md','# Letter\n\nDate: \n\nDear \n\nWrite your message here.\n\nSincerely,\n']]},
-    {id:'journal', icon:'◷', name:'Daily journal', description:'A focused page for reflection and daily notes.', files:[['journal.md','# Daily journal\n\n## Today\n\nWhat happened today?\n\n## Reflection\n\nWhat did I learn?\n']]},
-    {id:'notes', icon:'✎', name:'Meeting notes', description:'Agenda, notes, and next steps.', files:[['meeting.md','# Meeting notes\n\nDate: \nAttendees: \n\n## Agenda\n\n- \n\n## Notes\n\n\n## Next steps\n\n- \n']]},
-    {id:'book', icon:'▤', name:'Book project', description:'Outline, characters, research, and chapter files.', book:true}
+    {id:'blank', icon:'□', artwork:'blank', name:'Blank document', description:'A clean page for notes or free writing.', files:[['Untitled.md','']]},
+    {id:'letter', icon:'✉', artwork:'letter', name:'Letter', description:'Greeting, body, and closing for a formal note.', files:[['letter.md','# Letter\n\nDate: \n\nDear \n\nWrite your message here.\n\nSincerely,\n']]},
+    {id:'journal', icon:'◷', artwork:'journal', name:'Daily journal', description:'A focused page for reflection and daily notes.', files:[['journal.md','# Daily journal\n\n## Today\n\nWhat happened today?\n\n## Reflection\n\nWhat did I learn?\n']]},
+    {id:'notes', icon:'✎', artwork:'meeting', name:'Meeting notes', description:'Agenda, notes, and next steps.', files:[['meeting.md','# Meeting notes\n\nDate: \nAttendees: \n\n## Agenda\n\n- \n\n## Notes\n\n\n## Next steps\n\n- \n']]},
+    {id:'book', icon:'▤', artwork:'book', name:'Book project', description:'Outline, characters, research, and chapter files.', book:true}
   ];
 
   function safeLoad() { try { return JSON.parse(localStorage.getItem(workspaceKey) || 'null'); } catch (e) { return null; } }
@@ -38,6 +39,56 @@
   function activeFile() { return workspace.files.find(function (f) { return f.id === workspace.activeId; }) || null; }
   function saveWorkspace() { localStorage.setItem(workspaceKey, JSON.stringify(workspace)); }
   function setStatus(text) { $('saveStatus').textContent = text; }
+  function editorText() { return (editor.innerText || '').replace(/\u00a0/g, ' '); }
+  function markdownToHtml(value) {
+    return escapeHtml(String(value || ''))
+      .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.*)$/gm, '<h1>$1</h1>')
+      .replace(/^\- (.*)$/gm, '<div class="editor-bullet">• $1</div>')
+      .replace(/^\d+\. (.*)$/gm, '<div class="editor-number">$1</div>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/_([^_]+)_/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>');
+  }
+  function setEditorContent(value) {
+    var source = String(value || '');
+    editor.innerHTML = /^\s*<(?:h[1-6]|p|div|strong|em|ul|ol|br)\b/i.test(source) ? source : markdownToHtml(source);
+  }
+  function selectionOffsets() {
+    var selection = window.getSelection();
+    if (!selection || !selection.rangeCount || !editor.contains(selection.anchorNode)) return {start: caretStart, end: caretEnd};
+    var range = selection.getRangeAt(0), before = range.cloneRange();
+    before.selectNodeContents(editor);
+    before.setEnd(range.startContainer, range.startOffset);
+    var selected = range.cloneRange();
+    selected.selectNodeContents(editor);
+    selected.setEnd(range.endContainer, range.endOffset);
+    return {start: before.toString().length, end: selected.toString().length};
+  }
+  function nodeAtOffset(root, offset) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), node, count = 0;
+    while ((node = walker.nextNode())) {
+      var next = count + node.nodeValue.length;
+      if (offset <= next) return {node: node, offset: Math.max(0, offset - count)};
+      count = next;
+    }
+    return {node: root, offset: root.childNodes.length};
+  }
+  function restoreSelection(start, end) {
+    var startPoint = nodeAtOffset(editor, start), endPoint = nodeAtOffset(editor, end), range = document.createRange(), selection = window.getSelection();
+    try {
+      range.setStart(startPoint.node, startPoint.offset); range.setEnd(endPoint.node, endPoint.offset);
+      selection.removeAllRanges(); selection.addRange(range);
+      caretStart = start; caretEnd = end;
+    } catch (e) {}
+  }
+  function replaceTextRange(start, end, text) {
+    var startPoint = nodeAtOffset(editor, start), endPoint = nodeAtOffset(editor, end), range = document.createRange();
+    range.setStart(startPoint.node, startPoint.offset); range.setEnd(endPoint.node, endPoint.offset); range.deleteContents();
+    var inserted = document.createTextNode(text); range.insertNode(inserted); range.setStartAfter(inserted); range.collapse(true);
+    var selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range); caretStart = caretEnd = start + text.length;
+  }
   function applyTheme(theme) {
     var dark = theme === 'dark';
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
@@ -69,6 +120,15 @@
     return narrow || (coarse && noHover);
   }
   function closeMenu() { $('newMenu').hidden = true; $('newBtn').setAttribute('aria-expanded', 'false'); }
+  function closeContextMenu() { $('contextMenu').hidden = true; }
+  function showContextMenu(event, fileId) {
+    event.preventDefault();
+    contextFileId = fileId || workspace.activeId;
+    var menu = $('contextMenu');
+    menu.hidden = false;
+    menu.style.left = Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 8) + 'px';
+    menu.style.top = Math.min(event.clientY, window.innerHeight - menu.offsetHeight - 8) + 'px';
+  }
   function hideOrders() {
     var pops = document.querySelectorAll('.orders');
     for (var i = 0; i < pops.length; i++) pops[i].remove();
@@ -96,13 +156,12 @@
     else allowNativeKeyboard();
   }
   function rememberCaret() {
-    try {
-      caretStart = editor.selectionStart;
-      caretEnd = editor.selectionEnd;
-    } catch (e) {}
+    var offsets = selectionOffsets();
+    caretStart = offsets.start;
+    caretEnd = offsets.end;
   }
   function restoreCaret() {
-    try { editor.setSelectionRange(caretStart, caretEnd); } catch (e) {}
+    restoreSelection(caretStart, caretEnd);
   }
   function focusEditor() {
     syncNativeKeyboard();
@@ -169,7 +228,11 @@
       if (folder !== '__root') html += '</div>';
     });
     tree.innerHTML = html;
-    tree.querySelectorAll('[data-file]').forEach(function (button) { button.onclick = function () { openFile(button.dataset.file); }; });
+    tree.querySelectorAll('[data-file]').forEach(function (button) {
+      button.onclick = function () { openFile(button.dataset.file); };
+      button.ondblclick = function () { openFile(button.dataset.file); setStatus('Opened'); };
+      button.oncontextmenu = function (event) { showContextMenu(event, button.dataset.file); };
+    });
     $('treeProjectName').textContent = (workspace.projectName || 'MY DOCUMENTS').toUpperCase();
     $('projectName').value = workspace.projectName || 'My documents';
   }
@@ -182,6 +245,7 @@
     }).join('');
     $('tabs').querySelectorAll('[data-tab]').forEach(function (tab) { tab.onclick = function (event) { if (!event.target.dataset.close) openFile(tab.dataset.tab); }; });
     $('tabs').querySelectorAll('[data-close]').forEach(function (button) { button.onclick = function (event) { event.stopPropagation(); closeFile(button.dataset.close); }; });
+    $('tabs').querySelectorAll('[data-tab]').forEach(function (tab) { tab.oncontextmenu = function (event) { showContextMenu(event, tab.dataset.tab); }; });
   }
 
   function renderOutline() {
@@ -192,7 +256,7 @@
 
   function renderHome() {
     $('homeTemplates').innerHTML = templates.map(function (template) {
-      return '<button class="home-card" data-template="' + template.id + '"><span class="home-card-preview">' + template.icon + '</span><b>' + escapeHtml(template.name) + '</b><span>' + escapeHtml(template.description) + '</span></button>';
+      return '<button class="home-card" data-template="' + template.id + '"><span class="home-card-preview artwork-' + template.artwork + '"><span>' + template.icon + '</span></span><b>' + escapeHtml(template.name) + '</b><span>' + escapeHtml(template.description) + '</span></button>';
     }).join('');
     $('homeTemplates').querySelectorAll('[data-template]').forEach(function (button) {
       button.onclick = function () { createTemplate(templates.find(function (item) { return item.id === button.dataset.template; })); };
@@ -243,14 +307,14 @@
     var f = activeFile();
     if (!f) {
       applyingHistory = true;
-      editor.value = '';
+      editor.innerHTML = '';
       applyingHistory = false;
       $('fileStatus').textContent = 'No document open';
       updateStats();
       return;
     }
     applyingHistory = true;
-    editor.value = f.text;
+    setEditorContent(f.text);
     applyingHistory = false;
     editor.style.fontFamily = workspace.font || 'Noto Sans Ethiopic';
     editor.style.fontSize = (workspace.size || 18) + 'px';
@@ -259,11 +323,13 @@
     updateStats(); refreshSuggestions(); checkSpelling();
   }
   function updateStats() {
-    var words = editor.value.trim() ? editor.value.trim().split(/\s+/).length : 0;
-    $('editorStats').textContent = words + ' words · checking dictionary · ' + editor.value.length + ' characters';
+    var text = editorText();
+    var words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    $('editorStats').textContent = words + ' words · checking dictionary · ' + text.length + ' characters';
   }
   function snapshot() {
-    return {id: workspace.activeId, text: editor.value, start: editor.selectionStart, end: editor.selectionEnd};
+    var offsets = selectionOffsets();
+    return {id: workspace.activeId, html: editor.innerHTML, text: editorText(), start: offsets.start, end: offsets.end};
   }
   function pushUndo() {
     if (applyingHistory) return;
@@ -278,8 +344,8 @@
     if (!snap) return;
     if (snap.id && snap.id !== workspace.activeId) openFile(snap.id);
     applyingHistory = true;
-    editor.value = snap.text;
-    editor.setSelectionRange(snap.start, snap.end);
+    editor.innerHTML = snap.html != null ? snap.html : markdownToHtml(snap.text);
+    restoreSelection(snap.start, snap.end);
     applyingHistory = false;
     changed();
     focusEditor();
@@ -296,46 +362,38 @@
   }
   function changed() {
     var f = activeFile(); if (!f) return;
-    f.text = editor.value; f.updated = Date.now(); updateStats(); setStatus('Unsaved changes');
+    f.text = editor.innerHTML; f.updated = Date.now(); updateStats(); setStatus('Unsaved changes');
     rememberCaret();
     clearTimeout(saveTimer); saveTimer = setTimeout(save, 550); refreshSuggestions(); checkSpelling();
   }
   function save() { saveWorkspace(); renderTree(); setStatus('Saved locally'); }
 
-  function selectRangeInsert(prefix, suffix) {
-    pushUndo();
-    var start = editor.selectionStart, end = editor.selectionEnd, value = editor.value;
-    editor.value = value.slice(0, start) + prefix + value.slice(start, end) + suffix + value.slice(end);
-    editor.setSelectionRange(start + prefix.length, end + prefix.length); changed(); focusEditor();
-  }
   function insert(text) {
     pushUndo();
     focusEditor();
-    var start = editor.selectionStart, end = editor.selectionEnd, value = editor.value;
-    editor.value = value.slice(0, start) + text + value.slice(end);
-    var pos = start + text.length;
-    caretStart = caretEnd = pos;
-    editor.setSelectionRange(pos, pos); changed(); focusEditor();
+    var offsets = selectionOffsets();
+    replaceTextRange(offsets.start, offsets.end, text); changed(); focusEditor();
   }
   function replaceSuggestion(word) {
     pushUndo();
-    var cursor = editor.selectionStart, value = editor.value, left = value.slice(0, cursor), match = left.match(/[\u1200-\u135a]+$/), start = match ? cursor - match[0].length : cursor;
-    editor.value = value.slice(0, start) + word + ' ' + value.slice(cursor); editor.setSelectionRange(start + word.length + 1, start + word.length + 1); changed(); focusEditor();
+    focusEditor();
+    var offsets = selectionOffsets(), left = editorText().slice(0, offsets.start), match = left.match(/[\u1200-\u135a]+$/), start = match ? offsets.start - match[0].length : offsets.start;
+    replaceTextRange(start, offsets.end, word + ' '); changed(); focusEditor();
   }
   function findInDocument(direction) {
     var query = $('findInput').value;
     if (!query) { $('findCount').textContent = ''; return; }
-    var source = editor.value.toLocaleLowerCase(), needle = query.toLocaleLowerCase(), start = editor.selectionEnd;
+    var source = editorText().toLocaleLowerCase(), needle = query.toLocaleLowerCase(), start = selectionOffsets().end;
     var index = direction < 0 ? source.lastIndexOf(needle, Math.max(0, start - 1)) : source.indexOf(needle, start);
     if (index < 0) index = direction < 0 ? source.lastIndexOf(needle) : source.indexOf(needle);
-    if (index >= 0) { focusEditor(); editor.setSelectionRange(index, index + query.length); $('findCount').textContent = 'Found'; }
+    if (index >= 0) { focusEditor(); restoreSelection(index, index + query.length); $('findCount').textContent = 'Found'; }
     else $('findCount').textContent = 'Not found';
   }
 
   function refreshSuggestions() {
     clearTimeout(suggestTimer);
     suggestTimer = setTimeout(function () {
-      fetch('/api/suggest?text=' + encodeURIComponent(editor.value)).then(function (r) { return r.json(); }).then(function (data) {
+      fetch('/api/suggest?text=' + encodeURIComponent(editorText())).then(function (r) { return r.json(); }).then(function (data) {
         var values = (data.words && data.words.length ? data.words : (data.next || [])).slice(0, 6);
         var suggestionMarkup = values.length ? values.map(function (word) { return '<button class="suggestion" data-word="' + escapeHtml(word) + '">' + escapeHtml(word) + '</button>'; }).join('') : '<span class="empty">No dictionary suggestions yet.</span>';
         $('suggestions').innerHTML = suggestionMarkup;
@@ -349,13 +407,13 @@
   function checkSpelling() {
     clearTimeout(spellTimer);
     spellTimer = setTimeout(function () {
-      fetch('/api/check?text=' + encodeURIComponent(editor.value)).then(function (r) { return r.json(); }).then(function (data) {
+      fetch('/api/check?text=' + encodeURIComponent(editorText())).then(function (r) { return r.json(); }).then(function (data) {
         var words = data.words || [], unknown = words.filter(function (word) { return !word.known; }), known = words.length - unknown.length;
-        $('editorStats').textContent = words.length + ' words · ' + known + ' dictionary words · ' + editor.value.length + ' characters';
+        $('editorStats').textContent = words.length + ' words · ' + known + ' dictionary words · ' + editorText().length + ' characters';
         $('spellBadge').textContent = unknown.length ? unknown.length + ' ISSUES' : 'CLEAN'; $('spellBadge').className = 'badge' + (unknown.length ? ' warn' : '');
         $('spellSummary').textContent = unknown.length ? 'Choose a real dictionary correction below.' : 'Every Amharic word is in the Werket dictionary.';
         $('errors').innerHTML = unknown.slice(0, 8).map(function (item) { var buttons = (item.suggestions || []).slice(0, 3).map(function (s) { return '<button class="fix" data-fix="' + escapeHtml(s.word) + '" data-start="' + item.start + '" data-end="' + item.end + '">' + escapeHtml(s.word) + '</button>'; }).join(''); return '<div class="error-item"><span class="error-word">' + escapeHtml(item.word) + '</span><br>' + (buttons || '<span class="empty">No close match</span>') + '</div>'; }).join('');
-        $('errors').querySelectorAll('[data-fix]').forEach(function (button) { button.onclick = function () { pushUndo(); var start = Number(button.dataset.start), end = Number(button.dataset.end); editor.value = editor.value.slice(0, start) + button.dataset.fix + editor.value.slice(end); editor.setSelectionRange(start + button.dataset.fix.length, start + button.dataset.fix.length); changed(); focusEditor(); }; });
+        $('errors').querySelectorAll('[data-fix]').forEach(function (button) { button.onclick = function () { pushUndo(); focusEditor(); var start = Number(button.dataset.start), end = Number(button.dataset.end); replaceTextRange(start, end, button.dataset.fix); changed(); focusEditor(); }; });
       }).catch(function () {});
     }, 280);
   }
@@ -374,16 +432,16 @@
   }
   function phoneticKey(event) {
     if (!$('phoneticToggle').checked || event.ctrlKey || event.metaKey || event.altKey) return false;
-    var key = event.key, position = editor.selectionStart;
+    var key = event.key, offsets = selectionOffsets(), position = offsets.start;
     if (key === 'Tab') { var suggestion = $('suggestions').querySelector('[data-word]'); if (suggestion) { event.preventDefault(); replaceSuggestion(suggestion.dataset.word); return true; } return false; }
-    if (position === undefined || editor.selectionEnd !== position) { phoneticBuffer = ''; return false; }
+    if (offsets.end !== position) { phoneticBuffer = ''; return false; }
     if (/^[A-Za-z]$/.test(key)) {
       if (position !== phoneticStart + phoneticRendered.length) phoneticBuffer = '';
       if (!phoneticBuffer) { phoneticStart = position; phoneticRendered = ''; pushUndo(); }
-      phoneticBuffer += key; var rendered = compose(phoneticBuffer), value = editor.value;
-      editor.value = value.slice(0, phoneticStart) + rendered + value.slice(phoneticStart + phoneticRendered.length); phoneticRendered = rendered; editor.setSelectionRange(phoneticStart + rendered.length, phoneticStart + rendered.length); changed(); event.preventDefault(); return true;
+      phoneticBuffer += key; var rendered = compose(phoneticBuffer);
+      replaceTextRange(phoneticStart, phoneticStart + phoneticRendered.length, rendered); phoneticRendered = rendered; changed(); event.preventDefault(); return true;
     }
-    if (key === 'Backspace' && phoneticBuffer) { phoneticBuffer = phoneticBuffer.slice(0, -1); var next = compose(phoneticBuffer), current = editor.value; editor.value = current.slice(0, phoneticStart) + next + current.slice(phoneticStart + phoneticRendered.length); phoneticRendered = next; editor.setSelectionRange(phoneticStart + next.length, phoneticStart + next.length); changed(); event.preventDefault(); return true; }
+    if (key === 'Backspace' && phoneticBuffer) { phoneticBuffer = phoneticBuffer.slice(0, -1); var next = compose(phoneticBuffer); replaceTextRange(phoneticStart, phoneticStart + phoneticRendered.length, next); phoneticRendered = next; changed(); event.preventDefault(); return true; }
     if (key.length === 1 || key === 'Enter') { phoneticBuffer = ''; phoneticRendered = ''; }
     return false;
   }
@@ -437,10 +495,9 @@
       hideOrders();
       pushUndo();
       focusEditor();
-      var p = editor.selectionStart, q = editor.selectionEnd;
-      if (q > p) { editor.value = editor.value.slice(0, p) + editor.value.slice(q); caretStart = caretEnd = p; }
-      else if (p > 0) { editor.value = editor.value.slice(0, p - 1) + editor.value.slice(p); caretStart = caretEnd = p - 1; }
-      editor.setSelectionRange(caretStart, caretEnd);
+      var offsets = selectionOffsets(), p = offsets.start, q = offsets.end;
+      if (q > p) replaceTextRange(p, q, '');
+      else if (p > 0) replaceTextRange(p - 1, p, '');
       changed(); focusEditor();
     });
   }
@@ -471,7 +528,7 @@
   function showTemplates() {
     closeMenu();
     var dialog = $('templateDialog');
-    $('templateGrid').innerHTML = templates.map(function (template) { return '<button class="template-card" data-template="' + template.id + '"><b>' + template.icon + ' ' + template.name + '</b><span>' + template.description + '</span></button>'; }).join('');
+    $('templateGrid').innerHTML = templates.map(function (template) { return '<button class="template-card" data-template="' + template.id + '"><span class="template-art artwork-' + template.artwork + '"><span>' + template.icon + '</span></span><b>' + template.name + '</b><span>' + template.description + '</span></button>'; }).join('');
     $('templateGrid').querySelectorAll('[data-template]').forEach(function (button) { button.onclick = function () { createTemplate(templates.find(function (item) { return item.id === button.dataset.template; })); }; });
     if (dialog.showModal) dialog.showModal(); else dialog.setAttribute('open', '');
   }
@@ -494,15 +551,30 @@
   document.addEventListener('pointerdown', function (event) {
     if (!event.target.closest('.key[data-family]') && !event.target.closest('.orders')) hideOrders();
     if (!event.target.closest('.menu-wrap')) closeMenu();
+    if (!event.target.closest('.context-menu')) closeContextMenu();
+  });
+  editor.addEventListener('contextmenu', function (event) { showContextMenu(event, workspace.activeId); });
+  document.querySelectorAll('[data-context]').forEach(function (button) {
+    button.onclick = function () {
+      var action = button.dataset.context, id = contextFileId;
+      closeContextMenu();
+      if (action === 'new') return createFile();
+      if (id && id !== workspace.activeId && action !== 'open') openFile(id);
+      if (action === 'open' && id) return openFile(id);
+      if (action === 'rename') return renameFile();
+      if (action === 'duplicate') return duplicateFile();
+      if (action === 'close' && id) return closeFile(id);
+      if (action === 'delete') return deleteFile();
+    };
   });
   document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape') { hideOrders(); closeMenu(); if ($('templateDialog').open) closeTemplates(); }
+    if (event.key === 'Escape') { hideOrders(); closeMenu(); closeContextMenu(); if ($('templateDialog').open) closeTemplates(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'n') { event.preventDefault(); showHome(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') { event.preventDefault(); hideHome(); $('findBar').classList.add('open'); $('findInput').focus(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); if (event.shiftKey) redo(); else undo(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') { event.preventDefault(); redo(); }
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') { event.preventDefault(); selectRangeInsert('**', '**'); }
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'i') { event.preventDefault(); selectRangeInsert('_', '_'); }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') { event.preventDefault(); applyFormat('bold'); }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'i') { event.preventDefault(); applyFormat('italic'); }
   });
   editor.addEventListener('beforeinput', function () { if (!applyingHistory) pushUndo(); });
   editor.addEventListener('input', changed);
@@ -573,8 +645,14 @@
   $('fontSize').onchange = function () { workspace.size = Number($('fontSize').value); editor.style.fontSize = workspace.size + 'px'; save(); };
   $('zoom').onchange = function () { document.querySelector('.document-paper').style.transform = 'scale(' + $('zoom').value + ')'; document.querySelector('.document-paper').style.transformOrigin = 'top center'; };
   document.querySelectorAll('[data-align]').forEach(function (button) { button.onclick = function () { workspace.align = button.dataset.align; editor.style.textAlign = workspace.align; save(); }; });
-  document.querySelectorAll('[data-prefix]').forEach(function (button) { button.onclick = function () { pushUndo(); var start = editor.selectionStart, value = editor.value, line = value.lastIndexOf('\n', Math.max(0, start - 1)) + 1; editor.value = value.slice(0, line) + button.dataset.prefix + value.slice(line); editor.setSelectionRange(start + button.dataset.prefix.length, start + button.dataset.prefix.length); changed(); focusEditor(); }; });
-  document.querySelectorAll('[data-wrap]').forEach(function (button) { button.onclick = function () { selectRangeInsert(button.dataset.wrap, button.dataset.end || ''); }; });
+  function applyFormat(command, value) {
+    pushUndo();
+    focusEditor();
+    document.execCommand(command, false, value || null);
+    changed();
+    focusEditor();
+  }
+  document.querySelectorAll('[data-command]').forEach(function (button) { button.onclick = function () { applyFormat(button.dataset.command, button.dataset.value); }; });
   $('importBtn').onclick = function () { $('importFile').click(); };
   $('importFile').onchange = function (event) {
     var selected = event.target.files[0]; if (!selected) return;
@@ -587,7 +665,7 @@
     var f = activeFile();
     if (!f) { setStatus('Open a document before exporting'); return; }
     var link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([f.text], {type:'text/plain;charset=utf-8'}));
+    link.href = URL.createObjectURL(new Blob([editorText()], {type:'text/plain;charset=utf-8'}));
     link.download = f.name.replace(/\.md$/, '') + '.txt';
     link.click();
     URL.revokeObjectURL(link.href);
