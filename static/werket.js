@@ -11,6 +11,7 @@
   var oskOpen = false;
   var caretStart = 0, caretEnd = 0;
   var contextFileId = null;
+  var markingSpell = false;
   var families = ['ሀ','ለ','ሐ','መ','ሠ','ረ','ሰ','ሸ','ቀ','በ','ተ','ቸ','ኀ','ነ','ኘ','አ','ከ','ኸ','ወ','ዐ','ዘ','ዠ','የ','ደ','ጀ','ገ','ጠ','ጨ','ጰ','ጸ','ፀ'];
   var roman = ['h','l','H','m','S','r','s','sh','q','b','t','c','x','n','N','a','k','K','w','E','z','Z','y','d','j','g','T','C','P','S','D'];
   var orders = ['e','u','i','a','ie','silent','o'];
@@ -19,9 +20,9 @@
   var vowels = {e:0,u:1,i:2,a:3,ie:4,ee:4,'':5,o:6};
   var templates = [
     {id:'blank', icon:'□', artwork:'blank', name:'Blank document', description:'A clean page for notes or free writing.', files:[['Untitled.md','']]},
-    {id:'letter', icon:'✉', artwork:'letter', name:'Letter', description:'Greeting, body, and closing for a formal note.', files:[['letter.md','# Letter\n\nDate: \n\nDear \n\nWrite your message here.\n\nSincerely,\n']]},
-    {id:'journal', icon:'◷', artwork:'journal', name:'Daily journal', description:'A focused page for reflection and daily notes.', files:[['journal.md','# Daily journal\n\n## Today\n\nWhat happened today?\n\n## Reflection\n\nWhat did I learn?\n']]},
-    {id:'notes', icon:'✎', artwork:'meeting', name:'Meeting notes', description:'Agenda, notes, and next steps.', files:[['meeting.md','# Meeting notes\n\nDate: \nAttendees: \n\n## Agenda\n\n- \n\n## Notes\n\n\n## Next steps\n\n- \n']]},
+    {id:'letter', icon:'✉', artwork:'letter', name:'Letter', description:'Greeting, body, and closing for a formal note.', files:[['letter.md','<h1>Letter</h1><p>Date: </p><p>Dear </p><p>Write your message here.</p><p>Sincerely,</p>']]},
+    {id:'journal', icon:'◷', artwork:'journal', name:'Daily journal', description:'A focused page for reflection and daily notes.', files:[['journal.md','<h1>Daily journal</h1><h2>Today</h2><p>What happened today?</p><h2>Reflection</h2><p>What did I learn?</p>']]},
+    {id:'notes', icon:'✎', artwork:'meeting', name:'Meeting notes', description:'Agenda, notes, and next steps.', files:[['meeting.md','<h1>Meeting notes</h1><p>Date: </p><p>Attendees: </p><h2>Agenda</h2><ul><li></li></ul><h2>Notes</h2><p></p><h2>Next steps</h2><ul><li></li></ul>']]},
     {id:'book', icon:'▤', artwork:'book', name:'Book project', description:'Outline, characters, research, and chapter files.', book:true}
   ];
 
@@ -40,6 +41,25 @@
   function saveWorkspace() { localStorage.setItem(workspaceKey, JSON.stringify(workspace)); }
   function setStatus(text) { $('saveStatus').textContent = text; }
   function editorText() { return (editor.innerText || '').replace(/\u00a0/g, ' '); }
+  function editorHtml() {
+    var clone = editor.cloneNode(true);
+    clone.querySelectorAll('.spell-error').forEach(function (el) {
+      el.parentNode.replaceChild(document.createTextNode(el.textContent), el);
+    });
+    return clone.innerHTML;
+  }
+  function activeBlock() {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return editor;
+    var node = sel.anchorNode;
+    if (!node || node === editor) return editor;
+    if (node.nodeType === 3) node = node.parentNode;
+    while (node && node.parentNode && node.parentNode !== editor) node = node.parentNode;
+    return (node && editor.contains(node)) ? node : editor;
+  }
+  function stripMarkdownNoise(text) {
+    return String(text || '').replace(/^\s*#{1,6}\s+/, '').replace(/\*\*(.*?)\*\*/g, '$1').replace(/(^|\s)_([^_]+)_/g, '$1$2');
+  }
   function markdownToHtml(value) {
     return escapeHtml(String(value || ''))
       .replace(/^### (.*)$/gm, '<h3>$1</h3>')
@@ -121,10 +141,58 @@
   }
   function closeMenu() { $('newMenu').hidden = true; $('newBtn').setAttribute('aria-expanded', 'false'); }
   function closeContextMenu() { $('contextMenu').hidden = true; }
+  function replaceSpellSpan(el, word) {
+    if (!el) return;
+    pushUndo();
+    var text = document.createTextNode(word);
+    el.parentNode.replaceChild(text, el);
+    editor.normalize();
+    changed();
+    focusEditor();
+    checkSpelling();
+  }
   function showContextMenu(event, fileId) {
     event.preventDefault();
     contextFileId = fileId || workspace.activeId;
     var menu = $('contextMenu');
+    var old = menu.querySelector('.spell-fix-row');
+    if (old) old.remove();
+    var spellEl = event.target && event.target.closest ? event.target.closest('.spell-error') : null;
+    if (spellEl && editor.contains(spellEl)) {
+      var row = document.createElement('div');
+      row.className = 'spell-fix-row';
+      var word = spellEl.dataset.word || spellEl.textContent;
+      var title = document.createElement('div');
+      title.className = 'spell-fix-title';
+      title.textContent = '“' + word + '” — suggestions';
+      row.appendChild(title);
+      var list = String(spellEl.dataset.suggestions || '').split('|').filter(Boolean).slice(0, 5);
+      if (!list.length) {
+        var none = document.createElement('div');
+        none.className = 'spell-fix-none';
+        none.textContent = 'No close match';
+        row.appendChild(none);
+      }
+      list.forEach(function (suggestion) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'spell-fix-item';
+        button.textContent = '✓ ' + suggestion;
+        button.onclick = function (ev) {
+          ev.stopPropagation();
+          closeContextMenu();
+          replaceSpellSpan(spellEl, suggestion);
+        };
+        row.appendChild(button);
+      });
+      var ignore = document.createElement('button');
+      ignore.type = 'button';
+      ignore.className = 'spell-fix-item spell-fix-ignore';
+      ignore.textContent = 'Ignore once';
+      ignore.onclick = function (ev) { ev.stopPropagation(); closeContextMenu(); };
+      row.appendChild(ignore);
+      menu.insertBefore(row, menu.firstChild);
+    }
     menu.hidden = false;
     menu.style.left = Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 8) + 'px';
     menu.style.top = Math.min(event.clientY, window.innerHeight - menu.offsetHeight - 8) + 'px';
@@ -362,7 +430,8 @@
   }
   function changed() {
     var f = activeFile(); if (!f) return;
-    f.text = editor.innerHTML; f.updated = Date.now(); updateStats(); setStatus('Unsaved changes');
+    if (markingSpell) return;
+    f.text = editorHtml(); f.updated = Date.now(); updateStats(); setStatus('Unsaved changes');
     rememberCaret();
     clearTimeout(saveTimer); saveTimer = setTimeout(save, 550); refreshSuggestions(); checkSpelling();
   }
@@ -404,16 +473,69 @@
       }).catch(function () { $('suggestions').innerHTML = '<span class="empty">Suggestions unavailable while offline.</span>'; });
     }, 130);
   }
+  function clearSpellMarks(root) {
+    (root || editor).querySelectorAll('.spell-error').forEach(function (el) {
+      el.parentNode.replaceChild(document.createTextNode(el.textContent), el);
+    });
+    (root || editor).normalize();
+  }
+  function wrapSpellRange(root, start, end, item) {
+    var a = nodeAtOffset(root, start), b = nodeAtOffset(root, end);
+    if (!a.node || a.node.nodeType !== 3 || a.node !== b.node) return;
+    if (a.node.parentNode && a.node.parentNode.classList && a.node.parentNode.classList.contains('spell-error')) return;
+    var text = a.node, value = text.nodeValue, parent = text.parentNode;
+    var before = value.slice(0, a.offset), mid = value.slice(a.offset, b.offset), after = value.slice(b.offset);
+    if (!mid) return;
+    var span = document.createElement('span');
+    span.className = 'spell-error';
+    span.dataset.word = item.word;
+    span.dataset.suggestions = (item.suggestions || []).map(function (s) { return s.word; }).join('|');
+    span.textContent = mid;
+    var frag = document.createDocumentFragment();
+    if (before) frag.appendChild(document.createTextNode(before));
+    frag.appendChild(span);
+    if (after) frag.appendChild(document.createTextNode(after));
+    parent.replaceChild(frag, text);
+  }
+  function markActiveLineSpelling(words) {
+    var block = activeBlock();
+    if (!block) return;
+    var offsets = selectionOffsets();
+    var caret = 0;
+    try {
+      var range = document.createRange();
+      range.selectNodeContents(block);
+      var sel = window.getSelection();
+      if (sel && sel.rangeCount && block.contains(sel.anchorNode)) {
+        var before = range.cloneRange();
+        before.setEnd(sel.anchorNode, sel.anchorOffset);
+        caret = before.toString().length;
+      }
+    } catch (e) {}
+    markingSpell = true;
+    clearSpellMarks(block);
+    (words || []).filter(function (item) { return !item.known; }).slice().reverse().forEach(function (item) {
+      if (caret > item.start && caret <= item.end) return;
+      wrapSpellRange(block, item.start, item.end, item);
+    });
+    markingSpell = false;
+    restoreSelection(offsets.start, offsets.end);
+  }
   function checkSpelling() {
     clearTimeout(spellTimer);
     spellTimer = setTimeout(function () {
+      var block = activeBlock();
+      var lineText = block ? (block.innerText || '').replace(/\u00a0/g, ' ') : editorText();
       fetch('/api/check?text=' + encodeURIComponent(editorText())).then(function (r) { return r.json(); }).then(function (data) {
         var words = data.words || [], unknown = words.filter(function (word) { return !word.known; }), known = words.length - unknown.length;
         $('editorStats').textContent = words.length + ' words · ' + known + ' dictionary words · ' + editorText().length + ' characters';
         $('spellBadge').textContent = unknown.length ? unknown.length + ' ISSUES' : 'CLEAN'; $('spellBadge').className = 'badge' + (unknown.length ? ' warn' : '');
-        $('spellSummary').textContent = unknown.length ? 'Choose a real dictionary correction below.' : 'Every Amharic word is in the Werket dictionary.';
+        $('spellSummary').textContent = unknown.length ? 'Yellow underline marks the active line. Right-click a word to correct it.' : 'Every Amharic word is in the Werket dictionary.';
         $('errors').innerHTML = unknown.slice(0, 8).map(function (item) { var buttons = (item.suggestions || []).slice(0, 3).map(function (s) { return '<button class="fix" data-fix="' + escapeHtml(s.word) + '" data-start="' + item.start + '" data-end="' + item.end + '">' + escapeHtml(s.word) + '</button>'; }).join(''); return '<div class="error-item"><span class="error-word">' + escapeHtml(item.word) + '</span><br>' + (buttons || '<span class="empty">No close match</span>') + '</div>'; }).join('');
         $('errors').querySelectorAll('[data-fix]').forEach(function (button) { button.onclick = function () { pushUndo(); focusEditor(); var start = Number(button.dataset.start), end = Number(button.dataset.end); replaceTextRange(start, end, button.dataset.fix); changed(); focusEditor(); }; });
+      }).catch(function () {});
+      fetch('/api/check?text=' + encodeURIComponent(lineText)).then(function (r) { return r.json(); }).then(function (data) {
+        markActiveLineSpelling(data.words || []);
       }).catch(function () {});
     }, 280);
   }
@@ -502,7 +624,7 @@
     });
   }
 
-  function bookFiles() { return [file('outline.md', '# Book outline\n\n## Premise\n\nWrite the central idea here.\n\n## Structure\n\n- Beginning\n- Middle\n- End\n', ''), file('characters.md', '# Characters\n\n## Main character\n\nName, desire, conflict, and change.\n', ''), file('chapter-01.md', '# Chapter 01\n\nBegin the first scene here.\n', 'chapters'), file('chapter-02.md', '# Chapter 02\n\nContinue the story here.\n', 'chapters'), file('research.md', '# Research notes\n\nKeep references and ideas here.\n', '')]; }
+  function bookFiles() { return [file('outline.md', '<h1>Book outline</h1><h2>Premise</h2><p>Write the central idea here.</p><h2>Structure</h2><ul><li>Beginning</li><li>Middle</li><li>End</li></ul>', ''), file('characters.md', '<h1>Characters</h1><h2>Main character</h2><p>Name, desire, conflict, and change.</p>', ''), file('chapter-01.md', '<h1>Chapter 01</h1><p>Begin the first scene here.</p>', 'chapters'), file('chapter-02.md', '<h1>Chapter 02</h1><p>Continue the story here.</p>', 'chapters'), file('research.md', '<h1>Research notes</h1><p>Keep references and ideas here.</p>', '')]; }
   function addCreatedFiles(created, projectName) {
     created.forEach(function (f) { workspace.files.push(f); });
     workspace.activeId = created[0].id;
@@ -554,6 +676,14 @@
     if (!event.target.closest('.context-menu')) closeContextMenu();
   });
   editor.addEventListener('contextmenu', function (event) { showContextMenu(event, workspace.activeId); });
+  // Double-click a yellow misspelling to instantly apply its best suggestion.
+  editor.addEventListener('dblclick', function (event) {
+    var spellEl = event.target && event.target.closest ? event.target.closest('.spell-error') : null;
+    if (!spellEl || !editor.contains(spellEl)) return;
+    event.preventDefault();
+    var best = String(spellEl.dataset.suggestions || '').split('|').filter(Boolean)[0];
+    if (best) replaceSpellSpan(spellEl, best);
+  });
   document.querySelectorAll('[data-context]').forEach(function (button) {
     button.onclick = function () {
       var action = button.dataset.context, id = contextFileId;
@@ -645,10 +775,109 @@
   $('fontSize').onchange = function () { workspace.size = Number($('fontSize').value); editor.style.fontSize = workspace.size + 'px'; save(); };
   $('zoom').onchange = function () { document.querySelector('.document-paper').style.transform = 'scale(' + $('zoom').value + ')'; document.querySelector('.document-paper').style.transformOrigin = 'top center'; };
   document.querySelectorAll('[data-align]').forEach(function (button) { button.onclick = function () { workspace.align = button.dataset.align; editor.style.textAlign = workspace.align; save(); }; });
+  function currentBlockNode() {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return null;
+    var node = sel.anchorNode;
+    if (!node) return null;
+    if (node.nodeType === 3) node = node.parentNode;
+    while (node && node !== editor && !/^(P|H1|H2|H3|DIV|LI|UL|OL)$/i.test(node.nodeName)) node = node.parentNode;
+    return (node && node !== editor) ? node : null;
+  }
+  function applyBlock(tag) {
+    var name = String(tag || 'p').replace(/[<>]/g, '').toLowerCase();
+    if (!/^(h1|h2|h3|p)$/.test(name)) name = 'p';
+    focusEditor();
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var block = currentBlockNode();
+    if (!block) {
+      // Wrap current selection/line in a new block element.
+      var replacement = document.createElement(name);
+      var range = sel.getRangeAt(0);
+      if (range.collapsed) {
+        replacement.innerHTML = '<br>';
+        range.insertNode(replacement);
+        range.setStart(replacement, 0);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        try {
+          replacement.appendChild(range.extractContents());
+          range.insertNode(replacement);
+          sel.removeAllRanges();
+          var after = document.createRange();
+          after.selectNodeContents(replacement);
+          after.collapse(false);
+          sel.addRange(after);
+        } catch (e) {}
+      }
+      return;
+    }
+    if (block.nodeName.toLowerCase() === name) {
+      // Toggle back to a normal paragraph - never insert ## markers.
+      var para = document.createElement('p');
+      para.innerHTML = block.innerHTML || '<br>';
+      block.parentNode.replaceChild(para, block);
+      return;
+    }
+    var next = document.createElement(name);
+    next.innerHTML = block.innerHTML || '<br>';
+    // Clean any stray markdown markers that may have been pasted in.
+    next.textContent = stripMarkdownNoise(next.textContent);
+    // Re-apply inline HTML lost by textContent cleanup only if there was none.
+    if (!next.innerHTML) next.innerHTML = '<br>';
+    block.parentNode.replaceChild(next, block);
+  }
+  function applyInline(tag) {
+    var name = String(tag || 'strong').toLowerCase();
+    if (name === 'b') name = 'strong';
+    if (name === 'i') name = 'em';
+    if (!/^(strong|em)$/.test(name)) return false;
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return false;
+    var range = sel.getRangeAt(0);
+    if (range.collapsed) {
+      // For a caret with no selection, use execCommand so future typing keeps the style.
+      try { return document.execCommand(name === 'strong' ? 'bold' : 'italic', false, null); } catch (e) { return false; }
+    }
+    var el = document.createElement(name);
+    try {
+      el.appendChild(range.extractContents());
+      // Strip stray ** or _ markers inside the bolded text.
+      el.textContent = stripMarkdownNoise(el.textContent);
+      range.insertNode(el);
+      sel.removeAllRanges();
+      var after = document.createRange();
+      after.selectNodeContents(el);
+      sel.addRange(after);
+      return true;
+    } catch (e) {
+      try { return document.execCommand(name === 'strong' ? 'bold' : 'italic', false, null); } catch (e2) { return false; }
+    }
+  }
   function applyFormat(command, value) {
     pushUndo();
+    var cmd = String(command || '').toLowerCase();
+    var val = String(value || '').replace(/[<>]/g, '').toLowerCase();
+    // Normalize toolbar + shortcut aliases to real HTML - never markdown symbols.
+    if (cmd === 'h1' || cmd === 'h2' || cmd === 'h3' || val === 'h1' || val === 'h2' || val === 'h3') {
+      applyBlock(val === 'h1' || val === 'h2' || val === 'h3' ? val : cmd);
+      changed(); focusEditor(); return;
+    }
+    if (cmd === 'formatblock') {
+      applyBlock(val || 'p');
+      changed(); focusEditor(); return;
+    }
+    if (cmd === 'bold' || cmd === 'strong') {
+      if (applyInline('strong')) { changed(); focusEditor(); return; }
+    }
+    if (cmd === 'italic' || cmd === 'em') {
+      if (applyInline('em')) { changed(); focusEditor(); return; }
+    }
     focusEditor();
-    document.execCommand(command, false, value || null);
+    try { document.execCommand(command, false, value || null); } catch (e) {}
     changed();
     focusEditor();
   }
