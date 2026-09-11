@@ -15,6 +15,12 @@ python3 app.py
 Open `http://localhost:8765`. On a phone or tablet, use **Install app** or
 **Add to Home screen**. Documents are saved locally in the browser.
 
+## Deploy
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ZebraCodeX/Werket)
+
+The Render Blueprint uses the included `render.yaml` and `Dockerfile`.
+
 Templates include Blank document, Letter, Daily journal, and Book project. The
 Book project creates an outline, characters file, research notes, and chapter
 files in a `chapters/` folder. Font family and size are adjustable in the
