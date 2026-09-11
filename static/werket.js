@@ -343,12 +343,8 @@
     editor.focus({preventScroll: true});
     restoreCaret();
   }
-  function onTap(el, fn) {
-    el.addEventListener('pointerdown', function (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    });
-    el.addEventListener('pointerup', function (event) {
+   function onTap(el, fn) {
+    el.addEventListener('click', function (event) {
       event.preventDefault();
       event.stopPropagation();
       fn(event);
