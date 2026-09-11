@@ -73,10 +73,18 @@
         <input id="importFile" type="file" accept=".txt,.md,.text" hidden>
         <button class="top-btn" id="exportBtn">Export</button>
         <button class="top-btn" id="printBtn">Print</button>
-        <button class="top-btn primary" id="saveBtn">Save</button>
+        <div class="menu-wrap">
+          <button class="top-btn primary" id="saveBtn" aria-haspopup="true" aria-expanded="false">Save</button>
+          <div id="saveMenu" class="menu" hidden>
+            <button data-save="local">Save to this device</button>
+            <button data-save="cloud" id="saveCloudBtn">Save to your account</button>
+            <div class="context-sep"></div>
+            <button data-save="download">Download as file</button>
+          </div>
+        </div>
       </nav>
       <div class="topbar-center"><span class="workspace-name">My workspace</span><span class="slash">/</span><input id="projectName" value="My documents" aria-label="Workspace name"></div>
-      <div class="top-actions"><span id="saveStatus" class="save-status">Ready</span><button class="theme-btn" id="themeBtn" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false">☾</button><button class="avatar" title="Local workspace">Z</button></div>
+      <div class="top-actions"><span id="saveStatus" class="save-status">Ready</span><button class="theme-btn" id="themeBtn" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false">☾</button><button class="avatar" id="avatarBtn" title="Account">Z</button></div>
     </header>
     <div class="app-body">
       <aside class="activitybar"><button class="activity" id="homeActivity" title="Home">⌂</button><button class="activity active" id="filesActivity" title="Files">▤</button><button class="activity" id="templatesActivity" title="Templates">✦</button><button class="activity" id="searchActivity" title="Find">⌕</button><div class="activity-bottom"><button class="activity" id="settingsBtn" title="Inspector">⚙</button></div></aside>
@@ -128,6 +136,38 @@
     <button data-context="delete" role="menuitem" class="danger-action">Delete</button>
   </div>
   <dialog id="templateDialog" class="template-dialog"><div class="dialog-head"><div><b>Start a new project</b><span>Choose a structure and begin writing.</span></div><button id="closeTemplates">×</button></div><div id="templateGrid" class="template-grid"></div></dialog>
+  <dialog id="authDialog" class="auth-dialog">
+    <div class="auth-panel">
+      <div class="auth-header">
+        <span class="brand-mark" style="width:40px;height:40px;font:24px sans-serif;border-radius:10px;background:#078930;color:#fff;display:grid;place-items:center">ፈ</span>
+        <div><b id="authTitle">Sign in to Werket</b><span class="auth-sub">Save your work across devices</span></div>
+        <button id="closeAuth" class="auth-close">×</button>
+      </div>
+      <form id="authForm" class="auth-form" autocomplete="on">
+        <div id="authNameField" class="auth-field" style="display:none">
+          <label for="authName">Name</label>
+          <input id="authName" type="text" placeholder="Your name" autocomplete="name">
+        </div>
+        <div class="auth-field">
+          <label for="authEmail">Email</label>
+          <input id="authEmail" type="email" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label for="authPassword">Password</label>
+          <input id="authPassword" type="password" placeholder="4+ characters" required minlength="4" autocomplete="current-password">
+        </div>
+        <div id="authError" class="auth-error" hidden></div>
+        <button type="submit" class="auth-submit" id="authSubmitBtn">Sign in</button>
+      </form>
+      <div class="auth-switch">
+        <span id="authSwitchText">Don't have an account?</span>
+        <button id="authSwitchBtn" type="button">Create one</button>
+      </div>
+      <div class="auth-local">
+        <button id="authStayLocal" type="button">Continue without account</button>
+      </div>
+    </div>
+  </dialog>
   <script src="/static/werket.js"></script>
   <script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});</script>
 </body>

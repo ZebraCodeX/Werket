@@ -12,6 +12,8 @@
   var caretStart = 0, caretEnd = 0;
   var contextFileId = null;
   var markingSpell = false;
+  var currentUser = null;
+  var saveMenuOpen = false;
   var families = ['ሀ','ለ','ሐ','መ','ሠ','ረ','ሰ','ሸ','ቀ','በ','ተ','ቸ','ኀ','ነ','ኘ','አ','ከ','ኸ','ወ','ዐ','ዘ','ዠ','የ','ደ','ጀ','ገ','ጠ','ጨ','ጰ','ጸ','ፀ'];
   var roman = ['h','l','H','m','S','r','s','sh','q','b','t','c','x','n','N','a','k','K','w','E','z','Z','y','d','j','g','T','C','P','S','D'];
   var orders = ['e','u','i','a','ie','silent','o'];
@@ -242,6 +244,103 @@
   function restoreCaret() {
     restoreSelection(caretStart, caretEnd);
   }
+  function checkSession() {
+    fetch('/api/me').then(function (r) { return r.json(); }).then(function (data) {
+      currentUser = data.user || null;
+      updateAvatar();
+    }).catch(function () { currentUser = null; updateAvatar(); });
+  }
+  function updateAvatar() {
+    var btn = $('avatarBtn');
+    if (!btn) return;
+    if (currentUser) {
+      btn.textContent = (currentUser.name || currentUser.email || 'U')[0].toUpperCase();
+      btn.title = currentUser.name + ' (' + currentUser.email + ') - Click to sign out';
+    } else {
+      btn.textContent = 'Z';
+      btn.title = 'Sign in to save across devices';
+    }
+  }
+  function showAuth(mode) {
+    var dialog = $('authDialog');
+    var isSignup = mode === 'signup';
+    $('authTitle').textContent = isSignup ? 'Create your account' : 'Sign in to Werket';
+    $('authSubmitBtn').textContent = isSignup ? 'Create account' : 'Sign in';
+    $('authNameField').style.display = isSignup ? 'flex' : 'none';
+    $('authSwitchText').textContent = isSignup ? 'Already have an account?' : "Don't have an account?";
+    $('authSwitchBtn').textContent = isSignup ? 'Sign in' : 'Create one';
+    $('authError').hidden = true;
+    $('authForm').dataset.mode = mode;
+    if (dialog.showModal) dialog.showModal(); else dialog.setAttribute('open', '');
+    setTimeout(function () { (isSignup ? $('authName') : $('authEmail')).focus(); }, 100);
+  }
+  function closeAuth() {
+    var dialog = $('authDialog');
+    if (dialog.open) dialog.close(); else dialog.removeAttribute('open');
+  }
+  function submitAuth(event) {
+    event.preventDefault();
+    var mode = $('authForm').dataset.mode || 'login';
+    var url = mode === 'signup' ? '/api/register' : '/api/login';
+    var body = {email: $('authEmail').value, password: $('authPassword').value};
+    if (mode === 'signup') body.name = $('authName').value;
+    var errEl = $('authError');
+    errEl.hidden = true;
+    fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})
+      .then(function (r) { return r.json().then(function (d) { return {ok: r.ok, data: d}; }); })
+      .then(function (result) {
+        if (!result.ok) { errEl.textContent = result.data.error || 'Error'; errEl.hidden = false; return; }
+        currentUser = result.data.user;
+        updateAvatar();
+        closeAuth();
+        setStatus('Signed in as ' + currentUser.name);
+        syncToCloud();
+      }).catch(function (e) { errEl.textContent = 'Network error'; errEl.hidden = false; });
+  }
+  function signOut() {
+    fetch('/api/logout', {method: 'POST'}).then(function () {
+      currentUser = null;
+      updateAvatar();
+      setStatus('Signed out');
+    }).catch(function () {});
+  }
+  function syncToCloud() {
+    if (!currentUser) return;
+    var payload = {files: workspace.files, openIds: workspace.openIds, activeId: workspace.activeId, projectName: workspace.projectName, font: workspace.font, size: workspace.size, align: workspace.align};
+    fetch('/api/files/save', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)})
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d.ok) setStatus('Saved to account'); })
+      .catch(function () { setStatus('Cloud save failed'); });
+  }
+  function loadFromCloud() {
+    if (!currentUser) return;
+    fetch('/api/files').then(function (r) { return r.json(); }).then(function (data) {
+      if (data.files && data.files.length) {
+        workspace.files = data.files;
+        workspace.openIds = data.openIds || [];
+        workspace.activeId = data.activeId || (data.files[0] && data.files[0].id);
+        workspace.projectName = data.projectName || 'My documents';
+        workspace.font = workspace.font || 'Noto Sans Ethiopic';
+        workspace.size = data.size || 18;
+        workspace.align = data.align || 'left';
+        saveWorkspace();
+        render();
+        setStatus('Loaded from account');
+      }
+    }).catch(function () {});
+  }
+  function showSaveMenu() {
+    var menu = $('saveMenu');
+    var btn = $('saveBtn');
+    saveMenuOpen = !saveMenuOpen;
+    menu.hidden = !saveMenuOpen;
+    btn.setAttribute('aria-expanded', saveMenuOpen ? 'true' : 'false');
+    if (saveMenuOpen) {
+      $('saveCloudBtn').textContent = currentUser ? 'Save to your account (' + currentUser.name + ')' : 'Sign in to save to cloud';
+    }
+  }
+  function closeSaveMenu() { saveMenuOpen = false; var m = $('saveMenu'); if (m) m.hidden = true; var b = $('saveBtn'); if (b) b.setAttribute('aria-expanded', 'false'); }
+
   function focusEditor() {
     if (document.activeElement === editor) {
       restoreCaret();
@@ -312,9 +411,40 @@
     });
     tree.innerHTML = html;
     tree.querySelectorAll('[data-file]').forEach(function (button) {
-      button.onclick = function () { openFile(button.dataset.file); };
-      button.ondblclick = function () { openFile(button.dataset.file); setStatus('Opened'); };
+      button.onclick = function (event) {
+        if (event.target.closest('[data-rename]') || event.target.closest('[data-filedel]')) return;
+        openFile(button.dataset.file);
+      };
+      button.ondblclick = function (event) {
+        if (event.target.closest('[data-rename]') || event.target.closest('[data-filedel]')) return;
+        openFile(button.dataset.file); setStatus('Opened');
+      };
       button.oncontextmenu = function (event) { showContextMenu(event, button.dataset.file); };
+    });
+    tree.querySelectorAll('[data-rename]').forEach(function (btn) {
+      btn.onclick = function (event) {
+        event.stopPropagation();
+        var fid = btn.dataset.rename;
+        var f = workspace.files.find(function (item) { return item.id === fid; });
+        if (!f) return;
+        var name = window.prompt('Rename file', f.name);
+        if (name && name.trim()) { f.name = name.trim(); save(); render(); }
+      };
+    });
+    tree.querySelectorAll('[data-filedel]').forEach(function (btn) {
+      btn.onclick = function (event) {
+        event.stopPropagation();
+        var fid = btn.dataset.filedel;
+        var f = workspace.files.find(function (item) { return item.id === fid; });
+        if (!f) return;
+        if (workspace.files.length <= 1) { window.alert('Keep at least one document.'); return; }
+        if (!window.confirm('Permanently delete ' + f.name + '? This cannot be undone.')) return;
+        workspace.files = workspace.files.filter(function (item) { return item.id !== fid; });
+        workspace.openIds = workspace.openIds.filter(function (item) { return item !== fid; });
+        if (workspace.activeId === fid) workspace.activeId = workspace.openIds[workspace.openIds.length - 1] || workspace.files[0].id;
+        if (!workspace.openIds.length) workspace.openIds = [workspace.activeId];
+        save(); render();
+      };
     });
     $('treeProjectName').textContent = (workspace.projectName || 'MY DOCUMENTS').toUpperCase();
     $('projectName').value = workspace.projectName || 'My documents';
@@ -689,7 +819,7 @@
   $('projectName').oninput = function () { workspace.projectName = $('projectName').value; $('treeProjectName').textContent = workspace.projectName.toUpperCase(); saveWorkspace(); };
   document.addEventListener('pointerdown', function (event) {
     if (!event.target.closest('.key[data-family]') && !event.target.closest('.orders')) hideOrders();
-    if (!event.target.closest('.menu-wrap')) closeMenu();
+    if (!event.target.closest('.menu-wrap')) { closeMenu(); closeSaveMenu(); }
     if (!event.target.closest('.context-menu')) closeContextMenu();
   });
   editor.addEventListener('contextmenu', function (event) { showContextMenu(event, workspace.activeId); });
@@ -735,6 +865,42 @@
       if (action === 'delete') return deleteFile();
     };
   });
+  $('saveMenu').querySelectorAll('[data-save]').forEach(function (button) {
+    button.onclick = function () {
+      closeSaveMenu();
+      var target = button.dataset.save;
+      if (target === 'local') { save(); setStatus('Saved to this device'); }
+      else if (target === 'cloud') {
+        if (currentUser) { syncToCloud(); }
+        else { showAuth('login'); }
+      }
+      else if (target === 'download') {
+        var f = activeFile();
+        if (f) {
+          var link = document.createElement('a');
+          link.href = URL.createObjectURL(new Blob([editorText()], {type:'text/plain;charset=utf-8'}));
+          link.download = f.name.replace(/\.md$/, '') + '.txt';
+          link.click();
+          URL.revokeObjectURL(link.href);
+        }
+      }
+    };
+  });
+  $('avatarBtn').onclick = function () {
+    if (currentUser) {
+      if (window.confirm('Signed in as ' + currentUser.name + ' (' + currentUser.email + ')\n\nSign out?')) signOut();
+    } else {
+      showAuth('login');
+    }
+  };
+  $('authForm').onsubmit = submitAuth;
+  $('authSwitchBtn').onclick = function () {
+    var mode = $('authForm').dataset.mode === 'signup' ? 'login' : 'signup';
+    showAuth(mode);
+  };
+  $('closeAuth').onclick = closeAuth;
+  $('authStayLocal').onclick = closeAuth;
+  $('authDialog').onclick = function (event) { if (event.target === $('authDialog')) closeAuth(); };
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') { hideOrders(); closeMenu(); closeContextMenu(); if ($('templateDialog').open) closeTemplates(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'n') { event.preventDefault(); showHome(); }
@@ -759,7 +925,10 @@
   editor.addEventListener('focus', function () { if (oskOpen) suppressNativeKeyboard(); });
   editor.addEventListener('touchstart', function () { if (oskOpen) suppressNativeKeyboard(); }, {passive: true});
 
-  $('saveBtn').onclick = save;
+  $('saveBtn').onclick = function (event) {
+    event.stopPropagation();
+    showSaveMenu();
+  };
   $('newBtn').onclick = function (event) {
     event.stopPropagation();
     var open = $('newMenu').hidden;
@@ -995,6 +1164,7 @@
   window.addEventListener('orientationchange', layoutChrome);
 
   initTheme();
+  checkSession();
   renderKeyboard();
   render();
   layoutChrome();
