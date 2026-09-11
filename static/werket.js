@@ -134,12 +134,7 @@
     while (workspace.files.some(function (f) { return f.name === name; })) { name = stem + ' ' + n + ext; n++; }
     return name;
   }
-  function shouldOfferOnScreenKeyboard() {
-    var narrow = window.matchMedia('(max-width: 820px)').matches;
-    var coarse = window.matchMedia('(pointer: coarse)').matches;
-    var noHover = window.matchMedia('(hover: none)').matches;
-    return narrow || (coarse && noHover);
-  }
+  function shouldOfferOnScreenKeyboard() { return true; }
   function closeMenu() { $('newMenu').hidden = true; $('newBtn').setAttribute('aria-expanded', 'false'); }
   function closeContextMenu() { $('contextMenu').hidden = true; }
   function replaceSpellSpan(el, word) {
@@ -487,10 +482,10 @@
     suggestTimer = setTimeout(function () {
       fetch('/api/suggest?text=' + encodeURIComponent(editorText())).then(function (r) { return r.json(); }).then(function (data) {
         var values = (data.words && data.words.length ? data.words : (data.next || [])).slice(0, 6);
-        var suggestionMarkup = values.length ? values.map(function (word) { return '<button class="suggestion" data-word="' + escapeHtml(word) + '">' + escapeHtml(word) + '</button>'; }).join('') : '<span class="empty">No dictionary suggestions yet.</span>';
+        var suggestionMarkup = values.length ? values.map(function (word) { return '<button class="suggestion" data-word="' + escapeHtml(word) + '">' + escapeHtml(word) + '</button>'; }).join('') : '<span class="empty">No suggestions yet.</span>';
         $('suggestions').innerHTML = suggestionMarkup;
         var keyboardSuggestions = document.getElementById('keyboardSuggestions');
-        if (keyboardSuggestions) keyboardSuggestions.innerHTML = suggestionMarkup;
+        if (keyboardSuggestions) keyboardSuggestions.innerHTML = '<span class="keyboard-suggest-label">Suggestions</span>' + suggestionMarkup;
         $('suggestions').querySelectorAll('[data-word]').forEach(function (button) { button.onclick = function () { replaceSuggestion(button.dataset.word); }; });
         if (keyboardSuggestions) keyboardSuggestions.querySelectorAll('[data-word]').forEach(function (button) { button.onclick = function () { replaceSuggestion(button.dataset.word); hideOrders(); }; });
       }).catch(function () { $('suggestions').innerHTML = '<span class="empty">Suggestions unavailable while offline.</span>'; });
@@ -626,7 +621,7 @@
   }
 
   function renderKeyboard() {
-    var host = $('keyboard'), layout = [7, 8, 8, 8], cursor = 0, html = '<div class="keyboard-suggest-row" id="keyboardSuggestions"><span class="empty">Type to see dictionary suggestions</span></div><div class="keyboard-hint">Tap a family for its seven orders · the small label is its phonetic key</div>';
+    var host = $('keyboard'), layout = [7, 8, 8, 8], cursor = 0, html = '<div class="keyboard-suggest-row" id="keyboardSuggestions"><span class="keyboard-suggest-label">Suggestions</span><span class="empty">Type to see dictionary words</span></div><div class="keyboard-hint">Tap a family for its seven orders · the small label is its phonetic key</div>';
     layout.forEach(function (size) { html += '<div class="keys">'; families.slice(cursor, cursor + size).forEach(function (family, offset) { html += '<button type="button" class="key" data-family="' + family + '"><span>' + family + '</span><small>' + roman[cursor + offset] + '</small></button>'; }); html += '</div>'; cursor += size; });
     html += '<div class="keys">' + symbols.slice(0, 9).map(function (symbol) { return '<button type="button" class="key fn" data-symbol="' + symbol + '">' + symbol + '</button>'; }).join('') + '<button type="button" class="key fn space" data-symbol=" ">SPACE</button><button type="button" class="key fn" data-symbol="\\n">⏎</button><button type="button" class="key fn" id="backspaceKey">⌫</button></div>';
     host.innerHTML = html;
