@@ -572,6 +572,12 @@
   function insert(text) {
     pushUndo();
     editor.focus({preventScroll: true});
+    if (text === '\n' || text === '\r\n') {
+      document.execCommand('insertLineBreak');
+      changed();
+      restoreCaret();
+      return;
+    }
     var sel = window.getSelection();
     var inserted = false;
     if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
