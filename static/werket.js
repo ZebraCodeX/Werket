@@ -124,8 +124,12 @@
     suggestTimer = setTimeout(function () {
       fetch('/api/suggest?text=' + encodeURIComponent(editor.value)).then(function (r) { return r.json(); }).then(function (data) {
         var values = (data.words && data.words.length ? data.words : (data.next || [])).slice(0, 6);
-        $('suggestions').innerHTML = values.length ? values.map(function (word) { return '<button class="suggestion" data-word="' + escapeHtml(word) + '">' + escapeHtml(word) + '</button>'; }).join('') : '<span class="empty">No dictionary suggestions yet.</span>';
+        var suggestionMarkup = values.length ? values.map(function (word) { return '<button class="suggestion" data-word="' + escapeHtml(word) + '">' + escapeHtml(word) + '</button>'; }).join('') : '<span class="empty">No dictionary suggestions yet.</span>';
+        $('suggestions').innerHTML = suggestionMarkup;
+        var keyboardSuggestions = document.getElementById('keyboardSuggestions');
+        if (keyboardSuggestions) keyboardSuggestions.innerHTML = suggestionMarkup;
         $('suggestions').querySelectorAll('[data-word]').forEach(function (button) { button.onclick = function () { replaceSuggestion(button.dataset.word); }; });
+        if (keyboardSuggestions) keyboardSuggestions.querySelectorAll('[data-word]').forEach(function (button) { button.onclick = function () { replaceSuggestion(button.dataset.word); }; });
       }).catch(function () { $('suggestions').innerHTML = '<span class="empty">Suggestions unavailable while offline.</span>'; });
     }, 130);
   }
@@ -172,7 +176,7 @@
   }
 
   function renderKeyboard() {
-    var host = $('keyboard'), layout = [8, 8, 8, 7], cursor = 0, html = '<div class="keyboard-hint">Tap a family for its seven orders · phonetic keys are shown below</div>';
+    var host = $('keyboard'), layout = [7, 8, 8, 8], cursor = 0, html = '<div class="keyboard-suggest-row" id="keyboardSuggestions"><span class="empty">Type to see dictionary suggestions</span></div><div class="keyboard-hint">Tap a family for its seven orders · the small label is its phonetic key</div>';
     layout.forEach(function (size) { html += '<div class="keys">'; families.slice(cursor, cursor + size).forEach(function (family, offset) { html += '<button class="key" data-family="' + family + '"><span>' + family + '</span><small>' + roman[cursor + offset] + '</small></button>'; }); html += '</div>'; cursor += size; });
     html += '<div class="keys">' + symbols.slice(0, 9).map(function (symbol) { return '<button class="key fn" data-symbol="' + symbol + '">' + symbol + '</button>'; }).join('') + '<button class="key fn space" data-symbol=" ">SPACE</button><button class="key fn" id="backspaceKey">⌫</button></div>';
     host.innerHTML = html;
