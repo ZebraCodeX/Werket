@@ -220,7 +220,6 @@
   }
 
   function suppressNativeKeyboard() {
-    editor.setAttribute('readonly', 'true');
     editor.setAttribute('inputmode', 'none');
     editor.setAttribute('virtualkeyboardpolicy', 'manual');
     if (navigator.virtualKeyboard && navigator.virtualKeyboard.hide) {
@@ -228,13 +227,8 @@
     }
   }
   function allowNativeKeyboard() {
-    editor.removeAttribute('readonly');
     editor.setAttribute('inputmode', 'text');
     editor.removeAttribute('virtualkeyboardpolicy');
-  }
-  function syncNativeKeyboard() {
-    if (oskOpen && shouldOfferOnScreenKeyboard() && document.activeElement !== editor) suppressNativeKeyboard();
-    else allowNativeKeyboard();
   }
   function rememberCaret() {
     var offsets = selectionOffsets();
@@ -346,7 +340,6 @@
       restoreCaret();
       return;
     }
-    syncNativeKeyboard();
     editor.focus({preventScroll: true});
     restoreCaret();
   }
@@ -379,7 +372,6 @@
     hideOrders();
     if (oskOpen) {
       suppressNativeKeyboard();
-      if (document.activeElement === editor) editor.blur();
       setTimeout(function () { focusEditor(); }, 0);
     } else {
       allowNativeKeyboard();
@@ -579,21 +571,11 @@
 
   function insert(text) {
     pushUndo();
-    var wasReadonly = editor.hasAttribute('readonly');
-    if (wasReadonly) editor.removeAttribute('readonly');
     editor.focus({preventScroll: true});
     var offsets = selectionOffsets();
     replaceTextRange(offsets.start, offsets.end, text);
     changed();
-    if (wasReadonly) {
-      setTimeout(function () {
-        editor.setAttribute('readonly', 'true');
-        editor.focus({preventScroll: true});
-        restoreCaret();
-      }, 0);
-    } else {
-      restoreCaret();
-    }
+    restoreCaret();
   }
   function replaceSuggestion(word) {
     pushUndo();
@@ -771,22 +753,12 @@
     onTap($('backspaceKey'), function () {
       hideOrders();
       pushUndo();
-      var wasReadonly = editor.hasAttribute('readonly');
-      if (wasReadonly) editor.removeAttribute('readonly');
       editor.focus({preventScroll: true});
       var offsets = selectionOffsets(), p = offsets.start, q = offsets.end;
       if (q > p) replaceTextRange(p, q, '');
       else if (p > 0) replaceTextRange(p - 1, p, '');
       changed();
-      if (wasReadonly) {
-        setTimeout(function () {
-          editor.setAttribute('readonly', 'true');
-          editor.focus({preventScroll: true});
-          restoreCaret();
-        }, 0);
-      } else {
-        restoreCaret();
-      }
+      restoreCaret();
     });
   }
 
@@ -941,8 +913,8 @@
     else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') { event.preventDefault(); window.print(); }
     else { phoneticKey(event); }
   });
-  editor.addEventListener('focus', function () { if (oskOpen) suppressNativeKeyboard(); });
-  editor.addEventListener('touchstart', function () { if (oskOpen) suppressNativeKeyboard(); }, {passive: true});
+  editor.addEventListener('focus', function () {});
+  editor.addEventListener('touchstart', function () {}, {passive: true});
 
   $('saveBtn').onclick = function (event) {
     event.stopPropagation();
