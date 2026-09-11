@@ -140,7 +140,7 @@
     while (workspace.files.some(function (f) { return f.name === name; })) { name = stem + ' ' + n + ext; n++; }
     return name;
   }
-  function shouldOfferOnScreenKeyboard() { return true; }
+  function shouldOfferOnScreenKeyboard() { return isTouchDevice() || window.innerWidth < 1024; }
   function isTouchDevice() { return 'ontouchstart' in window || (navigator.maxTouchPoints > 0); }
   function closeMenu() { $('newMenu').hidden = true; $('newBtn').setAttribute('aria-expanded', 'false'); }
   function closeContextMenu() { $('contextMenu').hidden = true; }
@@ -346,20 +346,21 @@
     restoreCaret();
   }
    function onTap(el, fn) {
+    var lastRun = 0;
+    function run(event) {
+      var now = Date.now();
+      if (now - lastRun < 350) return;
+      lastRun = now;
+      event.preventDefault();
+      event.stopPropagation();
+      fn(event);
+    }
     el.addEventListener('pointerdown', function (event) {
       event.preventDefault();
       event.stopPropagation();
     });
-    el.addEventListener('pointerup', function (event) {
-      event.preventDefault();
-      event.stopPropagation();
-      fn(event);
-    });
-    el.addEventListener('click', function (event) {
-      event.preventDefault();
-      event.stopPropagation();
-      fn(event);
-    });
+    el.addEventListener('pointerup', run);
+    el.addEventListener('click', run);
   }
   function setOsk(open) {
     if (!shouldOfferOnScreenKeyboard()) {
@@ -380,6 +381,8 @@
     $('keyboardPanel').classList.toggle('open', oskOpen);
     document.body.classList.toggle('osk-open', oskOpen);
     $('keyboardBtn').classList.toggle('active', oskOpen);
+    $('keyboardBtn').textContent = oskOpen ? '⌄' : '⌃';
+    $('keyboardBtn').title = oskOpen ? 'Hide keyboard' : 'Show keyboard';
     localStorage.setItem(oskPrefKey, oskOpen ? '1' : '0');
     hideOrders();
     if (oskOpen) {
@@ -401,6 +404,7 @@
     if (!offer) setOsk(false);
     else {
       $('keyboardBtn').hidden = false;
+      $('keyboardBtn').textContent = oskOpen ? '⌄' : '⌃';
       if (oskOpen) setOsk(true);
     }
   }
