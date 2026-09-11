@@ -38,6 +38,25 @@
   function activeFile() { return workspace.files.find(function (f) { return f.id === workspace.activeId; }) || null; }
   function saveWorkspace() { localStorage.setItem(workspaceKey, JSON.stringify(workspace)); }
   function setStatus(text) { $('saveStatus').textContent = text; }
+  function applyTheme(theme) {
+    var dark = theme === 'dark';
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    var button = $('themeBtn');
+    if (button) {
+      button.textContent = dark ? '☀' : '☾';
+      button.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+      button.setAttribute('aria-label', button.title);
+      button.setAttribute('aria-pressed', String(dark));
+    }
+    var themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.content = dark ? '#172019' : '#233b7a';
+    localStorage.setItem('werket-theme', dark ? 'dark' : 'light');
+  }
+  function initTheme() {
+    var saved = localStorage.getItem('werket-theme');
+    var preferred = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    applyTheme(preferred);
+  }
   function uniqueName(base) {
     var name = base, n = 2, stem = base.replace(/(\.[^.]+)$/, ''), ext = (base.match(/(\.[^.]+)$/) || [''])[0];
     while (workspace.files.some(function (f) { return f.name === name; })) { name = stem + ' ' + n + ext; n++; }
@@ -77,9 +96,10 @@
     else allowNativeKeyboard();
   }
   function rememberCaret() {
-    if (document.activeElement !== editor) return;
-    caretStart = editor.selectionStart;
-    caretEnd = editor.selectionEnd;
+    try {
+      caretStart = editor.selectionStart;
+      caretEnd = editor.selectionEnd;
+    } catch (e) {}
   }
   function restoreCaret() {
     try { editor.setSelectionRange(caretStart, caretEnd); } catch (e) {}
@@ -277,6 +297,7 @@
   function changed() {
     var f = activeFile(); if (!f) return;
     f.text = editor.value; f.updated = Date.now(); updateStats(); setStatus('Unsaved changes');
+    rememberCaret();
     clearTimeout(saveTimer); saveTimer = setTimeout(save, 550); refreshSuggestions(); checkSpelling();
   }
   function save() { saveWorkspace(); renderTree(); setStatus('Saved locally'); }
@@ -488,6 +509,7 @@
   editor.addEventListener('keyup', rememberCaret);
   editor.addEventListener('click', rememberCaret);
   editor.addEventListener('select', rememberCaret);
+  editor.addEventListener('blur', rememberCaret);
   document.addEventListener('selectionchange', rememberCaret);
   editor.addEventListener('keydown', function (event) {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); save(); }
@@ -571,6 +593,7 @@
     URL.revokeObjectURL(link.href);
   };
   $('brandHome').onclick = showHome;
+  $('themeBtn').onclick = function () { applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'); };
 
   var deferredInstall = null;
   window.addEventListener('beforeinstallprompt', function (event) {
@@ -597,6 +620,7 @@
   window.addEventListener('resize', layoutChrome);
   window.addEventListener('orientationchange', layoutChrome);
 
+  initTheme();
   renderKeyboard();
   render();
   layoutChrome();

@@ -39,8 +39,10 @@ class WerketHttpTest(unittest.TestCase):
         self.assertEqual(status, 200)
         for marker in ('fileTree', 'templateDialog', 'fontFamily', 'fontSize', 'keyboardPanel',
                        'homeScreen', 'newBtn', 'newMenu', 'installBanner', 'og:title',
-             'application/ld+json'):
+                       'application/ld+json', 'themeBtn', 'hero-kicker'):
             self.assertIn(marker, html)
+        self.assertIn('aria-pressed', html)
+        self.assertNotIn('aggregateRating', html)
         self.assertIn('https://werket.onrender.com/', html)
         self.assertNotIn('werket-ug86.onrender.com', html)
         self.assertNotIn('id="lineNumbers"', html)

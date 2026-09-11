@@ -49,8 +49,7 @@
     "url": "https://werket.onrender.com/",
     "image": "https://werket.onrender.com/static/icon-512.png",
     "inLanguage": ["am", "en"],
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "aggregateRating": { "@type": "AggregateRating", "ratingValue": "5", "ratingCount": "1" }
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   }
   </script>
   <link rel="stylesheet" href="/static/werket.css">
@@ -77,7 +76,7 @@
         <button class="top-btn primary" id="saveBtn">Save</button>
       </nav>
       <div class="topbar-center"><span class="workspace-name">My workspace</span><span class="slash">/</span><input id="projectName" value="My documents" aria-label="Workspace name"></div>
-      <div class="top-actions"><span id="saveStatus" class="save-status">Ready</span><button class="avatar" title="Local workspace">Z</button></div>
+      <div class="top-actions"><span id="saveStatus" class="save-status">Ready</span><button class="theme-btn" id="themeBtn" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false">☾</button><button class="avatar" title="Local workspace">Z</button></div>
     </header>
     <div class="app-body">
       <aside class="activitybar"><button class="activity" id="homeActivity" title="Home">⌂</button><button class="activity active" id="filesActivity" title="Files">▤</button><button class="activity" id="templatesActivity" title="Templates">✦</button><button class="activity" id="searchActivity" title="Find">⌕</button><div class="activity-bottom"><button class="activity" id="settingsBtn" title="Inspector">⚙</button></div></aside>
@@ -90,7 +89,7 @@
       <main class="editor-area">
         <section id="homeScreen" class="home-screen" hidden>
           <div class="home-wrap">
-            <div class="home-hero"><h1>Create a document</h1><p>Start from a blank page or a starter template, like Pages and Word.</p></div>
+            <div class="home-hero"><div class="hero-kicker">አማርኛ · AMHARIC · ETHIOPIA</div><h1>Write your story in Amharic</h1><p>የአማርኛ ማስታወሻዎችን፣ ደብዳቤዎችን እና መጻሕፍትን በቀላሉ ይጻፉ።</p><p class="hero-secondary">A private, beautiful writing workspace for every Ethiopian voice, at home and around the world.</p></div>
             <div id="homeTemplates" class="home-templates"></div>
             <h2 class="home-recent-title">Recent</h2>
             <div id="homeRecent" class="home-recent"></div>
