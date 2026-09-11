@@ -9,6 +9,8 @@
   var phoneticBuffer = '', phoneticStart = 0, phoneticRendered = '';
   var undoStack = [], redoStack = [], applyingHistory = false;
   var oskOpen = false;
+  var deviceKeyboardMode = localStorage.getItem(oskPrefKey) === '0';
+  var tapStart = 0, tapX = 0, tapY = 0;
   var caretStart = 0, caretEnd = 0;
   var contextFileId = null;
   var markingSpell = false;
@@ -136,7 +138,7 @@
     while (workspace.files.some(function (f) { return f.name === name; })) { name = stem + ' ' + n + ext; n++; }
     return name;
   }
-  function shouldOfferOnScreenKeyboard() { return true; }
+  function shouldOfferOnScreenKeyboard() { return 'ontouchstart' in window || (navigator.maxTouchPoints > 0); }
   function closeMenu() { $('newMenu').hidden = true; $('newBtn').setAttribute('aria-expanded', 'false'); }
   function closeContextMenu() { $('contextMenu').hidden = true; }
   function replaceSpellSpan(el, word) {
@@ -370,6 +372,7 @@
     document.body.classList.add('touch-writing');
     $('keyboardBtn').hidden = false;
     oskOpen = !!open;
+    if (oskOpen) deviceKeyboardMode = false;
     $('keyboardPanel').hidden = !oskOpen;
     $('keyboardPanel').classList.toggle('open', oskOpen);
     document.body.classList.toggle('osk-open', oskOpen);
@@ -1062,7 +1065,16 @@
     else { phoneticKey(event); }
   });
   editor.addEventListener('focus', function () {});
-  editor.addEventListener('touchstart', function () {}, {passive: true});
+  editor.addEventListener('pointerdown', function (event) {
+    tapStart = Date.now();
+    tapX = event.clientX;
+    tapY = event.clientY;
+  });
+  editor.addEventListener('pointerup', function (event) {
+    if (shouldOfferOnScreenKeyboard() && !oskOpen && !deviceKeyboardMode && Date.now() - tapStart < 600 && Math.abs(event.clientX - tapX) < 12 && Math.abs(event.clientY - tapY) < 12) {
+      setOsk(true);
+    }
+  });
 
   $('saveBtn').onclick = function (event) {
     event.stopPropagation();
@@ -1086,8 +1098,16 @@
   $('templatesBtn').onclick = showTemplates;
   $('sidebarToggle').onclick = toggleExplorer;
   $('closeTemplates').onclick = closeTemplates;
-  $('keyboardBtn').onclick = function () { setOsk(!oskOpen); };
+  $('keyboardBtn').onclick = function () { deviceKeyboardMode = false; setOsk(!oskOpen); };
   $('closeKeyboard').onclick = function () { setOsk(false); };
+  $('deviceKbBtn').onclick = function () {
+    deviceKeyboardMode = true;
+    setOsk(false);
+    setTimeout(function () {
+      editor.focus({preventScroll: true});
+      restoreCaret();
+    }, 80);
+  };
   $('renameFileBtn').onclick = renameFile;
   $('duplicateFileBtn').onclick = duplicateFile;
   $('deleteFileBtn').onclick = deleteFile;
