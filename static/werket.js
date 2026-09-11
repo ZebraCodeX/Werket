@@ -215,9 +215,6 @@
     for (var i = 0; i < pops.length; i++) pops[i].remove();
   }
   function isHome() { return !$('homeScreen').hidden; }
-  function setActivity(id) {
-    document.querySelectorAll('.activity').forEach(function (button) { button.classList.toggle('active', button.id === id); });
-  }
 
   function suppressNativeKeyboard() {
     editor.setAttribute('inputmode', 'none');
@@ -367,7 +364,7 @@
     $('keyboardPanel').hidden = !oskOpen;
     $('keyboardPanel').classList.toggle('open', oskOpen);
     document.body.classList.toggle('osk-open', oskOpen);
-    $('keyboardBtn').textContent = oskOpen ? 'Hide keyboard' : 'Keyboard';
+    $('keyboardBtn').classList.toggle('active', oskOpen);
     localStorage.setItem(oskPrefKey, oskOpen ? '1' : '0');
     hideOrders();
     if (oskOpen) {
@@ -443,7 +440,6 @@
         save(); render();
       };
     });
-    $('treeProjectName').textContent = (workspace.projectName || 'MY DOCUMENTS').toUpperCase();
     $('projectName').value = workspace.projectName || 'My documents';
   }
 
@@ -479,17 +475,15 @@
     closeMenu();
     $('homeScreen').hidden = false;
     document.body.classList.add('home-open');
-    setActivity('homeActivity');
     setOsk(false);
     renderHome();
   }
   function hideHome() {
     $('homeScreen').hidden = true;
     document.body.classList.remove('home-open');
-    setActivity('filesActivity');
   }
 
-  function render() { renderTree(); renderTabs(); renderOutline(); loadActiveIntoEditor(); }
+  function render() { renderTree(); renderTabs(); loadActiveIntoEditor(); }
   function openFile(id) {
     if (!workspace.files.some(function (f) { return f.id === id; })) return;
     workspace.activeId = id;
@@ -852,9 +846,12 @@
   function renameFile() { var current = activeFile(); if (!current) return; var name = window.prompt('Rename file', current.name); if (name && name.trim()) { current.name = name.trim(); save(); render(); } }
   function duplicateFile() { var current = activeFile(); if (!current) return; var copy = file(uniqueName(current.name.replace(/(\.[^.]+)?$/, ' copy$1')), current.text, current.folder); workspace.files.push(copy); openFile(copy.id); save(); }
   function deleteFile() { var current = activeFile(); if (!current || workspace.files.length === 1) { window.alert('Keep at least one document in the workspace.'); return; } if (!window.confirm('Delete ' + current.name + '?')) return; workspace.files = workspace.files.filter(function (item) { return item.id !== current.id; }); workspace.openIds = workspace.openIds.filter(function (item) { return item !== current.id; }); workspace.activeId = workspace.openIds[workspace.openIds.length - 1] || workspace.files[0].id; if (!workspace.openIds.length) workspace.openIds = [workspace.activeId]; save(); render(); }
-  function toggleExplorer() { $('explorerPanel').classList.toggle('open'); setActivity($('explorerPanel').classList.contains('open') ? 'filesActivity' : 'homeActivity'); }
+  function toggleExplorer() {
+    $('explorerPanel').classList.toggle('open');
+    document.body.classList.toggle('sidebar-open', $('explorerPanel').classList.contains('open'));
+  }
 
-  $('projectName').oninput = function () { workspace.projectName = $('projectName').value; $('treeProjectName').textContent = workspace.projectName.toUpperCase(); saveWorkspace(); };
+  $('projectName').oninput = function () { workspace.projectName = $('projectName').value; saveWorkspace(); };
   document.addEventListener('pointerdown', function (event) {
     if (!event.target.closest('.menu-wrap')) { closeMenu(); closeSaveMenu(); }
     if (!event.target.closest('.context-menu')) closeContextMenu();
@@ -983,21 +980,8 @@
   $('newFromTemplate').onclick = function () { closeMenu(); showTemplates(); };
   $('printBtn').onclick = function () { hideHome(); window.print(); };
   $('newFileBtn').onclick = createFile;
-  $('newDocBtn').onclick = createBlank;
-  $('newProjectBtn').onclick = showTemplates;
   $('templatesBtn').onclick = showTemplates;
-  $('templatesActivity').onclick = function () { showTemplates(); setActivity('templatesActivity'); };
-  $('homeActivity').onclick = showHome;
-  $('filesActivity').onclick = function () {
-    var wasHome = isHome();
-    hideHome();
-    if (shouldOfferOnScreenKeyboard()) {
-      if (wasHome) $('explorerPanel').classList.add('open');
-      else $('explorerPanel').classList.toggle('open');
-    }
-    setActivity('filesActivity');
-  };
-  $('searchActivity').onclick = function () { hideHome(); $('findBar').classList.add('open'); $('findInput').focus(); setActivity('searchActivity'); };
+  $('sidebarToggle').onclick = toggleExplorer;
   $('closeTemplates').onclick = closeTemplates;
   $('keyboardBtn').onclick = function () { setOsk(!oskOpen); };
   $('closeKeyboard').onclick = function () { setOsk(false); };
