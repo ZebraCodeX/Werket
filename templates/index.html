@@ -130,46 +130,71 @@
         <div id="tabs" class="tabs"></div>
         <section class="editor-toolbar" aria-label="Editor toolbar">
           <div class="toolbar-left">
-            <button class="tool" id="undoBtn" title="Undo">↶</button>
-            <button class="tool" id="redoBtn" title="Redo">↷</button>
+            <button class="tool" id="undoBtn" title="Undo (Ctrl+Z)">↶</button>
+            <button class="tool" id="redoBtn" title="Redo (Ctrl+Shift+Z)">↷</button>
             <div class="toolbar-divider"></div>
-            <select id="fontFamily" class="toolbar-select font-select">
+            <select id="paragraphStyle" class="toolbar-select style-select" title="Paragraph Style">
+              <option value="body">Body</option>
+              <option value="heading1">Heading 1</option>
+              <option value="heading2">Heading 2</option>
+              <option value="heading3">Heading 3</option>
+              <option value="title">Title</option>
+              <option value="subtitle">Subtitle</option>
+              <option value="caption">Caption</option>
+              <option value="code">Code</option>
+              <option value="blockquote">Blockquote</option>
+            </select>
+            <select id="fontFamily" class="toolbar-select font-select" title="Font">
               <option value="Noto Sans Ethiopic">Noto Sans Ethiopic</option>
               <option value="Abyssinica SIL">Abyssinica SIL</option>
               <option value="Nyala">Nyala</option>
               <option value="Aptos">Aptos</option>
               <option value="Georgia">Georgia</option>
+              <option value="system-ui">System UI</option>
             </select>
-            <select id="fontSize" class="toolbar-select size-select">
+            <select id="fontSize" class="toolbar-select size-select" title="Font Size">
+              <option value="12">12</option>
               <option value="14">14</option>
               <option value="16">16</option>
               <option value="18" selected>18</option>
               <option value="20">20</option>
               <option value="24">24</option>
               <option value="28">28</option>
+              <option value="32">32</option>
+              <option value="36">36</option>
+              <option value="48">48</option>
             </select>
             <div class="toolbar-divider"></div>
             <button class="tool" data-command="bold" title="Bold (Ctrl+B)"><b>B</b></button>
             <button class="tool" data-command="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+            <button class="tool" data-command="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+            <button class="tool" data-command="strikethrough" title="Strikethrough">S</button>
             <div class="toolbar-divider"></div>
-            <button class="tool" data-command="formatBlock" data-value="h1" title="Heading 1">H1</button>
-            <button class="tool" data-command="formatBlock" data-value="h2" title="Heading 2">H2</button>
-            <div class="toolbar-divider"></div>
-            <button class="tool" data-command="insertUnorderedList" title="Bullet list">•</button>
-            <button class="tool" data-command="insertOrderedList" title="Numbered list">1.</button>
+            <button class="tool" data-command="insertUnorderedList" title="Bullet list (Ctrl+Shift+8)">•</button>
+            <button class="tool" data-command="insertOrderedList" title="Numbered list (Ctrl+Shift+7)">1.</button>
+            <button class="tool" id="pageBreakBtn" title="Page Break (Ctrl+Enter)">⎐</button>
+          </div>
+          <div class="toolbar-center">
+            <button class="tool" id="tocBtn" title="Table of Contents">☰</button>
+            <button class="tool" id="thumbnailsBtn" title="Page Thumbnails">⧉</button>
+            <button class="tool" id="inspectorBtn" title="Format Inspector" aria-pressed="false">⚙</button>
           </div>
           <div class="toolbar-right">
-            <button class="tool" data-align="left" title="Align left">⫷</button>
-            <button class="tool" data-align="center" title="Center">☰</button>
-            <button class="tool" data-align="right" title="Align right">⫸</button>
+            <button class="tool" data-align="left" title="Align Left (Ctrl+L)">⫷</button>
+            <button class="tool" data-align="center" title="Center (Ctrl+E)">☰</button>
+            <button class="tool" data-align="right" title="Align Right (Ctrl+R)">⫸</button>
+            <button class="tool" data-align="justify" title="Justify (Ctrl+J)">⫹</button>
             <div class="toolbar-divider"></div>
-            <select id="zoom" class="toolbar-select zoom-select">
+            <select id="zoom" class="toolbar-select zoom-select" title="Zoom">
+              <option value="0.75">75%</option>
               <option value="0.9">90%</option>
               <option value="1" selected>100%</option>
               <option value="1.1">110%</option>
               <option value="1.25">125%</option>
+              <option value="1.5">150%</option>
+              <option value="2">200%</option>
             </select>
-            <button class="tool" id="findBtn" title="Find in document">🔍</button>
+            <button class="tool" id="findBtn" title="Find (Ctrl+F)">🔍</button>
           </div>
         </section>
         <section class="document-stage">
@@ -180,10 +205,129 @@
             <button id="findNext">↓</button>
             <button id="closeFind">×</button>
           </div>
-          <div class="document-paper">
-            <div id="editor" class="document-editor" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off" data-placeholder="Start writing in Amharic..."></div>
+          <aside id="thumbnailsSidebar" class="thumbnails-sidebar" hidden>
+            <div class="sidebar-header"><span>Page Thumbnails</span><button id="closeThumbnails" class="sidebar-close">×</button></div>
+            <div id="pageThumbnails" class="page-thumbnails"></div>
+          </aside>
+          <aside id="tocSidebar" class="toc-sidebar" hidden>
+            <div class="sidebar-header"><span>Table of Contents</span><button id="closeToc" class="sidebar-close">×</button></div>
+            <div id="tocList" class="toc-list"></div>
+          </aside>
+          <div class="document-paper-wrapper">
+            <div class="document-paper" id="documentPaper">
+              <div id="editor" class="document-editor" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off" data-placeholder="Start writing in Amharic..."></div>
+            </div>
           </div>
         </section>
+        <aside id="inspectorSidebar" class="inspector-sidebar" hidden>
+          <div class="inspector-header">
+            <div class="inspector-tabs">
+              <button class="inspector-tab active" data-inspector="style">Style</button>
+              <button class="inspector-tab" data-inspector="text">Text</button>
+              <button class="inspector-tab" data-inspector="layout">Layout</button>
+            </div>
+            <button id="closeInspector" class="inspector-close" title="Close Inspector">×</button>
+          </div>
+          <div class="inspector-content">
+            <div id="inspectorStyle" class="inspector-panel">
+              <div class="inspector-section">
+                <label>Paragraph Style</label>
+                <select id="inspectorParagraphStyle" class="inspector-select"></select>
+              </div>
+              <div class="inspector-section">
+                <label>Character Style</label>
+                <select id="inspectorCharacterStyle" class="inspector-select">
+                  <option value="none">None</option>
+                  <option value="emphasis">Emphasis</option>
+                  <option value="strong">Strong</option>
+                  <option value="link">Link</option>
+                </select>
+              </div>
+              <div class="inspector-section">
+                <label>List Style</label>
+                <select id="inspectorListStyle" class="inspector-select">
+                  <option value="none">None</option>
+                  <option value="bullet">Bullet</option>
+                  <option value="number">Numbered</option>
+                  <option value="letter">Lettered</option>
+                  <option value="roman">Roman</option>
+                </select>
+              </div>
+            </div>
+            <div id="inspectorText" class="inspector-panel" hidden>
+              <div class="inspector-section">
+                <label>Font</label>
+                <select id="inspectorFontFamily" class="inspector-select"></select>
+              </div>
+              <div class="inspector-row">
+                <div><label>Size</label><input id="inspectorFontSize" type="number" class="inspector-input" min="6" max="144" step="1"></div>
+                <div><label>Color</label><input id="inspectorFontColor" type="color" class="inspector-color"></div>
+              </div>
+              <div class="inspector-row">
+                <div><label>Line Spacing</label><select id="inspectorLineSpacing" class="inspector-select"><option value="1">Single</option><option value="1.15">1.15</option><option value="1.5" selected>1.5</option><option value="2">Double</option><option value="2.5">2.5</option><option value="3">Triple</option></select></div>
+                <div><label>Paragraph Spacing</label><select id="inspectorParaSpacing" class="inspector-select"><option value="0">None</option><option value="6">6 pt</option><option value="12" selected>12 pt</option><option value="18">18 pt</option><option value="24">24 pt</option></select></div>
+              </div>
+              <div class="inspector-section">
+                <label>Text Effects</label>
+                <div class="inspector-toggles">
+                  <label class="switch-label"><input type="checkbox" id="inspectorBold"><span>Bold</span></label>
+                  <label class="switch-label"><input type="checkbox" id="inspectorItalic"><span>Italic</span></label>
+                  <label class="switch-label"><input type="checkbox" id="inspectorUnderline"><span>Underline</span></label>
+                  <label class="switch-label"><input type="checkbox" id="inspectorStrike"><span>Strikethrough</span></label>
+                </div>
+              </div>
+            </div>
+            <div id="inspectorLayout" class="inspector-panel" hidden>
+              <div class="inspector-section">
+                <label>Paper Size</label>
+                <select id="inspectorPaperSize" class="inspector-select">
+                  <option value="a4">A4 (210 × 297 mm)</option>
+                  <option value="letter">US Letter (8.5 × 11 in)</option>
+                  <option value="legal">US Legal (8.5 × 14 in)</option>
+                  <option value="a5">A5 (148 × 210 mm)</option>
+                  <option value="a3">A3 (297 × 420 mm)</option>
+                  <option value="custom">Custom...</option>
+                </select>
+              </div>
+              <div class="inspector-row">
+                <div><label>Width (mm)</label><input id="inspectorPaperWidth" type="number" class="inspector-input" min="50" max="1000" step="1"></div>
+                <div><label>Height (mm)</label><input id="inspectorPaperHeight" type="number" class="inspector-input" min="50" max="1000" step="1"></div>
+              </div>
+              <div class="inspector-section">
+                <label>Margins (mm)</label>
+                <div class="inspector-row">
+                  <div><label>Top</label><input id="inspectorMarginTop" type="number" class="inspector-input" min="0" max="100" step="1"></div>
+                  <div><label>Bottom</label><input id="inspectorMarginBottom" type="number" class="inspector-input" min="0" max="100" step="1"></div>
+                  <div><label>Left</label><input id="inspectorMarginLeft" type="number" class="inspector-input" min="0" max="100" step="1"></div>
+                  <div><label>Right</label><input id="inspectorMarginRight" type="number" class="inspector-input" min="0" max="100" step="1"></div>
+                </div>
+              </div>
+              <div class="inspector-section">
+                <label>Header / Footer</label>
+                <div class="inspector-toggles">
+                  <label class="switch-label"><input type="checkbox" id="inspectorHeader"><span>Header</span></label>
+                  <label class="switch-label"><input type="checkbox" id="inspectorFooter"><span>Footer</span></label>
+                  <label class="switch-label"><input type="checkbox" id="inspectorPageNumbers"><span>Page Numbers</span></label>
+                </div>
+                <div class="inspector-row">
+                  <div><label>Header Height</label><input id="inspectorHeaderHeight" type="number" class="inspector-input" min="10" max="100" step="1"></div>
+                  <div><label>Footer Height</label><input id="inspectorFooterHeight" type="number" class="inspector-input" min="10" max="100" step="1"></div>
+                </div>
+              </div>
+              <div class="inspector-section">
+                <label>Columns</label>
+                <select id="inspectorColumns" class="inspector-select">
+                  <option value="1">1 Column</option>
+                  <option value="2">2 Columns</option>
+                  <option value="3">3 Columns</option>
+                </select>
+                <div class="inspector-row" style="margin-top:8px;">
+                  <div><label>Column Gap</label><input id="inspectorColumnGap" type="number" class="inspector-input" min="0" max="50" step="1"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
         <div class="editor-status"><span id="fileStatus">Plain text · UTF-8</span><span id="editorStats">0 words · 0 dictionary words · 0 characters</span><button class="tool" id="keyboardBtn" title="Show keyboard">⌃</button></div>
          <section id="keyboardPanel" class="keyboard-panel" hidden>
           <div class="keyboard-grab" aria-hidden="true"></div>

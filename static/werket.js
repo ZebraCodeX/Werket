@@ -18,6 +18,14 @@
   var currentUser = null;
   var saveMenuOpen = false;
   var exportMenuOpen = false;
+  var inspectorOpen = false;
+  var thumbnailsOpen = false;
+  var tocOpen = false;
+  var pageBreakCounter = 0;
+  var paperSizes = {a4:{w:794,h:1123},letter:{w:816,h:1056},legal:{w:816,h:1344},a5:{w:559,h:794},a3:{w:1123,h:1587}};
+  var currentPaperSize = 'a4';
+  var margins = {top:72,right:72,bottom:72,left:72};
+  var headerFooter = {header:true,footer:true,pageNumbers:true,headerHeight:36,footerHeight:36};
   var families = ['ሀ','ለ','ሐ','መ','ሠ','ረ','ሰ','ሸ','ቀ','በ','ተ','ቸ','ኀ','ነ','ኘ','አ','ከ','ኸ','ወ','ዐ','ዘ','ዠ','የ','ደ','ጀ','ገ','ጠ','ጨ','ጰ','ጸ','ፀ'];
   var roman = ['h','l','H','m','S','r','s','sh','q','b','t','c','x','n','N','a','k','K','w','E','z','Z','y','d','j','g','T','C','P','S','D'];
   var orders = ['e','u','i','a','ie','silent','o'];
@@ -2277,6 +2285,427 @@ function addImportedFile(name, content) {
   document.querySelectorAll('#exportMenu [data-export]').forEach(function (button) { button.onclick = function () { closeExportMenu(); exportFile(button.dataset.export); }; });
   $('brandHome').onclick = showHome;
   $('themeBtn').onclick = function () { applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'); };
+
+  /* ======= PAGES-LIKE FEATURES ======= */
+
+  // Paragraph Style Dropdown
+  var paragraphStyles = {
+    body: {tag:'p', name:'Body'},
+    heading1: {tag:'h1', name:'Heading 1'},
+    heading2: {tag:'h2', name:'Heading 2'},
+    heading3: {tag:'h3', name:'Heading 3'},
+    title: {tag:'h1', name:'Title', className:'title-style'},
+    subtitle: {tag:'h2', name:'Subtitle', className:'subtitle-style'},
+    caption: {tag:'p', name:'Caption', className:'caption-style'},
+    code: {tag:'pre', name:'Code', className:'code-style'},
+    blockquote: {tag:'blockquote', name:'Blockquote'}
+  };
+  function applyParagraphStyle(styleKey) {
+    var style = paragraphStyles[styleKey];
+    if (!style) return;
+    pushUndo();
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var block = currentBlockNode();
+    var newTag = style.tag;
+    var className = style.className || '';
+    if (!block) {
+      var range = sel.getRangeAt(0);
+      var el = document.createElement(newTag);
+      if (className) el.className = className;
+      if (range.collapsed) el.innerHTML = '<br>';
+      else { el.appendChild(range.extractContents()); }
+      range.insertNode(el);
+      range.selectNodeContents(el);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else if (block.nodeName.toLowerCase() === newTag && (!className || block.className === className)) {
+      // Already this style, convert to body
+      var p = document.createElement('p');
+      p.innerHTML = block.innerHTML || '<br>';
+      block.parentNode.replaceChild(p, block);
+    } else {
+      var newEl = document.createElement(newTag);
+      newEl.innerHTML = block.innerHTML || '<br>';
+      if (className) newEl.className = className;
+      block.parentNode.replaceChild(newEl, block);
+    }
+    changed(); restoreCaret();
+    updateInspectorFromSelection();
+  }
+  if ($('paragraphStyle')) {
+    $('paragraphStyle').onchange = function () {
+      applyParagraphStyle(this.value);
+      this.value = 'body'; // Reset to show default
+    };
+  }
+
+  // Inspector Sidebar
+  function toggleInspector() {
+    inspectorOpen = !inspectorOpen;
+    document.body.classList.toggle('inspector-open', inspectorOpen);
+    $('inspectorBtn').setAttribute('aria-pressed', inspectorOpen);
+    if (inspectorOpen) {
+      updateInspectorFromSelection();
+      closeThumbnails();
+      closeToc();
+    }
+  }
+  function closeInspector() {
+    inspectorOpen = false;
+    document.body.classList.remove('inspector-open');
+    $('inspectorBtn').setAttribute('aria-pressed', 'false');
+  }
+  function switchInspectorTab(tab) {
+    document.querySelectorAll('.inspector-tab').forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.inspector === tab);
+    });
+    document.querySelectorAll('.inspector-panel').forEach(function (panel) {
+      panel.hidden = panel.id !== 'inspector' + tab.charAt(0).toUpperCase() + tab.slice(1);
+    });
+  }
+  function updateInspectorFromSelection() {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var block = currentBlockNode();
+    if (!block) return;
+    // Style panel
+    var tag = block.nodeName.toLowerCase();
+    var className = block.className || '';
+    var styleKey = 'body';
+    for (var k in paragraphStyles) {
+      if (paragraphStyles[k].tag === tag && (!paragraphStyles[k].className || paragraphStyles[k].className === className)) {
+        styleKey = k; break;
+      }
+    }
+    if ($('inspectorParagraphStyle')) $('inspectorParagraphStyle').value = styleKey;
+    // Text panel
+    if ($('inspectorFontFamily')) $('inspectorFontFamily').value = getComputedStyle(block).fontFamily.split(',')[0].trim().replace(/['"]/g, '');
+    if ($('inspectorFontSize')) $('inspectorFontSize').value = parseFloat(getComputedStyle(block).fontSize) || workspace.size;
+    if ($('inspectorFontColor')) $('inspectorFontColor').value = rgbToHex(getComputedStyle(block).color);
+    if ($('inspectorLineSpacing')) $('inspectorLineSpacing').value = getComputedStyle(block).lineHeight;
+    if ($('inspectorParaSpacing')) $('inspectorParaSpacing').value = parseFloat(getComputedStyle(block).marginBottom) * 1 || 12;
+    if ($('inspectorBold')) $('inspectorBold').checked = getComputedStyle(block).fontWeight >= 600 || getComputedStyle(block).fontWeight === 'bold';
+    if ($('inspectorItalic')) $('inspectorItalic').checked = getComputedStyle(block).fontStyle === 'italic';
+    if ($('inspectorUnderline')) $('inspectorUnderline').checked = getComputedStyle(block).textDecoration.includes('underline');
+    if ($('inspectorStrike')) $('inspectorStrike').checked = getComputedStyle(block).textDecoration.includes('line-through');
+  }
+  function rgbToHex(rgb) {
+    var m = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (!m) return '#000000';
+    return '#' + [m[1],m[2],m[3]].map(function(x){return parseInt(x).toString(16).padStart(2,'0');}).join('');
+  }
+  // Inspector event handlers
+  if ($('inspectorParagraphStyle')) {
+    $('inspectorParagraphStyle').onchange = function () { applyParagraphStyle(this.value); };
+  }
+  if ($('inspectorFontFamily')) {
+    $('inspectorFontFamily').onchange = function () {
+      pushUndo();
+      var block = currentBlockNode();
+      if (block) { block.style.fontFamily = this.value; changed(); }
+    };
+  }
+  if ($('inspectorFontSize')) {
+    $('inspectorFontSize').onchange = function () {
+      pushUndo();
+      var block = currentBlockNode();
+      if (block) { block.style.fontSize = this.value + 'px'; changed(); }
+    };
+  }
+  if ($('inspectorFontColor')) {
+    $('inspectorFontColor').onchange = function () {
+      pushUndo();
+      var block = currentBlockNode();
+      if (block) { block.style.color = this.value; changed(); }
+    };
+  }
+  if ($('inspectorLineSpacing')) {
+    $('inspectorLineSpacing').onchange = function () {
+      pushUndo();
+      var block = currentBlockNode();
+      if (block) { block.style.lineHeight = this.value; changed(); }
+    };
+  }
+  if ($('inspectorParaSpacing')) {
+    $('inspectorParaSpacing').onchange = function () {
+      pushUndo();
+      var block = currentBlockNode();
+      if (block) { block.style.marginBottom = this.value + 'px'; changed(); }
+    };
+  }
+  ['Bold','Italic','Underline','Strike'].forEach(function (prop) {
+    var el = $('inspector' + prop);
+    if (el) {
+      el.onchange = function () {
+        pushUndo();
+        var block = currentBlockNode();
+        if (!block) return;
+        var val = this.checked;
+        if (prop === 'Bold') block.style.fontWeight = val ? '700' : '400';
+        else if (prop === 'Italic') block.style.fontStyle = val ? 'italic' : 'normal';
+        else if (prop === 'Underline') block.style.textDecoration = val ? 'underline' : 'none';
+        else if (prop === 'Strike') block.style.textDecoration = val ? 'line-through' : 'none';
+        changed();
+      };
+    }
+  });
+
+  // Layout Inspector
+  function applyLayoutSettings() {
+    var paper = $('inspectorPaperSize');
+    if (paper) {
+      paper.onchange = function () {
+        var size = this.value;
+        if (size === 'custom') return;
+        currentPaperSize = size;
+        var sz = paperSizes[size];
+        applyPaperSize(sz.w, sz.h);
+      };
+    }
+    var width = $('inspectorPaperWidth'), height = $('inspectorPaperHeight');
+    if (width && height) {
+      function applyCustom() {
+        var w = parseInt(width.value) || paperSizes[currentPaperSize].w;
+        var h = parseInt(height.value) || paperSizes[currentPaperSize].h;
+        applyPaperSize(w, h);
+      }
+      width.onchange = applyCustom;
+      height.onchange = applyCustom;
+    }
+    ['Top','Right','Bottom','Left'].forEach(function (side) {
+      var el = $('inspectorMargin' + side);
+      if (el) el.onchange = function () {
+        margins[side.toLowerCase()] = parseInt(this.value) || 72;
+        applyMargins();
+      };
+    });
+    if ($('inspectorHeader')) $('inspectorHeader').onchange = function () { headerFooter.header = this.checked; applyHeaderFooter(); };
+    if ($('inspectorFooter')) $('inspectorFooter').onchange = function () { headerFooter.footer = this.checked; applyHeaderFooter(); };
+    if ($('inspectorPageNumbers')) $('inspectorPageNumbers').onchange = function () { headerFooter.pageNumbers = this.checked; applyHeaderFooter(); };
+    if ($('inspectorHeaderHeight')) $('inspectorHeaderHeight').onchange = function () { headerFooter.headerHeight = parseInt(this.value) || 36; applyHeaderFooter(); };
+    if ($('inspectorFooterHeight')) $('inspectorFooterHeight').onchange = function () { headerFooter.footerHeight = parseInt(this.value) || 36; applyHeaderFooter(); };
+    if ($('inspectorColumns')) $('inspectorColumns').onchange = function () { editor.style.columnCount = this.value; };
+    if ($('inspectorColumnGap')) $('inspectorColumnGap').onchange = function () { editor.style.columnGap = this.value + 'px'; };
+  }
+
+  function applyPaperSize(w, h) {
+    var paper = $('documentPaper');
+    if (!paper) return;
+    paper.style.width = w + 'px';
+    paper.style.minHeight = h + 'px';
+    paper.dataset.paper = currentPaperSize;
+    paperSizes[currentPaperSize] = {w:w, h:h};
+    // Update width/height inputs
+    if ($('inspectorPaperWidth')) $('inspectorPaperWidth').value = w;
+    if ($('inspectorPaperHeight')) $('inspectorPaperHeight').value = h;
+  }
+  function applyMargins() {
+    var paper = $('documentPaper');
+    if (!paper) return;
+    paper.style.setProperty('--margin-top', margins.top + 'px');
+    paper.style.setProperty('--margin-right', margins.right + 'px');
+    paper.style.setProperty('--margin-bottom', margins.bottom + 'px');
+    paper.style.setProperty('--margin-left', margins.left + 'px');
+    // Update editor padding
+    editor.style.paddingTop = margins.top + 'px';
+    editor.style.paddingRight = margins.right + 'px';
+    editor.style.paddingBottom = margins.bottom + 'px';
+    editor.style.paddingLeft = margins.left + 'px';
+    // Update margin inputs
+    if ($('inspectorMarginTop')) $('inspectorMarginTop').value = margins.top;
+    if ($('inspectorMarginRight')) $('inspectorMarginRight').value = margins.right;
+    if ($('inspectorMarginBottom')) $('inspectorMarginBottom').value = margins.bottom;
+    if ($('inspectorMarginLeft')) $('inspectorMarginLeft').value = margins.left;
+  }
+  function applyHeaderFooter() {
+    var paper = $('documentPaper');
+    if (!paper) return;
+    // Header
+    var header = paper.querySelector('.page-header') || document.createElement('div');
+    header.className = 'page-header';
+    if (headerFooter.header) {
+      header.style.display = 'block';
+      header.style.top = 'calc(var(--margin-top, 72px) - ' + headerFooter.headerHeight + 'px)';
+      header.style.height = headerFooter.headerHeight + 'px';
+    } else { header.style.display = 'none'; }
+    // Footer
+    var footer = paper.querySelector('.page-footer') || document.createElement('div');
+    footer.className = 'page-footer';
+    if (headerFooter.footer) {
+      footer.style.display = 'block';
+      footer.style.bottom = 'calc(var(--margin-bottom, 72px) - ' + headerFooter.footerHeight + 'px)';
+      footer.style.height = headerFooter.footerHeight + 'px';
+    } else { footer.style.display = 'none'; }
+    // Page numbers
+    var pnum = paper.querySelector('.page-number') || document.createElement('div');
+    pnum.className = 'page-number';
+    pnum.style.display = headerFooter.pageNumbers ? 'block' : 'none';
+    // Ensure elements are in DOM
+    if (!paper.contains(header)) paper.insertBefore(header, paper.firstChild);
+    if (!paper.contains(footer)) paper.appendChild(footer);
+    if (!paper.contains(pnum)) paper.appendChild(pnum);
+    // Update inputs
+    if ($('inspectorHeader')) $('inspectorHeader').checked = headerFooter.header;
+    if ($('inspectorFooter')) $('inspectorFooter').checked = headerFooter.footer;
+    if ($('inspectorPageNumbers')) $('inspectorPageNumbers').checked = headerFooter.pageNumbers;
+    if ($('inspectorHeaderHeight')) $('inspectorHeaderHeight').value = headerFooter.headerHeight;
+    if ($('inspectorFooterHeight')) $('inspectorFooterHeight').value = headerFooter.footerHeight;
+  }
+
+  // Page Break
+  function insertPageBreak() {
+    pushUndo();
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    var pb = document.createElement('div');
+    pb.className = 'page-break';
+    pb.setAttribute('data-page-break', 'true');
+    range.insertNode(pb);
+    range.setStartAfter(pb);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    changed();
+    updateThumbnails();
+  }
+
+  // Thumbnails Sidebar
+  function toggleThumbnails() {
+    thumbnailsOpen = !thumbnailsOpen;
+    document.body.classList.toggle('thumbnails-open', thumbnailsOpen);
+    $('thumbnailsBtn').setAttribute('aria-pressed', thumbnailsOpen);
+    if (thumbnailsOpen) {
+      updateThumbnails();
+      closeInspector();
+      closeToc();
+    }
+  }
+  function closeThumbnails() {
+    thumbnailsOpen = false;
+    document.body.classList.remove('thumbnails-open');
+    $('thumbnailsBtn').setAttribute('aria-pressed', 'false');
+  }
+  function updateThumbnails() {
+    var container = $('pageThumbnails');
+    if (!container) return;
+    // For now, render a single page thumbnail representing the document
+    // In a full implementation, we'd split content by page breaks and render each
+    var html = '';
+    var paper = $('documentPaper');
+    if (paper) {
+      // Use canvas to render thumbnail
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      var scale = 0.3;
+      canvas.width = paper.offsetWidth * scale;
+      canvas.height = paper.offsetHeight * scale;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Draw a simplified representation
+      ctx.fillStyle = '#e0e0e0';
+      ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20);
+      html = '<div class="page-thumbnail active" title="Page 1"><canvas></canvas><span class="page-number-badge">1</span></div>';
+    }
+    container.innerHTML = html;
+    // Actually draw on canvas
+    setTimeout(function() {
+      var c = container.querySelector('canvas');
+      if (c) {
+        var ctx2 = c.getContext('2d');
+        var p = $('documentPaper');
+        if (p) {
+          // Draw background
+          ctx2.fillStyle = '#fff';
+          ctx2.fillRect(0, 0, c.width, c.height);
+          // Draw page border
+          ctx2.strokeStyle = '#ddd';
+          ctx2.lineWidth = 1;
+          ctx2.strokeRect(2, 2, c.width - 4, c.height - 4);
+        }
+      }
+    }, 0);
+  }
+
+  // Table of Contents Sidebar
+  function toggleToc() {
+    tocOpen = !tocOpen;
+    document.body.classList.toggle('toc-open', tocOpen);
+    $('tocBtn').setAttribute('aria-pressed', tocOpen);
+    if (tocOpen) {
+      updateToc();
+      closeInspector();
+      closeThumbnails();
+    }
+  }
+  function closeToc() {
+    tocOpen = false;
+    document.body.classList.remove('toc-open');
+    $('tocBtn').setAttribute('aria-pressed', 'false');
+  }
+  function updateToc() {
+    var list = $('tocList');
+    if (!list) return;
+    var headings = editor.querySelectorAll('h1, h2, h3');
+    var html = '';
+    headings.forEach(function (h, i) {
+      var level = h.tagName.toLowerCase();
+      var text = h.textContent.trim();
+      if (!text) return;
+      var id = 'toc-' + i;
+      h.id = id;
+      html += '<a class="toc-item toc-' + level + '" href="#' + id + '">' + escapeHtml(text) + '</a>';
+    });
+    list.innerHTML = html || '<div style="padding:16px;color:var(--muted);text-align:center;">No headings</div>';
+    // Make links work
+    list.querySelectorAll('a').forEach(function (a) {
+      a.onclick = function (e) {
+        e.preventDefault();
+        var target = document.getElementById(this.getAttribute('href').slice(1));
+        if (target) target.scrollIntoView({behavior:'smooth'});
+      };
+    });
+  }
+
+  // Event handlers for new toolbar buttons
+  if ($('pageBreakBtn')) $('pageBreakBtn').onclick = insertPageBreak;
+  if ($('inspectorBtn')) $('inspectorBtn').onclick = toggleInspector;
+  if ($('closeInspector')) $('closeInspector').onclick = closeInspector;
+  document.querySelectorAll('.inspector-tab').forEach(function (btn) {
+    btn.onclick = function () { switchInspectorTab(btn.dataset.inspector); };
+  });
+  if ($('thumbnailsBtn')) $('thumbnailsBtn').onclick = toggleThumbnails;
+  if ($('closeThumbnails')) $('closeThumbnails').onclick = closeThumbnails;
+  if ($('tocBtn')) $('tocBtn').onclick = toggleToc;
+  if ($('closeToc')) $('closeToc').onclick = closeToc;
+
+  // Initialize inspector layout settings
+  applyLayoutSettings();
+  applyPaperSize(paperSizes[currentPaperSize].w, paperSizes[currentPaperSize].h);
+  applyMargins();
+  applyHeaderFooter();
+
+  // Keyboard shortcuts for page break
+  document.addEventListener('keydown', function (event) {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+      event.preventDefault();
+      insertPageBreak();
+    }
+  });
+
+  // Escape key closes all sidebars
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+      hideOrders(); closeMenu(); closeContextMenu();
+      if ($('newDocDialog').open) closeNewDocDialog();
+      if ($('templateDialog').open) closeTemplates();
+      if (inspectorOpen) closeInspector();
+      if (thumbnailsOpen) closeThumbnails();
+      if (tocOpen) closeToc();
+    }
+  });
 
   var deferredInstall = null;
   window.addEventListener('beforeinstallprompt', function (event) {
