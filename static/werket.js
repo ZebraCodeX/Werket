@@ -341,6 +341,15 @@
     restoreCaret();
   }
    function onTap(el, fn) {
+    el.addEventListener('pointerdown', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    el.addEventListener('pointerup', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      fn(event);
+    });
     el.addEventListener('click', function (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -589,8 +598,8 @@
     newRange.collapse(true);
     sel.removeAllRanges();
     sel.addRange(newRange);
+    rememberCaret();
     changed();
-    restoreCaret();
   }
   function insert(text) {
     pushUndo();
