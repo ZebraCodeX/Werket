@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://werket-ug86.onrender.com/sitemap.xml
+Sitemap: https://werket.onrender.com/sitemap.xml

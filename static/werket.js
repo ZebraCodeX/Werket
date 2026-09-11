@@ -35,7 +35,7 @@
 
   function file(name, text, folder) { return {id:newId(), name:name, text:text || '', folder:folder || '', updated:Date.now()}; }
   function escapeHtml(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-  function activeFile() { return workspace.files.find(function (f) { return f.id === workspace.activeId; }) || workspace.files[0]; }
+  function activeFile() { return workspace.files.find(function (f) { return f.id === workspace.activeId; }) || null; }
   function saveWorkspace() { localStorage.setItem(workspaceKey, JSON.stringify(workspace)); }
   function setStatus(text) { $('saveStatus').textContent = text; }
   function uniqueName(base) {
@@ -213,12 +213,22 @@
   function closeFile(id) {
     workspace.openIds = workspace.openIds.filter(function (item) { return item !== id; });
     if (workspace.activeId === id) workspace.activeId = workspace.openIds[workspace.openIds.length - 1] || workspace.files[0].id;
-    if (!workspace.openIds.length) workspace.openIds = [workspace.activeId];
+    if (!workspace.openIds.length) {
+      workspace.activeId = null;
+      showHome();
+    }
     render(); saveWorkspace();
   }
   function loadActiveIntoEditor() {
     var f = activeFile();
-    if (!f) return;
+    if (!f) {
+      applyingHistory = true;
+      editor.value = '';
+      applyingHistory = false;
+      $('fileStatus').textContent = 'No document open';
+      updateStats();
+      return;
+    }
     applyingHistory = true;
     editor.value = f.text;
     applyingHistory = false;
@@ -553,6 +563,7 @@
   };
   $('exportBtn').onclick = function () {
     var f = activeFile();
+    if (!f) { setStatus('Open a document before exporting'); return; }
     var link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([f.text], {type:'text/plain;charset=utf-8'}));
     link.download = f.name.replace(/\.md$/, '') + '.txt';

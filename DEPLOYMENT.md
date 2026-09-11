@@ -2,6 +2,8 @@
 
 ## Website
 
+Production URL: https://werket.onrender.com/
+
 The repository includes `Dockerfile` and `render.yaml` for Render:
 
 1. Create a Render account and choose **New > Blueprint**.

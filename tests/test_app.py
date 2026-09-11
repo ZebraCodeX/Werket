@@ -39,8 +39,10 @@ class WerketHttpTest(unittest.TestCase):
         self.assertEqual(status, 200)
         for marker in ('fileTree', 'templateDialog', 'fontFamily', 'fontSize', 'keyboardPanel',
                        'homeScreen', 'newBtn', 'newMenu', 'installBanner', 'og:title',
-                       'application/ld+json'):
+             'application/ld+json'):
             self.assertIn(marker, html)
+        self.assertIn('https://werket.onrender.com/', html)
+        self.assertNotIn('werket-ug86.onrender.com', html)
         self.assertNotIn('id="lineNumbers"', html)
 
     def test_manifest_has_store_icons(self):
@@ -49,6 +51,12 @@ class WerketHttpTest(unittest.TestCase):
         self.assertEqual(payload['name'], 'Werket — Amharic Editor')
         self.assertTrue(payload['icons'])
         self.assertTrue(payload['screenshots'])
+
+    def test_search_files_use_production_url(self):
+        for path in ('/robots.txt', '/sitemap.xml'):
+            status, body = self.get(path)
+            self.assertEqual(status, 200)
+            self.assertIn(b'werket.onrender.com', body)
 
     def test_suggestions_and_spell_api(self):
         encoded = urllib.parse.quote('ሰላም እንዳ')
