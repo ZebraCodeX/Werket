@@ -220,11 +220,16 @@
   }
 
   function suppressNativeKeyboard() {
+    editor.setAttribute('inputmode', 'none');
+    editor.setAttribute('virtualkeyboardpolicy', 'manual');
     if (navigator.virtualKeyboard && navigator.virtualKeyboard.hide) {
       try { navigator.virtualKeyboard.hide(); } catch (e) {}
     }
   }
-  function allowNativeKeyboard() {}
+  function allowNativeKeyboard() {
+    editor.removeAttribute('inputmode');
+    editor.removeAttribute('virtualkeyboardpolicy');
+  }
   function rememberCaret() {
     var offsets = selectionOffsets();
     caretStart = offsets.start;
@@ -342,7 +347,11 @@
     el.addEventListener('pointerdown', function (event) {
       event.preventDefault();
       event.stopPropagation();
-      setTimeout(function () { fn(event); }, 0);
+    });
+    el.addEventListener('pointerup', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      fn(event);
     });
   }
   function setOsk(open) {
@@ -367,7 +376,12 @@
     hideOrders();
     if (oskOpen) {
       suppressNativeKeyboard();
-      setTimeout(function () { focusEditor(); }, 0);
+      setTimeout(function () {
+        if (document.activeElement !== editor) {
+          editor.focus({preventScroll: true});
+          restoreCaret();
+        }
+      }, 50);
     } else {
       allowNativeKeyboard();
     }
@@ -567,12 +581,11 @@
   function insert(text) {
     pushUndo();
     editor.focus({preventScroll: true});
-    if (text === '\n' || text === '\r\n') {
-      document.execCommand('insertLineBreak', false, null);
-    } else {
-      document.execCommand('insertText', false, text);
-    }
+    var offsets = selectionOffsets();
+    var t = text === '\n' || text === '\r\n' ? '\n' : text;
+    replaceTextRange(offsets.start, offsets.end, t);
     changed();
+    restoreCaret();
   }
   function replaceSuggestion(word) {
     pushUndo();
@@ -652,27 +665,44 @@
     markingSpell = false;
     restoreSelection(offsets.start, offsets.end);
   }
-  function checkSpelling() {
-    clearTimeout(spellTimer);
-    spellTimer = setTimeout(function () {
-      var block = activeBlock();
-      var lineText = block ? (block.innerText || '').replace(/\u00a0/g, ' ') : editorText();
-      fetch('/api/check?text=' + encodeURIComponent(editorText())).then(function (r) { return r.json(); }).then(function (data) {
-        var words = data.words || [], unknown = words.filter(function (word) { return !word.known; }), known = words.length - unknown.length;
-        $('editorStats').textContent = words.length + ' words · ' + known + ' dictionary words · ' + editorText().length + ' characters';
-        var badge = $('spellBadge');
-        if (badge) {
-          badge.textContent = unknown.length ? unknown.length + ' ISSUES' : 'CLEAN';
-          badge.className = 'keyboard-info-badge' + (unknown.length ? ' warn' : '');
-        }
-        var summary = $('spellSummary');
-        if (summary) summary.textContent = unknown.length ? unknown.length + ' misspelled word' + (unknown.length > 1 ? 's' : '') + '. Right-click to correct.' : 'All words in dictionary.';
-      }).catch(function () {});
-      fetch('/api/check?text=' + encodeURIComponent(lineText)).then(function (r) { return r.json(); }).then(function (data) {
-        markActiveLineSpelling(data.words || []);
-      }).catch(function () {});
-    }, 280);
-  }
+   function checkSpelling() {
+     clearTimeout(spellTimer);
+     spellTimer = setTimeout(function () {
+       var block = activeBlock();
+       var lineText = block ? (block.innerText || '').replace(/\u00a0/g, ' ') : editorText();
+       fetch('/api/check?text=' + encodeURIComponent(editorText())).then(function (r) { return r.json(); }).then(function (data) {
+         var words = data.words || [], unknown = words.filter(function (word) { return !word.known; }), known = words.length - unknown.length;
+         $('editorStats').textContent = words.length + ' words · ' + known + ' dictionary words · ' + editorText().length + ' characters';
+         var badge = $('spellBadge');
+         if (badge) {
+           badge.textContent = unknown.length ? unknown.length + ' ISSUES' : 'CLEAN';
+           badge.className = 'keyboard-info-badge' + (unknown.length ? ' warn' : '');
+         }
+         var summary = $('spellSummary');
+         if (summary) summary.textContent = unknown.length ? unknown.length + ' misspelled word' + (unknown.length > 1 ? 's' : '') + '. Right-click to correct.' : 'All words in dictionary.';
+         var errorsEl = $('errors');
+         if (errorsEl) {
+           errorsEl.innerHTML = unknown.slice(0, 8).map(function (item) {
+             var btns = (item.suggestions || []).slice(0, 3).map(function (s) {
+               return '<button data-fix="' + escapeHtml(s.word) + '" data-start="' + item.start + '" data-end="' + item.end + '">' + escapeHtml(s.word) + '</button>';
+             }).join('');
+             var start = item.start, end = item.end;
+             return '<div class="spell-error-item"><span class="spell-wrong">' + escapeHtml(item.word) + '</span><span class="spell-actions">' + (btns || '<span class="empty">No match</span>') + '</span></div>';
+           }).join('');
+           errorsEl.querySelectorAll('[data-fix]').forEach(function (btn) {
+             btn.onclick = function () {
+               var start = Number(btn.dataset.start), end = Number(btn.dataset.end);
+               replaceTextRange(start, end, btn.dataset.fix);
+               changed(); restoreCaret(); checkSpelling();
+             };
+           });
+         }
+       }).catch(function () {});
+       fetch('/api/check?text=' + encodeURIComponent(lineText)).then(function (r) { return r.json(); }).then(function (data) {
+         markActiveLineSpelling(data.words || []);
+       }).catch(function () {});
+     }, 280);
+   }
 
   function compose(raw) {
     var map = phon, result = '', index = 0;
@@ -751,13 +781,11 @@
       hideOrders();
       pushUndo();
       editor.focus({preventScroll: true});
-      var sel = window.getSelection();
-      if (sel && sel.rangeCount && !sel.getRangeAt(0).collapsed) {
-        document.execCommand('delete');
-      } else {
-        document.execCommand('delete');
-      }
+      var offsets = selectionOffsets(), p = offsets.start, q = offsets.end;
+      if (q > p) replaceTextRange(p, q, '');
+      else if (p > 0) replaceTextRange(p - 1, p, '');
       changed();
+      restoreCaret();
     });
   }
 
@@ -808,9 +836,9 @@
 
   $('projectName').oninput = function () { workspace.projectName = $('projectName').value; $('treeProjectName').textContent = workspace.projectName.toUpperCase(); saveWorkspace(); };
   document.addEventListener('pointerdown', function (event) {
-    if (!event.target.closest('.key[data-family]') && !event.target.closest('.orders')) hideOrders();
     if (!event.target.closest('.menu-wrap')) { closeMenu(); closeSaveMenu(); }
     if (!event.target.closest('.context-menu')) closeContextMenu();
+    if (!event.target.closest('.key[data-family]') && !event.target.closest('.orders') && !event.target.closest('.keyboard-panel')) hideOrders();
   });
   editor.addEventListener('contextmenu', function (event) { showContextMenu(event, workspace.activeId); });
   // Double-click a yellow misspelling to instantly apply its best suggestion.

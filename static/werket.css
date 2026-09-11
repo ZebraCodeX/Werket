@@ -91,3 +91,103 @@ html[data-theme="dark"] .auth-dialog{background:#19231c;border-color:#344238}htm
 html[data-theme="dark"] .kbd-hint kbd{background:#2a392e;border-color:#405044;color:#a8b6a8}
 html[data-theme="dark"] .keyboard-info-row{border-top-color:#344238;color:#a8b6a8}
 html[data-theme="dark"] .keyboard-info-divider{background:#344238}
+
+/* Inspector sidebar spell-check integration */
+.inspector-spell{margin-bottom:12px}
+.inspector-spell-title{display:flex;align-items:center;justify-content:space-between;color:#3d4b63;font-size:12px;font-weight:700;margin-bottom:6px}
+.inspector-spell .keyboard-info-badge{font-size:10px;padding:2px 6px}
+.spell-error-list{max-height:200px;overflow-y:auto}
+.spell-error-item{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eef0f4;font-size:11px;font-family:"Noto Sans Ethiopic",sans-serif}
+.spell-error-item .spell-wrong{color:var(--danger);text-decoration:underline wavy var(--danger)}
+.spell-error-item .spell-actions{display:flex;gap:4px}
+.spell-error-item button{border:0;background:#e8edff;color:#445ab0;border-radius:4px;padding:3px 7px;font-size:10px;cursor:pointer;font-family:"Noto Sans Ethiopic",sans-serif}
+.spell-error-item button:hover{background:#d7dce8}
+.inspector-section{padding:15px;border-bottom:1px solid var(--line)}
+.inspector-heading{border-bottom:1px solid var(--line)}
+.section-title{display:flex;align-items:center;justify-content:space-between;color:#3d4b63;font-size:12px;font-weight:700}
+.section-help{margin:7px 0 10px;color:#8290a4;font-size:10px;line-height:1.5}
+.empty{color:#99a4b5;font-size:10px}
+
+/* Keyboard panel info row - integrated with editor */
+.keyboard-info-row{display:flex;align-items:center;gap:10px;padding:8px 6px 4px;border-top:1px solid rgba(0,0,0,.06);margin-top:4px;font-size:11px;color:#8a93a5;flex-wrap:wrap}
+.keyboard-info-section{display:flex;align-items:center;gap:6px}
+.keyboard-info-badge{font:9px monospace;padding:3px 6px;border-radius:4px;background:#e4f3ed;color:#32856b;white-space:nowrap}
+.keyboard-info-badge.warn{background:#fdecee;color:#c24155}
+.keyboard-info-text{white-space:nowrap}
+.keyboard-info-divider{width:1px;height:16px;background:#e0e4ea;flex-shrink:0}
+.keyboard-shortcuts{gap:8px}
+.kbd-hint{display:flex;align-items:center;gap:3px;white-space:nowrap}
+.kbd-hint kbd{padding:2px 4px;border:1px solid #d4dbe5;border-radius:3px;background:#fff;font:9px monospace;color:#6b7280}
+html[data-theme="dark"] .kbd-hint kbd{background:#2a392e;border-color:#405044;color:#a8b6a8}
+
+/* Editor-area integration: show spell info inline */
+.editor-area{position:relative}
+.editor-spell-status{display:flex;align-items:center;gap:8px;padding:4px 12px;background:#fafafd;border-bottom:1px solid #e5e5ea;font-size:11px;color:#8a93a5}
+.editor-spell-status .badge{font:9px monospace;padding:2px 6px;border-radius:4px}
+.editor-spell-status .badge.ok{background:#e4f3ed;color:#32856b}
+.editor-spell-status .badge.warn{background:#fdecee;color:#c24155}
+
+/* Ensure editor properly handles focus with on-screen keyboard */
+body.osk-open .document-editor{caret-color:#4158b3}
+body.osk-open .document-editor:focus{outline:none}
+
+/* Dark mode inspector spell */
+html[data-theme="dark"] .inspector-section{background:#19231c;border-bottom-color:#344238}
+html[data-theme="dark"] .inspector-heading{border-bottom-color:#344238}
+html[data-theme="dark"] .section-title{color:#c4d0c1}
+html[data-theme="dark"] .section-help{color:#a8b6a8}
+html[data-theme="dark"] .spell-error-item{border-bottom-color:#344238;color:#b2c0b1}
+html[data-theme="dark"] .spell-error-item .spell-wrong{color:#f87171}
+html[data-theme="dark"] .spell-error-item button{background:#294631;border-color:#48684f;color:#baf0c2}
+html[data-theme="dark"] .spell-error-item button:hover{background:#3a5540}
+html[data-theme="dark"] .keyboard-info-row{border-top-color:#344238;color:#a8b6a8}
+html[data-theme="dark"] .editor-spell-status{background:#19231c;border-bottom-color:#344238;color:#a8b6a8}
+
+/* Template grid improvements */
+.template-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:18px}
+.template-card{display:flex;flex-direction:column;gap:6px;text-align:left;border:1px solid #e3e4e9;border-radius:12px;background:#fff;padding:12px;box-shadow:0 6px 18px #2632470d;transition:transform .15s,box-shadow .15s,border-color .15s}
+.template-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px #26324722;border-color:#9aa8e0}
+.template-card b{color:#2c3a52;font-size:13px}
+.template-card span{color:#7b8698;font-size:11px;line-height:1.45;margin-top:4px}
+.template-art{display:block;height:110px;margin:-13px -13px 10px;background-size:cover;background-position:center;border-bottom:1px solid #00000012;border-radius:8px 8px 0 0}
+.template-art>span{display:grid;place-items:center;height:100%;color:#fff;text-shadow:0 2px 10px #142019aa;font-size:30px;background:linear-gradient(180deg,#0000,#0006)}
+
+/* Home card artwork */
+.home-card-preview{display:grid;place-items:center;height:92px;background:linear-gradient(180deg,#f7f8ff,#eef1f8);color:#5d6db8;font-size:32px;border-bottom:1px solid #eceef3;background-size:cover;background-position:center}
+.home-card-preview.artwork-blank{background-image:url('/static/artwork-blank.svg')}
+.home-card-preview.artwork-letter{background-image:url('/static/artwork-letter.svg')}
+.home-card-preview.artwork-journal{background-image:url('/static/artwork-journal.svg')}
+.home-card-preview.artwork-meeting{background-image:url('/static/artwork-meeting.svg')}
+.home-card-preview.artwork-book{background-image:url('/static/artwork-book.svg')}
+
+/* Context menu */
+.context-menu{position:fixed;z-index:120;min-width:230px;max-width:300px;padding:6px;background:#fff;border:1px solid #e3e4e9;border-radius:12px;box-shadow:0 14px 34px #26324733}
+.context-menu[hidden]{display:none}
+.context-menu button{display:block;width:100%;padding:8px 10px;border:0;border-radius:7px;background:transparent;color:#3d4b63;text-align:left;font-size:12px}
+.context-menu button:hover{background:var(--accent-soft);color:var(--accent)}
+.context-menu button:disabled{opacity:.4;cursor:not-allowed}
+.context-menu .danger-action{color:#b44252}
+.context-sep{height:1px;background:#eef0f4;margin:4px 8px}
+.spell-fix-row{padding:6px 6px 8px;margin-bottom:6px;border-bottom:1px solid #eef0f4}
+.spell-fix-title{padding:2px 8px 6px;color:#8a93a5;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spell-fix-none{padding:2px 8px 6px;color:#9aa3b2;font-size:11px}
+.spell-fix-item{font-weight:600;padding:7px 10px;font-size:12px}
+.spell-fix-item:hover{background:#fff7d6!important;color:#7a6200!important}
+.spell-fix-ignore{opacity:.75;font-weight:400}
+
+/* Spell error underline */
+.document-editor .spell-error{text-decoration:underline wavy #fcd116;text-decoration-thickness:2.5px;text-underline-offset:5px;text-decoration-skip-ink:none;background:linear-gradient(180deg,transparent 85%,#fff6bf 0);border-radius:2px;cursor:context-menu;transition:background .15s;padding:1px 2px;margin:0 -2px}
+.document-editor .spell-error:hover{background:#fff3ad}
+
+/* Strong and emphasis styling */
+.document-editor strong{font-weight:800}
+.document-editor em{font-style:italic}
+.document-editor h1{border-bottom:2px solid #f0d90a33;padding-bottom:.15em}
+.tool[data-command="bold"]{font-weight:800}
+.tool[data-command="italic"]{font-style:italic}
+
+/* Toolbar active state */
+.editor-toolbar .tool.active{background:var(--accent-soft);border-color:#c6d0f8;color:#4158b3}
+
+/* Typography select */
+.typography select{max-width:145px;padding:5px 6px;border:1px solid var(--line);border-radius:5px;background:#fff;color:#3e4b63;font-size:11px}
