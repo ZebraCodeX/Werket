@@ -21,10 +21,12 @@ Open `http://localhost:8765`. On a phone or tablet, use **Install app** or
 
 The Render Blueprint uses the included `render.yaml` and `Dockerfile`.
 
-Templates include Blank document, Letter, Daily journal, and Book project. The
-Book project creates an outline, characters file, research notes, and chapter
-files in a `chapters/` folder. Font family and size are adjustable in the
-editor toolbar.
+The home screen and **New** menu offer Blank document, Letter, Daily journal,
+Meeting notes, and Book project templates. The Book project creates an outline,
+characters file, research notes, and chapter files in a `chapters/` folder.
+Font family and size are adjustable in the editor toolbar. On phones, an
+optional Amharic keyboard can replace the device keyboard; laptops with a
+physical keyboard do not show that control.
 
 ## Input
 

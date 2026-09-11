@@ -35,7 +35,7 @@ class WerketHttpTest(unittest.TestCase):
         status, body = self.get('/')
         html = body.decode('utf-8')
         self.assertEqual(status, 200)
-        for marker in ('fileTree', 'templateDialog', 'fontFamily', 'fontSize', 'keyboardPanel'):
+        for marker in ('fileTree', 'templateDialog', 'fontFamily', 'fontSize', 'keyboardPanel', 'homeScreen', 'newBtn', 'newMenu'):
             self.assertIn(marker, html)
         self.assertNotIn('id="lineNumbers"', html)
 
