@@ -1137,6 +1137,49 @@ body.sidebar-open .editor-area {
   margin: 4px 8px;
 }
 
+/* Spell Popup (mobile) */
+.spell-popup {
+  position: fixed;
+  z-index: 200;
+  min-width: 200px;
+  max-width: 280px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+.spell-popup-title {
+  padding: 4px 8px 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.spell-popup-none {
+  padding: 4px 8px 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.spell-popup-item {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 13px;
+}
+.spell-popup-item:hover {
+  background: var(--accent) !important;
+  color: #fff !important;
+}
+.spell-popup-ignore {
+  opacity: 0.75;
+  font-weight: 400;
+}
+
+html[data-theme="dark"] .spell-popup {
+  background: rgba(44, 44, 46, 0.95);
+}
+
 .spell-fix-row {
   padding: 8px;
   margin-bottom: 6px;

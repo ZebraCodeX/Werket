@@ -1710,9 +1710,21 @@ var errorsEl = $('errors');
     host.innerHTML = html;
     host.querySelectorAll('[data-family]').forEach(function (button) {
       onTap(button, function () { showOrders(button, button.dataset.family); });
+      button.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        showOrders(button, button.dataset.family);
+      });
+      button.addEventListener('dblclick', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideOrders();
+        insert(button.dataset.family);
+      });
     });
     host.querySelectorAll('[data-symbol]').forEach(function (button) {
       onTap(button, function () { hideOrders(); insert(button.dataset.symbol === '\\n' ? '\n' : button.dataset.symbol); });
+      button.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     });
     onTap($('layerToggle'), function () { kbLayer = kbLayer === 'fidel' ? 'num' : 'fidel'; renderKeyboard(); });
     setupBackspace($('backspaceKey'));
@@ -1792,14 +1804,83 @@ var errorsEl = $('errors');
     $('explorerPanel').classList.toggle('open');
     document.body.classList.toggle('sidebar-open', $('explorerPanel').classList.contains('open'));
   }
-
+  function showSpellPopup(spellEl, x, y) {
+    var existing = document.getElementById('spellPopup');
+    if (existing) existing.remove();
+    var suggestions = String(spellEl.dataset.suggestions || '').split('|').filter(Boolean).slice(0, 5);
+    var popup = document.createElement('div');
+    popup.id = 'spellPopup';
+    popup.className = 'spell-popup';
+    popup.setAttribute('role', 'menu');
+    var word = spellEl.dataset.word || spellEl.textContent;
+    var title = document.createElement('div');
+    title.className = 'spell-popup-title';
+    title.textContent = '\u201c' + word + '\u201d \u2014 suggestions';
+    popup.appendChild(title);
+    if (!suggestions.length) {
+      var none = document.createElement('div');
+      none.className = 'spell-popup-none';
+      none.textContent = 'No close match';
+      popup.appendChild(none);
+    }
+    suggestions.forEach(function (suggestion) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'spell-popup-item';
+      button.textContent = '\u2713 ' + suggestion;
+      button.onclick = function (ev) {
+        ev.stopPropagation();
+        closeSpellPopup();
+        replaceSpellSpan(spellEl, suggestion);
+      };
+      popup.appendChild(button);
+    });
+    var ignore = document.createElement('button');
+    ignore.type = 'button';
+    ignore.className = 'spell-popup-item spell-popup-ignore';
+    ignore.textContent = 'Ignore once';
+    ignore.onclick = function (ev) { ev.stopPropagation(); closeSpellPopup(); };
+    popup.appendChild(ignore);
+    document.body.appendChild(popup);
+    var pw = popup.offsetWidth, ph = popup.offsetHeight;
+    var left = Math.min(x - pw / 2, window.innerWidth - pw - 8);
+    left = Math.max(8, left);
+    var top = y - ph - 12;
+    if (top < 8) top = y + 12;
+    popup.style.left = left + 'px';
+    popup.style.top = top + 'px';
+    setTimeout(function () { document.addEventListener('pointerdown', closeSpellPopup, {once: true}); }, 0);
+  }
+  function closeSpellPopup() {
+    var popup = document.getElementById('spellPopup');
+    if (popup) popup.remove();
+  }
   $('projectName').oninput = function () { workspace.projectName = $('projectName').value; saveWorkspace(); };
   document.addEventListener('pointerdown', function (event) {
     if (!event.target.closest('.menu-wrap')) { closeMenu(); closeSaveMenu(); closeExportMenu(); }
     if (!event.target.closest('.context-menu')) closeContextMenu();
+    if (!event.target.closest('.spell-popup')) closeSpellPopup();
     if (!event.target.closest('.key[data-family]') && !event.target.closest('.orders') && !event.target.closest('.keyboard-panel')) hideOrders();
   });
   editor.addEventListener('contextmenu', function (event) { showContextMenu(event, workspace.activeId); });
+  var lastTap = 0, lastTapEl = null;
+  editor.addEventListener('click', function (event) {
+    var spellEl = event.target && event.target.closest ? event.target.closest('.spell-error') : null;
+    if (!spellEl || !editor.contains(spellEl)) return;
+    var now = Date.now();
+    if (now - lastTap < 300 && lastTapEl === spellEl) {
+      var best = String(spellEl.dataset.suggestions || '').split('|').filter(Boolean)[0];
+      if (best) replaceSpellSpan(spellEl, best);
+      lastTap = 0; lastTapEl = null;
+      return;
+    }
+    if (isTouchDevice()) {
+      event.preventDefault();
+      event.stopPropagation();
+      showSpellPopup(spellEl, event.clientX, event.clientY);
+    }
+    lastTap = now; lastTapEl = spellEl;
+  });
   // Double-click a yellow misspelling to instantly apply its best suggestion.
   editor.addEventListener('dblclick', function (event) {
     var spellEl = event.target && event.target.closest ? event.target.closest('.spell-error') : null;
