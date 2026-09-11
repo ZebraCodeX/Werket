@@ -462,11 +462,12 @@
     $('tabs').innerHTML = workspace.openIds.map(function (id) {
       var f = workspace.files.find(function (item) { return item.id === id; });
       if (!f) return '';
-      return '<div class="tab ' + (id === workspace.activeId ? 'active' : '') + '" data-tab="' + id + '"><span>' + escapeHtml(f.name) + '</span><button data-close="' + id + '" title="Close">×</button></div>';
-    }).join('');
+      return '<div class="tab ' + (id === workspace.activeId ? 'active' : '') + '" data-tab="' + id + '" title="' + escapeHtml(f.name) + '"><span>' + escapeHtml(f.name) + '</span><button data-close="' + id + '" title="Close">×</button></div>';
+    }).join('') + '<button class="tab-add" id="tabAddBtn" title="New document">＋</button>';
     $('tabs').querySelectorAll('[data-tab]').forEach(function (tab) { tab.onclick = function (event) { if (!event.target.dataset.close) openFile(tab.dataset.tab); }; });
     $('tabs').querySelectorAll('[data-close]').forEach(function (button) { button.onclick = function (event) { event.stopPropagation(); closeFile(button.dataset.close); }; });
     $('tabs').querySelectorAll('[data-tab]').forEach(function (tab) { tab.oncontextmenu = function (event) { showContextMenu(event, tab.dataset.tab); }; });
+    $('tabAddBtn').onclick = function () { createFile(); };
   }
 
 
