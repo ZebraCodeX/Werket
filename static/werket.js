@@ -11,7 +11,6 @@
   var oskOpen = false;
   var deviceKeyboardMode = localStorage.getItem(oskPrefKey) === '0';
   var kbLayer = 'fidel';
-  var tapStart = 0, tapX = 0, tapY = 0;
   var caretStart = 0, caretEnd = 0;
   var contextFileId = null;
   var markingSpell = false;
@@ -19,12 +18,10 @@
   var saveMenuOpen = false;
   var exportMenuOpen = false;
   var assistantOpen = false;
-  var families = ['ሀ','ለ','ሐ','መ','ሠ','ረ','ሰ','ሸ','ቀ','በ','ተ','ቸ','ኀ','ነ','ኘ','አ','ከ','ኸ','ወ','ዐ','ዘ','ዠ','የ','ደ','ጀ','ገ','ጠ','ጨ','ጰ','ጸ','ፀ'];
-  var roman = ['h','l','H','m','S','r','s','sh','q','b','t','c','x','n','N','a','k','K','w','E','z','Z','y','d','j','g','T','C','P','S','D'];
-  var orders = ['e','u','i','a','ie','silent','o'];
-  var symbols = ['።','፣','፤','፥','፦','፧','፨','፩','፪','፫','፬','፭','፮','፯','፰','፱','፲','?','!',',','.'];
-  var phon = {h:'ሀ',H:'ሐ',l:'ለ',m:'መ',s:'ሰ',r:'ረ',S:'ሠ',b:'በ',t:'ተ',c:'ቸ',C:'ጨ',q:'ቀ',k:'ከ',x:'ኀ',n:'ነ',N:'ኘ',a:'አ',w:'ወ',z:'ዘ',y:'የ',d:'ደ',j:'ጀ',g:'ገ',T:'ጠ',p:'ፐ',f:'ፈ',v:'ቨ',D:'ፀ'};
-  var vowels = {e:0,u:1,i:2,a:3,ie:4,ee:4,'':5,o:6};
+  var F = window.WerketFidel;
+  var families = F.FAMILIES;
+  var roman = F.ROMAN;
+  var orders = F.ORDERS;
   var templates = [
     {id:'blank', icon:'□', artwork:'blank', name:'Blank document', description:'A clean page for notes or free writing.', files:[['Untitled.md','']]},
     {id:'letter', icon:'✉', artwork:'letter', name:'Letter', description:'Greeting, body, and closing for a formal note.', files:[['letter.md','<h1>Letter</h1><p>Date: </p><p>Dear </p><p>Write your message here.</p><p>Sincerely,</p>']]},
@@ -1621,18 +1618,7 @@ var errorsEl = $('errors');
      }, 280);
    }
 
-  function compose(raw) {
-    var map = phon, result = '', index = 0;
-    while (index < raw.length) {
-      var family = map[raw[index]];
-      if (!family) { result += raw[index++]; continue; }
-      index++; var vowel = '';
-      if ((raw.slice(index, index + 2).toLowerCase() === 'ie') || (raw.slice(index, index + 2).toLowerCase() === 'ee')) { vowel = raw.slice(index, index + 2).toLowerCase(); index += 2; }
-      else if (Object.prototype.hasOwnProperty.call(vowels, (raw[index] || '').toLowerCase())) { vowel = (raw[index] || '').toLowerCase(); index++; }
-      result += String.fromCodePoint(family.codePointAt(0) + vowels[vowel]);
-    }
-    return result;
-  }
+  function compose(raw) { return F.compose(raw); }
   function phoneticKey(event) {
     if (!$('phoneticToggle').checked || event.ctrlKey || event.metaKey || event.altKey) return false;
     var offsets = selectionOffsets();
@@ -1806,7 +1792,6 @@ var errorsEl = $('errors');
     $('templateGrid').querySelectorAll('[data-template]').forEach(function (button) { button.onclick = function () { createTemplate(templates.find(function (item) { return item.id === button.dataset.template; })); }; });
     if (dialog.showModal) dialog.showModal(); else dialog.setAttribute('open', '');
   }
-  function createBlank() { createTemplate(templates[0]); }
   function createFile() {
     closeMenu();
     var name = window.prompt('File name', uniqueName('notes.md'));
@@ -2003,11 +1988,7 @@ var errorsEl = $('errors');
     else { phoneticKey(event); }
   });
   editor.addEventListener('focus', function () {});
-  editor.addEventListener('pointerdown', function (event) {
-    tapStart = Date.now();
-    tapX = event.clientX;
-    tapY = event.clientY;
-  });
+  editor.addEventListener('pointerdown', function (event) {});
 
   $('saveBtn').onclick = function (event) {
     event.stopPropagation();
