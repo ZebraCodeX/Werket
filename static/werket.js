@@ -91,12 +91,7 @@
     editor.style.fontFamily = workspace.font || 'Noto Sans Ethiopic';
     editor.style.fontSize = (workspace.size || 18) + 'px';
     $('fileStatus').textContent = f.name + ' · UTF-8';
-    updateLineNumbers(); updateStats(); refreshSuggestions(); checkSpelling();
-  }
-  function updateLineNumbers() {
-    var count = Math.max(1, editor.value.split('\n').length);
-    $('lineNumbers').innerHTML = Array.from({length:count}, function (_, i) { return '<span>' + (i + 1) + '</span>'; }).join('');
-    $('lineNumbers').scrollTop = editor.scrollTop;
+    updateStats(); refreshSuggestions(); checkSpelling();
   }
   function updateStats() {
     var words = editor.value.trim() ? editor.value.trim().split(/\s+/).length : 0;
@@ -104,7 +99,7 @@
   }
   function changed() {
     var f = activeFile(); if (!f) return;
-    f.text = editor.value; f.updated = Date.now(); updateStats(); updateLineNumbers(); setStatus('Unsaved changes');
+    f.text = editor.value; f.updated = Date.now(); updateStats(); setStatus('Unsaved changes');
     clearTimeout(saveTimer); saveTimer = setTimeout(save, 550); refreshSuggestions(); checkSpelling();
   }
   function save() { saveWorkspace(); renderTree(); setStatus('Saved locally'); }
@@ -193,7 +188,7 @@
   function toggleExplorer() { $('explorerPanel').classList.toggle('open'); }
 
   $('projectName').oninput = function () { workspace.projectName = $('projectName').value; $('treeProjectName').textContent = workspace.projectName.toUpperCase(); saveWorkspace(); };
-  $('editor').addEventListener('input', changed); $('editor').addEventListener('scroll', function () { $('lineNumbers').scrollTop = editor.scrollTop; });
+  $('editor').addEventListener('input', changed);
   $('editor').addEventListener('keydown', function (event) { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); save(); } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') { event.preventDefault(); window.print(); } else { phoneticKey(event); } });
   $('saveBtn').onclick = save; $('newFileBtn').onclick = createFile; $('newDocBtn').onclick = function () { createTemplate(templates[0]); }; $('newProjectBtn').onclick = showTemplates; $('templatesBtn').onclick = showTemplates; $('templatesActivity').onclick = showTemplates; $('filesActivity').onclick = toggleExplorer; $('searchActivity').onclick = function () { editor.focus(); }; $('settingsBtn').onclick = function () { $('inspector').classList.toggle('open'); }; $('closeTemplates').onclick = function () { $('templateDialog').close(); }; $('keyboardBtn').onclick = function () { $('keyboardPanel').classList.toggle('open'); }; $('closeKeyboard').onclick = function () { $('keyboardPanel').classList.remove('open'); }; $('toggleInspector').onclick = function () { $('inspector').classList.toggle('open'); }; $('closeInspector').onclick = function () { $('inspector').classList.remove('open'); }; $('addOutlineBtn').onclick = createFile;
   $('fontFamily').value = workspace.font || 'Noto Sans Ethiopic'; $('fontSize').value = String(workspace.size || 18); $('fontFamily').onchange = function () { workspace.font = $('fontFamily').value; editor.style.fontFamily = workspace.font; save(); }; $('fontSize').onchange = function () { workspace.size = Number($('fontSize').value); editor.style.fontSize = workspace.size + 'px'; save(); };

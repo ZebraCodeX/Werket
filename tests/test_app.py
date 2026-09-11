@@ -35,8 +35,9 @@ class WerketHttpTest(unittest.TestCase):
         status, body = self.get('/')
         html = body.decode('utf-8')
         self.assertEqual(status, 200)
-        for marker in ('fileTree', 'templateDialog', 'fontFamily', 'fontSize', 'keyboardPanel', 'lineNumbers'):
+        for marker in ('fileTree', 'templateDialog', 'fontFamily', 'fontSize', 'keyboardPanel'):
             self.assertIn(marker, html)
+        self.assertNotIn('id="lineNumbers"', html)
 
     def test_suggestions_and_spell_api(self):
         encoded = urllib.parse.quote('ሰላም እንዳ')
