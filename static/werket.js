@@ -347,7 +347,7 @@
     el.addEventListener('pointerdown', function (event) {
       event.preventDefault();
       event.stopPropagation();
-      fn(event);
+      setTimeout(function () { fn(event); }, 0);
     });
   }
   function setOsk(open) {
@@ -572,6 +572,11 @@
   function insert(text) {
     pushUndo();
     editor.focus({preventScroll: true});
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) {
+      restoreCaret();
+      sel = window.getSelection();
+    }
     var offsets = selectionOffsets();
     replaceTextRange(offsets.start, offsets.end, text);
     changed();
