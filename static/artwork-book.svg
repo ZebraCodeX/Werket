@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <defs>
+    <linearGradient id="bsky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2a4a"/>
+      <stop offset="50%" stop-color="#2a3a5a"/>
+      <stop offset="100%" stop-color="#3a4a6a"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="200" fill="url(#bsky)"/>
+  <rect x="0" y="160" width="400" height="40" fill="#1a2a3a" rx="0"/>
+  <circle cx="80" cy="40" r="3" fill="#fff" opacity="0.7"/>
+  <circle cx="150" cy="25" r="2" fill="#fff" opacity="0.5"/>
+  <circle cx="250" cy="35" r="2.5" fill="#fff" opacity="0.6"/>
+  <circle cx="320" cy="20" r="2" fill="#fff" opacity="0.4"/>
+  <circle cx="380" cy="45" r="1.5" fill="#fff" opacity="0.5"/>
+  <circle cx="45" cy="55" r="1.5" fill="#fff" opacity="0.3"/>
+  <circle cx="200" cy="15" r="3.5" fill="#fff" opacity="0.8"/>
+  <circle cx="350" cy="50" r="2" fill="#fff" opacity="0.45"/>
+  <path d="M140 90 L200 80 L260 90 L260 150 L200 142 L140 150Z" fill="#f0e8d8" opacity="0.9" stroke="#d0c8b0" stroke-width="1"/>
+  <line x1="200" y1="80" x2="200" y2="142" stroke="#d8d0c0" stroke-width="1"/>
+  <line x1="155" y1="98" x2="190" y2="95" stroke="#e0d8c8" stroke-width="0.5"/>
+  <line x1="155" y1="106" x2="190" y2="103" stroke="#e0d8c8" stroke-width="0.5"/>
+  <line x1="155" y1="114" x2="190" y2="111" stroke="#e0d8c8" stroke-width="0.5"/>
+  <line x1="155" y1="122" x2="190" y2="119" stroke="#e0d8c8" stroke-width="0.5"/>
+  <line x1="210" y1="95" x2="248" y2="98" stroke="#e0d8c8" stroke-width="0.5"/>
+  <line x1="210" y1="103" x2="248" y2="106" stroke="#e0d8c8" stroke-width="0.5"/>
+  <line x1="210" y1="111" x2="248" y2="114" stroke="#e0d8c8" stroke-width="0.5"/>
+  <line x1="210" y1="119" x2="240" y2="122" stroke="#e0d8c8" stroke-width="0.5"/>
+  <path d="M0 170 Q50 158 100 168 Q150 155 200 165 Q250 150 300 162 Q350 148 400 158 L400 200 L0 200Z" fill="#1a2a3a" opacity="0.6"/>
+  <path d="M310 70 Q330 55 350 70 Q370 50 390 68" stroke="#5a7aa0" stroke-width="1" fill="none" opacity="0.3"/>
+</svg>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <defs>
+    <linearGradient id="msky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c8e0f0"/>
+      <stop offset="100%" stop-color="#e0e8f0"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="200" fill="url(#msky)"/>
+  <rect x="0" y="155" width="400" height="45" fill="#d0dcd8" rx="0"/>
+  <circle cx="350" cy="35" r="20" fill="#e8e040" opacity="0.6"/>
+  <path d="M0 165 Q100 150 200 160 Q300 145 400 155 L400 200 L0 200Z" fill="#b8ccc0"/>
+  <rect x="140" y="90" width="120" height="60" fill="#e8e0d8" rx="6" opacity="0.85" stroke="#d0c8c0" stroke-width="1"/>
+  <rect x="150" y="95" width="100" height="4" fill="#c8c0b8" rx="2"/>
+  <rect x="150" y="103" width="80" height="4" fill="#d8d0c8" rx="2"/>
+  <rect x="150" y="111" width="95" height="4" fill="#d0c8c0" rx="2"/>
+  <rect x="150" y="119" width="70" height="4" fill="#d8d0c8" rx="2"/>
+  <rect x="150" y="127" width="90" height="4" fill="#d0c8c0" rx="2"/>
+  <circle cx="175" cy="75" r="10" fill="#c0b8b0" opacity="0.6"/>
+  <circle cx="200" cy="72" r="11" fill="#b8b0a8" opacity="0.6"/>
+  <circle cx="225" cy="75" r="10" fill="#c8c0b8" opacity="0.6"/>
+  <rect x="168" y="85" width="14" height="8" fill="#c0b8b0" rx="3" opacity="0.5"/>
+  <rect x="193" y="82" width="14" height="10" fill="#b8b0a8" rx="3" opacity="0.5"/>
+  <rect x="218" y="85" width="14" height="8" fill="#c8c0b8" rx="3" opacity="0.5"/>
+</svg>

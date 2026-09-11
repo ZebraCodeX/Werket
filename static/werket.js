@@ -108,6 +108,7 @@
     range.setStart(startPoint.node, startPoint.offset); range.setEnd(endPoint.node, endPoint.offset); range.deleteContents();
     var inserted = document.createTextNode(text); range.insertNode(inserted); range.setStartAfter(inserted); range.collapse(true);
     var selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range); caretStart = caretEnd = start + text.length;
+    try { editor.dispatchEvent(new Event('input', {bubbles: true})); } catch (e) {}
   }
   function applyTheme(theme) {
     var dark = theme === 'dark';
@@ -148,50 +149,65 @@
     el.parentNode.replaceChild(text, el);
     editor.normalize();
     changed();
-    focusEditor();
+    restoreCaret();
     checkSpelling();
   }
   function showContextMenu(event, fileId) {
     event.preventDefault();
+    event.stopPropagation();
     contextFileId = fileId || workspace.activeId;
     var menu = $('contextMenu');
     var old = menu.querySelector('.spell-fix-row');
     if (old) old.remove();
-    var spellEl = event.target && event.target.closest ? event.target.closest('.spell-error') : null;
-    if (spellEl && editor.contains(spellEl)) {
-      var row = document.createElement('div');
-      row.className = 'spell-fix-row';
-      var word = spellEl.dataset.word || spellEl.textContent;
-      var title = document.createElement('div');
-      title.className = 'spell-fix-title';
-      title.textContent = '“' + word + '” — suggestions';
-      row.appendChild(title);
-      var list = String(spellEl.dataset.suggestions || '').split('|').filter(Boolean).slice(0, 5);
-      if (!list.length) {
-        var none = document.createElement('div');
-        none.className = 'spell-fix-none';
-        none.textContent = 'No close match';
-        row.appendChild(none);
+    var oldSep = menu.querySelector('.context-sep');
+    if (oldSep) oldSep.remove();
+    var inEditor = editor.contains(event.target);
+    if (inEditor) {
+      var sel = window.getSelection();
+      var hasSelection = sel && sel.rangeCount && !sel.getRangeAt(0).collapsed;
+      var cutBtn = menu.querySelector('[data-context="cut"]');
+      var copyBtn = menu.querySelector('[data-context="copy"]');
+      if (cutBtn) cutBtn.disabled = !hasSelection;
+      if (copyBtn) copyBtn.disabled = !hasSelection;
+      var sep = document.createElement('div');
+      sep.className = 'context-sep';
+      menu.insertBefore(sep, menu.firstChild);
+      var spellEl = event.target && event.target.closest ? event.target.closest('.spell-error') : null;
+      if (spellEl && editor.contains(spellEl)) {
+        var row = document.createElement('div');
+        row.className = 'spell-fix-row';
+        var word = spellEl.dataset.word || spellEl.textContent;
+        var title = document.createElement('div');
+        title.className = 'spell-fix-title';
+        title.textContent = '\u201c' + word + '\u201d \u2014 suggestions';
+        row.appendChild(title);
+        var list = String(spellEl.dataset.suggestions || '').split('|').filter(Boolean).slice(0, 5);
+        if (!list.length) {
+          var none = document.createElement('div');
+          none.className = 'spell-fix-none';
+          none.textContent = 'No close match';
+          row.appendChild(none);
+        }
+        list.forEach(function (suggestion) {
+          var button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'spell-fix-item';
+          button.textContent = '\u2713 ' + suggestion;
+          button.onclick = function (ev) {
+            ev.stopPropagation();
+            closeContextMenu();
+            replaceSpellSpan(spellEl, suggestion);
+          };
+          row.appendChild(button);
+        });
+        var ignore = document.createElement('button');
+        ignore.type = 'button';
+        ignore.className = 'spell-fix-item spell-fix-ignore';
+        ignore.textContent = 'Ignore once';
+        ignore.onclick = function (ev) { ev.stopPropagation(); closeContextMenu(); };
+        row.appendChild(ignore);
+        menu.insertBefore(row, menu.firstChild);
       }
-      list.forEach(function (suggestion) {
-        var button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'spell-fix-item';
-        button.textContent = '✓ ' + suggestion;
-        button.onclick = function (ev) {
-          ev.stopPropagation();
-          closeContextMenu();
-          replaceSpellSpan(spellEl, suggestion);
-        };
-        row.appendChild(button);
-      });
-      var ignore = document.createElement('button');
-      ignore.type = 'button';
-      ignore.className = 'spell-fix-item spell-fix-ignore';
-      ignore.textContent = 'Ignore once';
-      ignore.onclick = function (ev) { ev.stopPropagation(); closeContextMenu(); };
-      row.appendChild(ignore);
-      menu.insertBefore(row, menu.firstChild);
     }
     menu.hidden = false;
     menu.style.left = Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 8) + 'px';
@@ -220,7 +236,7 @@
     editor.removeAttribute('virtualkeyboardpolicy');
   }
   function syncNativeKeyboard() {
-    if (oskOpen && shouldOfferOnScreenKeyboard()) suppressNativeKeyboard();
+    if (oskOpen && shouldOfferOnScreenKeyboard() && document.activeElement !== editor) suppressNativeKeyboard();
     else allowNativeKeyboard();
   }
   function rememberCaret() {
@@ -232,6 +248,10 @@
     restoreSelection(caretStart, caretEnd);
   }
   function focusEditor() {
+    if (document.activeElement === editor) {
+      restoreCaret();
+      return;
+    }
     syncNativeKeyboard();
     editor.focus({preventScroll: true});
     restoreCaret();
@@ -265,7 +285,7 @@
     hideOrders();
     if (oskOpen) {
       suppressNativeKeyboard();
-      editor.blur();
+      if (document.activeElement === editor) editor.blur();
       setTimeout(function () { focusEditor(); }, 0);
     } else {
       allowNativeKeyboard();
@@ -439,15 +459,18 @@
 
   function insert(text) {
     pushUndo();
-    focusEditor();
+    var wasReadonly = editor.hasAttribute('readonly');
+    if (wasReadonly) editor.removeAttribute('readonly');
     var offsets = selectionOffsets();
-    replaceTextRange(offsets.start, offsets.end, text); changed(); focusEditor();
+    replaceTextRange(offsets.start, offsets.end, text);
+    changed();
+    if (wasReadonly) editor.setAttribute('readonly', 'true');
+    restoreCaret();
   }
   function replaceSuggestion(word) {
     pushUndo();
-    focusEditor();
     var offsets = selectionOffsets(), left = editorText().slice(0, offsets.start), match = left.match(/[\u1200-\u135a]+$/), start = match ? offsets.start - match[0].length : offsets.start;
-    replaceTextRange(start, offsets.end, word + ' '); changed(); focusEditor();
+    replaceTextRange(start, offsets.end, word + ' '); changed(); restoreCaret();
   }
   function findInDocument(direction) {
     var query = $('findInput').value;
@@ -616,11 +639,10 @@
     onTap($('backspaceKey'), function () {
       hideOrders();
       pushUndo();
-      focusEditor();
       var offsets = selectionOffsets(), p = offsets.start, q = offsets.end;
       if (q > p) replaceTextRange(p, q, '');
       else if (p > 0) replaceTextRange(p - 1, p, '');
-      changed(); focusEditor();
+      changed(); restoreCaret();
     });
   }
 
@@ -679,15 +701,36 @@
   // Double-click a yellow misspelling to instantly apply its best suggestion.
   editor.addEventListener('dblclick', function (event) {
     var spellEl = event.target && event.target.closest ? event.target.closest('.spell-error') : null;
-    if (!spellEl || !editor.contains(spellEl)) return;
-    event.preventDefault();
-    var best = String(spellEl.dataset.suggestions || '').split('|').filter(Boolean)[0];
-    if (best) replaceSpellSpan(spellEl, best);
+    if (spellEl && editor.contains(spellEl)) {
+      event.preventDefault();
+      var best = String(spellEl.dataset.suggestions || '').split('|').filter(Boolean)[0];
+      if (best) replaceSpellSpan(spellEl, best);
+      return;
+    }
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    var node = range.startContainer;
+    if (node.nodeType !== 3) return;
+    var text = node.nodeValue;
+    var start = range.startOffset;
+    var end = range.endOffset;
+    while (start > 0 && /\w/.test(text[start - 1])) start--;
+    while (end < text.length && /\w/.test(text[end])) end++;
+    if (start !== range.startOffset || end !== range.endOffset) {
+      range.setStart(node, start);
+      range.setEnd(node, end);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
   });
   document.querySelectorAll('[data-context]').forEach(function (button) {
     button.onclick = function () {
       var action = button.dataset.context, id = contextFileId;
       closeContextMenu();
+      if (action === 'cut') { document.execCommand('cut'); return; }
+      if (action === 'copy') { document.execCommand('copy'); return; }
+      if (action === 'paste') { focusEditor(); document.execCommand('paste'); return; }
       if (action === 'new') return createFile();
       if (id && id !== workspace.activeId && action !== 'open') openFile(id);
       if (action === 'open' && id) return openFile(id);
@@ -784,15 +827,19 @@
     while (node && node !== editor && !/^(P|H1|H2|H3|DIV|LI|UL|OL)$/i.test(node.nodeName)) node = node.parentNode;
     return (node && node !== editor) ? node : null;
   }
+  function cleanMarkdownFromTextNodes(root) {
+    root.childNodes.forEach(function (node) {
+      if (node.nodeType === 3) node.textContent = stripMarkdownNoise(node.textContent);
+      else if (node.nodeType === 1) cleanMarkdownFromTextNodes(node);
+    });
+  }
   function applyBlock(tag) {
     var name = String(tag || 'p').replace(/[<>]/g, '').toLowerCase();
     if (!/^(h1|h2|h3|p)$/.test(name)) name = 'p';
-    focusEditor();
     var sel = window.getSelection();
     if (!sel || !sel.rangeCount) return;
     var block = currentBlockNode();
     if (!block) {
-      // Wrap current selection/line in a new block element.
       var replacement = document.createElement(name);
       var range = sel.getRangeAt(0);
       if (range.collapsed) {
@@ -816,7 +863,6 @@
       return;
     }
     if (block.nodeName.toLowerCase() === name) {
-      // Toggle back to a normal paragraph - never insert ## markers.
       var para = document.createElement('p');
       para.innerHTML = block.innerHTML || '<br>';
       block.parentNode.replaceChild(para, block);
@@ -824,9 +870,7 @@
     }
     var next = document.createElement(name);
     next.innerHTML = block.innerHTML || '<br>';
-    // Clean any stray markdown markers that may have been pasted in.
-    next.textContent = stripMarkdownNoise(next.textContent);
-    // Re-apply inline HTML lost by textContent cleanup only if there was none.
+    cleanMarkdownFromTextNodes(next);
     if (!next.innerHTML) next.innerHTML = '<br>';
     block.parentNode.replaceChild(next, block);
   }
@@ -839,14 +883,21 @@
     if (!sel || !sel.rangeCount) return false;
     var range = sel.getRangeAt(0);
     if (range.collapsed) {
-      // For a caret with no selection, use execCommand so future typing keeps the style.
-      try { return document.execCommand(name === 'strong' ? 'bold' : 'italic', false, null); } catch (e) { return false; }
+      // Insert <strong><br></strong> so cursor stays inside for typing
+      var el = document.createElement(name);
+      el.innerHTML = '<br>';
+      range.insertNode(el);
+      range.setStartAfter(el);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      return true;
     }
     var el = document.createElement(name);
     try {
       el.appendChild(range.extractContents());
-      // Strip stray ** or _ markers inside the bolded text.
-      el.textContent = stripMarkdownNoise(el.textContent);
+      // Strip stray ** or _ markers inside the bolded text without losing HTML formatting.
+      cleanMarkdownFromTextNodes(el);
       range.insertNode(el);
       sel.removeAllRanges();
       var after = document.createRange();
@@ -854,32 +905,53 @@
       sel.addRange(after);
       return true;
     } catch (e) {
-      try { return document.execCommand(name === 'strong' ? 'bold' : 'italic', false, null); } catch (e2) { return false; }
+      return false;
     }
   }
   function applyFormat(command, value) {
     pushUndo();
     var cmd = String(command || '').toLowerCase();
     var val = String(value || '').replace(/[<>]/g, '').toLowerCase();
-    // Normalize toolbar + shortcut aliases to real HTML - never markdown symbols.
     if (cmd === 'h1' || cmd === 'h2' || cmd === 'h3' || val === 'h1' || val === 'h2' || val === 'h3') {
       applyBlock(val === 'h1' || val === 'h2' || val === 'h3' ? val : cmd);
-      changed(); focusEditor(); return;
+      changed(); restoreCaret(); return;
     }
     if (cmd === 'formatblock') {
       applyBlock(val || 'p');
-      changed(); focusEditor(); return;
+      changed(); restoreCaret(); return;
     }
     if (cmd === 'bold' || cmd === 'strong') {
-      if (applyInline('strong')) { changed(); focusEditor(); return; }
+      if (applyInline('strong')) { changed(); restoreCaret(); return; }
     }
     if (cmd === 'italic' || cmd === 'em') {
-      if (applyInline('em')) { changed(); focusEditor(); return; }
+      if (applyInline('em')) { changed(); restoreCaret(); return; }
     }
-    focusEditor();
-    try { document.execCommand(command, false, value || null); } catch (e) {}
-    changed();
-    focusEditor();
+    if (cmd === 'insertunorderedlist' || cmd === 'insertorderedlist') {
+      var sel = window.getSelection();
+      if (sel && sel.rangeCount) {
+        var range = sel.getRangeAt(0);
+        var block = currentBlockNode();
+        if (block && block.parentNode && block.parentNode.classList && block.parentNode.classList.contains('editor-bullet')) return;
+        if (block && block.parentNode && block.parentNode.classList && block.parentNode.classList.contains('editor-number')) return;
+        var wrapper = document.createElement(cmd === 'insertunorderedlist' ? 'div' : 'div');
+        wrapper.className = cmd === 'insertunorderedlist' ? 'editor-bullet' : 'editor-number';
+        var prefix = cmd === 'insertunorderedlist' ? '\u2022 ' : '1. ';
+        if (block) {
+          wrapper.textContent = prefix + (block.textContent || '').trim();
+          block.parentNode.replaceChild(wrapper, block);
+        } else if (!range.collapsed) {
+          wrapper.textContent = prefix + (range.toString() || '').trim();
+          range.deleteContents();
+          range.insertNode(wrapper);
+        } else {
+          wrapper.innerHTML = prefix + '<br>';
+          range.insertNode(wrapper);
+        }
+        changed(); restoreCaret();
+      }
+      return;
+    }
+    changed(); restoreCaret();
   }
   document.querySelectorAll('[data-command]').forEach(function (button) { button.onclick = function () { applyFormat(button.dataset.command, button.dataset.value); }; });
   $('importBtn').onclick = function () { $('importFile').click(); };

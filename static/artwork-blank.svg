@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8f4f8"/>
+      <stop offset="100%" stop-color="#d4eaf5"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="200" fill="url(#sky)"/>
+  <rect x="0" y="150" width="400" height="50" fill="#c8dcc8" rx="0"/>
+  <circle cx="320" cy="50" r="28" fill="#f5d76e" opacity="0.9"/>
+  <ellipse cx="100" cy="145" rx="60" ry="20" fill="#a8c8a0" opacity="0.5"/>
+  <ellipse cx="300" cy="148" rx="45" ry="15" fill="#90b888" opacity="0.4"/>
+  <path d="M0 160 Q100 130 200 155 Q300 135 400 150 L400 200 L0 200Z" fill="#b5d4a8"/>
+  <path d="M50 170 Q80 155 110 170 Q140 150 170 168" stroke="#7a9e6e" stroke-width="1.5" fill="none" opacity="0.4"/>
+  <rect x="170" y="60" width="60" height="80" fill="#fff" rx="3" opacity="0.85" stroke="#ddd" stroke-width="0.5"/>
+  <line x1="178" y1="72" x2="222" y2="72" stroke="#ccc" stroke-width="1"/>
+  <line x1="178" y1="82" x2="222" y2="82" stroke="#ccc" stroke-width="1"/>
+  <line x1="178" y1="92" x2="210" y2="92" stroke="#ccc" stroke-width="1"/>
+  <line x1="178" y1="102" x2="218" y2="102" stroke="#ccc" stroke-width="1"/>
+  <line x1="178" y1="112" x2="205" y2="112" stroke="#ccc" stroke-width="1"/>
+</svg>

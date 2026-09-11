@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <defs>
+    <linearGradient id="lsky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fdf2e9"/>
+      <stop offset="100%" stop-color="#f5d5b8"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="200" fill="url(#lsky)"/>
+  <rect x="0" y="155" width="400" height="45" fill="#e8d5b8" rx="0"/>
+  <path d="M0 165 Q100 145 200 160 Q300 140 400 155 L400 200 L0 200Z" fill="#d4c4a8"/>
+  <circle cx="60" cy="45" r="22" fill="#f0c040" opacity="0.8"/>
+  <path d="M140 100 L260 100 L260 155 L140 155Z" fill="#fff" rx="4" opacity="0.9" stroke="#e0d0c0" stroke-width="1"/>
+  <path d="M140 100 L200 130 L260 100" fill="none" stroke="#c0a888" stroke-width="1.5"/>
+  <line x1="155" y1="115" x2="245" y2="115" stroke="#e8ddd0" stroke-width="1"/>
+  <line x1="155" y1="125" x2="245" y2="125" stroke="#e8ddd0" stroke-width="1"/>
+  <line x1="155" y1="135" x2="220" y2="135" stroke="#e8ddd0" stroke-width="1"/>
+  <line x1="155" y1="145" x2="235" y2="145" stroke="#e8ddd0" stroke-width="1"/>
+  <path d="M300 80 Q320 60 340 80 Q360 60 380 80" stroke="#c8a878" stroke-width="1.5" fill="none" opacity="0.3"/>
+  <ellipse cx="320" cy="145" rx="30" ry="10" fill="#c8b898" opacity="0.3"/>
+</svg>
