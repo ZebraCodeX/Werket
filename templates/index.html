@@ -87,7 +87,7 @@
       <div class="top-actions"><span id="saveStatus" class="save-status">Ready</span><button class="theme-btn" id="themeBtn" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false">☾</button><button class="avatar" id="avatarBtn" title="Account">Z</button></div>
     </header>
     <div class="app-body">
-      <aside class="activitybar"><button class="activity" id="homeActivity" title="Home">⌂</button><button class="activity active" id="filesActivity" title="Files">▤</button><button class="activity" id="templatesActivity" title="Templates">✦</button><button class="activity" id="searchActivity" title="Find">⌕</button><div class="activity-bottom"><button class="activity" id="settingsBtn" title="Inspector">⚙</button></div></aside>
+      <aside class="activitybar"><button class="activity" id="homeActivity" title="Home">⌂</button><button class="activity active" id="filesActivity" title="Files">▤</button><button class="activity" id="templatesActivity" title="Templates">✦</button><button class="activity" id="searchActivity" title="Find">⌕</button><div class="activity-bottom"></div></aside>
       <aside class="explorer" id="explorerPanel">
         <div class="panel-heading"><span>EXPLORER</span><button id="newFileBtn" title="New file">＋</button></div>
         <div class="workspace-label"><span class="chevron">⌄</span><b id="treeProjectName">MY DOCUMENTS</b><button id="newProjectBtn" title="New from template">＋</button></div>
@@ -111,16 +111,29 @@
           <div class="toolbar-group typography"><label>Font <select id="fontFamily"><option value="Noto Sans Ethiopic">Noto Sans Ethiopic</option><option value="Abyssinica SIL">Abyssinica SIL</option><option value="Nyala">Nyala</option><option value="Aptos">Aptos</option><option value="Georgia">Georgia</option></select></label><label>Size <select id="fontSize"><option value="16">16</option><option value="18" selected>18</option><option value="20">20</option><option value="24">24</option><option value="28">28</option></select></label><button class="tool" data-align="left" title="Align left">≡</button><button class="tool" data-align="center" title="Center">☷</button><button class="tool" data-align="right" title="Align right">≡</button><label>Zoom <select id="zoom"><option value="1">100%</option><option value="1.1">110%</option><option value="1.25">125%</option><option value="0.9">90%</option></select></label></div>
         </section>
         <section class="document-stage"><div class="find-bar" id="findBar"><input id="findInput" placeholder="Find in document"><span id="findCount"></span><button id="findPrev">↑</button><button id="findNext">↓</button><button id="closeFind">×</button></div><div class="document-paper"><div id="editor" class="document-editor" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off" data-placeholder="Start writing in Amharic..."></div></div></section>
-        <div class="editor-status"><span id="fileStatus">Plain text · UTF-8</span><span id="editorStats">0 words · 0 dictionary words · 0 characters</span><button id="keyboardBtn">Keyboard</button><button id="toggleInspector">Inspector</button></div>
-        <section id="keyboardPanel" class="keyboard-panel osk-only" hidden><div class="keyboard-grab" aria-hidden="true"></div><div class="keyboard-panel-head"><div><b>Amharic keyboard</b><span>Tap a family, then choose its order</span></div><div><label class="switch-label"><input id="phoneticToggle" type="checkbox" checked><span>Phonetic QWERTY</span></label><button id="closeKeyboard" class="small-btn">Hide</button></div></div><div id="keyboard" class="keyboard"></div></section>
+        <div class="editor-status"><span id="fileStatus">Plain text · UTF-8</span><span id="editorStats">0 words · 0 dictionary words · 0 characters</span><button id="keyboardBtn">Keyboard</button></div>
+        <section id="keyboardPanel" class="keyboard-panel" hidden>
+          <div class="keyboard-grab" aria-hidden="true"></div>
+          <div class="keyboard-panel-head">
+            <div><b>Amharic keyboard</b><span>Tap a family, then choose its order</span></div>
+            <div><label class="switch-label"><input id="phoneticToggle" type="checkbox" checked><span>Phonetic QWERTY</span></label><button id="closeKeyboard" class="small-btn">Hide</button></div>
+          </div>
+          <div id="keyboardSuggestions" class="keyboard-suggest-row"><span class="keyboard-suggest-label">Suggestions</span><span class="empty">Type to see dictionary words</span></div>
+          <div id="keyboard" class="keyboard"></div>
+          <div class="keyboard-info-row">
+            <div class="keyboard-info-section">
+              <span class="keyboard-info-badge" id="spellBadge">CLEAN</span>
+              <span id="spellSummary" class="keyboard-info-text">All words checked</span>
+            </div>
+            <div class="keyboard-info-divider"></div>
+            <div class="keyboard-info-section keyboard-shortcuts">
+              <span class="kbd-hint"><kbd>Tab</kbd> suggest</span>
+              <span class="kbd-hint"><kbd>Ctrl+B</kbd> bold</span>
+              <span class="kbd-hint"><kbd>Ctrl+Z</kbd> undo</span>
+            </div>
+          </div>
+        </section>
       </main>
-      <aside class="inspector" id="inspector">
-        <div class="inspector-heading"><b>INSPECTOR</b><button id="closeInspector">×</button></div>
-        <section class="inspector-section"><div class="section-title"><span>Suggestions</span><span class="live-dot">LIVE</span></div><p class="section-help">Dictionary words and likely continuations.</p><div id="suggestions" class="suggestions"><span class="empty">Start typing for suggestions.</span></div></section>
-        <section class="inspector-section"><div class="section-title"><span>Spelling</span><span id="spellBadge" class="badge">READY</span></div><p id="spellSummary" class="section-help">Every Amharic word is checked against the dictionary.</p><div id="errors" class="errors"></div></section>
-        <section class="inspector-section outline-section"><div class="section-title"><span>Book outline</span><button id="addOutlineBtn" class="link-btn">＋</button></div><div id="outline" class="outline"><span class="empty">Create a book project to see its structure.</span></div></section>
-        <section class="inspector-section"><div class="section-title"><span>Shortcuts</span></div><div class="shortcut"><kbd>⌘/Ctrl</kbd><span>+ N</span><small>New</small></div><div class="shortcut"><kbd>⌘/Ctrl</kbd><span>+ S</span><small>Save</small></div><div class="shortcut"><kbd>Tab</kbd><small>Accept suggestion</small></div><div class="shortcut"><kbd>⌘/Ctrl</kbd><span>+ P</span><small>Print</small></div></section>
-      </aside>
     </div>
   </div>
   <div id="contextMenu" class="context-menu" hidden role="menu">

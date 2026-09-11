@@ -461,11 +461,6 @@
     $('tabs').querySelectorAll('[data-tab]').forEach(function (tab) { tab.oncontextmenu = function (event) { showContextMenu(event, tab.dataset.tab); }; });
   }
 
-  function renderOutline() {
-    var items = workspace.files.filter(function (f) { return f.folder === 'chapters' || f.name === 'outline.md' || f.name === 'characters.md'; });
-    $('outline').innerHTML = items.length ? items.map(function (f) { return '<button class="outline-item" data-outline="' + f.id + '">◦ ' + escapeHtml(f.name) + '</button>'; }).join('') : '<span class="empty">Create a book project to see its structure.</span>';
-    $('outline').querySelectorAll('[data-outline]').forEach(function (b) { b.onclick = function () { openFile(b.dataset.outline); }; });
-  }
 
   function renderHome() {
     $('homeTemplates').innerHTML = templates.map(function (template) {
@@ -586,11 +581,19 @@
     pushUndo();
     var wasReadonly = editor.hasAttribute('readonly');
     if (wasReadonly) editor.removeAttribute('readonly');
+    editor.focus({preventScroll: true});
     var offsets = selectionOffsets();
     replaceTextRange(offsets.start, offsets.end, text);
     changed();
-    if (wasReadonly) editor.setAttribute('readonly', 'true');
-    restoreCaret();
+    if (wasReadonly) {
+      setTimeout(function () {
+        editor.setAttribute('readonly', 'true');
+        editor.focus({preventScroll: true});
+        restoreCaret();
+      }, 0);
+    } else {
+      restoreCaret();
+    }
   }
   function replaceSuggestion(word) {
     pushUndo();
@@ -612,13 +615,14 @@
     suggestTimer = setTimeout(function () {
       fetch('/api/suggest?text=' + encodeURIComponent(editorText())).then(function (r) { return r.json(); }).then(function (data) {
         var values = (data.words && data.words.length ? data.words : (data.next || [])).slice(0, 6);
-        var suggestionMarkup = values.length ? values.map(function (word) { return '<button class="suggestion" data-word="' + escapeHtml(word) + '">' + escapeHtml(word) + '</button>'; }).join('') : '<span class="empty">No suggestions yet.</span>';
-        $('suggestions').innerHTML = suggestionMarkup;
-        var keyboardSuggestions = document.getElementById('keyboardSuggestions');
-        if (keyboardSuggestions) keyboardSuggestions.innerHTML = '<span class="keyboard-suggest-label">Suggestions</span>' + suggestionMarkup;
-        $('suggestions').querySelectorAll('[data-word]').forEach(function (button) { button.onclick = function () { replaceSuggestion(button.dataset.word); }; });
-        if (keyboardSuggestions) keyboardSuggestions.querySelectorAll('[data-word]').forEach(function (button) { button.onclick = function () { replaceSuggestion(button.dataset.word); hideOrders(); }; });
-      }).catch(function () { $('suggestions').innerHTML = '<span class="empty">Suggestions unavailable while offline.</span>'; });
+        var suggestionMarkup = values.length ? values.map(function (word) { return '<button class="suggestion" data-word="' + escapeHtml(word) + '">' + escapeHtml(word) + '</button>'; }).join('') : '<span class="empty">Type to see suggestions</span>';
+        var ks = document.getElementById('keyboardSuggestions');
+        if (ks) ks.innerHTML = '<span class="keyboard-suggest-label">Suggestions</span>' + suggestionMarkup;
+        if (ks) ks.querySelectorAll('[data-word]').forEach(function (button) { button.onclick = function () { replaceSuggestion(button.dataset.word); hideOrders(); }; });
+      }).catch(function () {
+        var ks = document.getElementById('keyboardSuggestions');
+        if (ks) ks.innerHTML = '<span class="keyboard-suggest-label">Suggestions</span><span class="empty">Offline</span>';
+      });
     }, 130);
   }
   function clearSpellMarks(root) {
@@ -677,10 +681,13 @@
       fetch('/api/check?text=' + encodeURIComponent(editorText())).then(function (r) { return r.json(); }).then(function (data) {
         var words = data.words || [], unknown = words.filter(function (word) { return !word.known; }), known = words.length - unknown.length;
         $('editorStats').textContent = words.length + ' words · ' + known + ' dictionary words · ' + editorText().length + ' characters';
-        $('spellBadge').textContent = unknown.length ? unknown.length + ' ISSUES' : 'CLEAN'; $('spellBadge').className = 'badge' + (unknown.length ? ' warn' : '');
-        $('spellSummary').textContent = unknown.length ? 'Yellow underline marks the active line. Right-click a word to correct it.' : 'Every Amharic word is in the Werket dictionary.';
-        $('errors').innerHTML = unknown.slice(0, 8).map(function (item) { var buttons = (item.suggestions || []).slice(0, 3).map(function (s) { return '<button class="fix" data-fix="' + escapeHtml(s.word) + '" data-start="' + item.start + '" data-end="' + item.end + '">' + escapeHtml(s.word) + '</button>'; }).join(''); return '<div class="error-item"><span class="error-word">' + escapeHtml(item.word) + '</span><br>' + (buttons || '<span class="empty">No close match</span>') + '</div>'; }).join('');
-        $('errors').querySelectorAll('[data-fix]').forEach(function (button) { button.onclick = function () { pushUndo(); focusEditor(); var start = Number(button.dataset.start), end = Number(button.dataset.end); replaceTextRange(start, end, button.dataset.fix); changed(); focusEditor(); }; });
+        var badge = $('spellBadge');
+        if (badge) {
+          badge.textContent = unknown.length ? unknown.length + ' ISSUES' : 'CLEAN';
+          badge.className = 'keyboard-info-badge' + (unknown.length ? ' warn' : '');
+        }
+        var summary = $('spellSummary');
+        if (summary) summary.textContent = unknown.length ? unknown.length + ' misspelled word' + (unknown.length > 1 ? 's' : '') + '. Right-click to correct.' : 'All words in dictionary.';
       }).catch(function () {});
       fetch('/api/check?text=' + encodeURIComponent(lineText)).then(function (r) { return r.json(); }).then(function (data) {
         markActiveLineSpelling(data.words || []);
@@ -703,7 +710,7 @@
   function phoneticKey(event) {
     if (!$('phoneticToggle').checked || event.ctrlKey || event.metaKey || event.altKey) return false;
     var key = event.key, offsets = selectionOffsets(), position = offsets.start;
-    if (key === 'Tab') { var suggestion = $('suggestions').querySelector('[data-word]'); if (suggestion) { event.preventDefault(); replaceSuggestion(suggestion.dataset.word); return true; } return false; }
+    if (key === 'Tab') { var ks = document.getElementById('keyboardSuggestions'); var suggestion = ks ? ks.querySelector('[data-word]') : null; if (suggestion) { event.preventDefault(); replaceSuggestion(suggestion.dataset.word); return true; } return false; }
     if (offsets.end !== position) { phoneticBuffer = ''; return false; }
     if (/^[A-Za-z]$/.test(key)) {
       if (position !== phoneticStart + phoneticRendered.length) phoneticBuffer = '';
@@ -751,7 +758,7 @@
   }
 
   function renderKeyboard() {
-    var host = $('keyboard'), layout = [7, 8, 8, 8], cursor = 0, html = '<div class="keyboard-suggest-row" id="keyboardSuggestions"><span class="keyboard-suggest-label">Suggestions</span><span class="empty">Type to see dictionary words</span></div><div class="keyboard-hint">Tap a family for its seven orders · the small label is its phonetic key</div>';
+    var host = $('keyboard'), layout = [7, 8, 8, 8], cursor = 0, html = '<div class="keyboard-hint">Tap a family for its seven orders · the small label is its phonetic key</div>';
     layout.forEach(function (size) { html += '<div class="keys">'; families.slice(cursor, cursor + size).forEach(function (family, offset) { html += '<button type="button" class="key" data-family="' + family + '"><span>' + family + '</span><small>' + roman[cursor + offset] + '</small></button>'; }); html += '</div>'; cursor += size; });
     html += '<div class="keys">' + symbols.slice(0, 9).map(function (symbol) { return '<button type="button" class="key fn" data-symbol="' + symbol + '">' + symbol + '</button>'; }).join('') + '<button type="button" class="key fn space" data-symbol=" ">SPACE</button><button type="button" class="key fn" data-symbol="\\n">⏎</button><button type="button" class="key fn" id="backspaceKey">⌫</button></div>';
     host.innerHTML = html;
@@ -764,10 +771,22 @@
     onTap($('backspaceKey'), function () {
       hideOrders();
       pushUndo();
+      var wasReadonly = editor.hasAttribute('readonly');
+      if (wasReadonly) editor.removeAttribute('readonly');
+      editor.focus({preventScroll: true});
       var offsets = selectionOffsets(), p = offsets.start, q = offsets.end;
       if (q > p) replaceTextRange(p, q, '');
       else if (p > 0) replaceTextRange(p - 1, p, '');
-      changed(); restoreCaret();
+      changed();
+      if (wasReadonly) {
+        setTimeout(function () {
+          editor.setAttribute('readonly', 'true');
+          editor.focus({preventScroll: true});
+          restoreCaret();
+        }, 0);
+      } else {
+        restoreCaret();
+      }
     });
   }
 
@@ -814,7 +833,7 @@
   function renameFile() { var current = activeFile(); if (!current) return; var name = window.prompt('Rename file', current.name); if (name && name.trim()) { current.name = name.trim(); save(); render(); } }
   function duplicateFile() { var current = activeFile(); if (!current) return; var copy = file(uniqueName(current.name.replace(/(\.[^.]+)?$/, ' copy$1')), current.text, current.folder); workspace.files.push(copy); openFile(copy.id); save(); }
   function deleteFile() { var current = activeFile(); if (!current || workspace.files.length === 1) { window.alert('Keep at least one document in the workspace.'); return; } if (!window.confirm('Delete ' + current.name + '?')) return; workspace.files = workspace.files.filter(function (item) { return item.id !== current.id; }); workspace.openIds = workspace.openIds.filter(function (item) { return item !== current.id; }); workspace.activeId = workspace.openIds[workspace.openIds.length - 1] || workspace.files[0].id; if (!workspace.openIds.length) workspace.openIds = [workspace.activeId]; save(); render(); }
-  function toggleExplorer() { $('explorerPanel').classList.toggle('open'); setActivity($('explorerPanel').classList.contains('open') || !shouldOfferOnScreenKeyboard() ? 'filesActivity' : 'homeActivity'); }
+  function toggleExplorer() { $('explorerPanel').classList.toggle('open'); setActivity($('explorerPanel').classList.contains('open') ? 'filesActivity' : 'homeActivity'); }
 
   $('projectName').oninput = function () { workspace.projectName = $('projectName').value; $('treeProjectName').textContent = workspace.projectName.toUpperCase(); saveWorkspace(); };
   document.addEventListener('pointerdown', function (event) {
@@ -959,13 +978,9 @@
     setActivity('filesActivity');
   };
   $('searchActivity').onclick = function () { hideHome(); $('findBar').classList.add('open'); $('findInput').focus(); setActivity('searchActivity'); };
-  $('settingsBtn').onclick = function () { $('inspector').classList.toggle('open'); };
   $('closeTemplates').onclick = closeTemplates;
   $('keyboardBtn').onclick = function () { setOsk(!oskOpen); };
   $('closeKeyboard').onclick = function () { setOsk(false); };
-  $('toggleInspector').onclick = function () { $('inspector').classList.toggle('open'); };
-  $('closeInspector').onclick = function () { $('inspector').classList.remove('open'); };
-  $('addOutlineBtn').onclick = createFile;
   $('renameFileBtn').onclick = renameFile;
   $('duplicateFileBtn').onclick = duplicateFile;
   $('deleteFileBtn').onclick = deleteFile;
