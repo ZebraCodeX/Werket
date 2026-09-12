@@ -1,18 +1,11 @@
 """Admin configuration for Werket."""
 from django.contrib import admin
 
-from .models import Document, UserPreferences
+from .models import Workspace
 
 
-@admin.register(Document)
-class DocumentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'folder', 'user', 'is_active', 'updated_at')
-    list_filter = ('is_active', 'folder')
-    search_fields = ('name', 'folder', 'content')
-    ordering = ('-updated_at',)
-
-
-@admin.register(UserPreferences)
-class UserPreferencesAdmin(admin.ModelAdmin):
-    list_display = ('user', 'font_family', 'font_size', 'theme', 'phonetic_enabled')
-    search_fields = ('user__username',)
+@admin.register(Workspace)
+class WorkspaceAdmin(admin.ModelAdmin):
+    list_display = ('user', 'updated_at')
+    search_fields = ('user__username', 'user__email')
+    readonly_fields = ('updated_at',)

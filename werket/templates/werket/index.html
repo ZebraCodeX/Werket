@@ -1,4 +1,4 @@
-{% load static %}<!doctype html>
+<!doctype html>
 <html lang="am">
 <head>
   <meta charset="utf-8">
@@ -20,23 +20,23 @@
   <meta name="apple-mobile-web-app-title" content="Werket">
   <meta name="application-name" content="Werket">
   <meta name="format-detection" content="telephone=no">
-  <link rel="icon" type="image/svg+xml" href="{% static 'icon.svg' %}">
-  <link rel="icon" type="image/png" sizes="192x192" href="{% static 'icon-192.png' %}">
-  <link rel="icon" type="image/png" sizes="512x512" href="{% static 'icon-512.png' %}">
-  <link rel="apple-touch-icon" href="{% static 'apple-touch-icon.png' %}">
+  <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.json">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Werket">
   <meta property="og:title" content="Werket — Amharic Editor">
   <meta property="og:description" content="Write Amharic beautifully. A free Pages-style editor with a Fidel keyboard, phonetic typing, and spell check.">
   <meta property="og:url" content="https://werket.onrender.com/">
-  <meta property="og:image" content="{% static 'icon-512.png' %}">
+  <meta property="og:image" content="https://werket.onrender.com/static/icon-512.png">
   <meta property="og:locale" content="am_ET">
   <meta property="og:locale:alternate" content="en_US">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Werket — Amharic Editor">
   <meta name="twitter:description" content="Write Amharic beautifully. Fidel keyboard, phonetic typing, and spell check.">
-  <meta name="twitter:image" content="{% static 'icon-512.png' %}">
+  <meta name="twitter:image" content="https://werket.onrender.com/static/icon-512.png">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -52,7 +52,7 @@
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   }
   </script>
-  <link rel="stylesheet" href="{% static 'werket.css' %}?v=16">
+  <link rel="stylesheet" href="/static/werket.css?v=12">
 </head>
 <body>
   <div class="app-shell">
@@ -65,7 +65,6 @@
         <input id="projectName" value="My documents" aria-label="Document title" class="doc-title">
       </div>
       <div class="topbar-right">
-        <span class="user-chip" title="Signed in as {{ request.user.username }}">👤 {{ request.user.username }} <form method="post" action="{% url 'logout' %}" class="logout-form">{% csrf_token %}<button type="submit" class="logout-link">Log out</button></form></span>
         <div class="menu-wrap">
           <button class="icon-btn" id="newBtn" title="New document" aria-haspopup="true" aria-expanded="false">＋</button>
           <div id="newMenu" class="menu" hidden>
@@ -77,7 +76,7 @@
           </div>
         </div>
         <button class="icon-btn" id="importBtn" title="Open">📂</button>
-        <input id="importFile" type="file" accept=".txt,.md,.text,.html,.htm" hidden>
+        <input id="importFile" type="file" accept=".txt,.md,.markdown,.text,.html,.htm,.pdf,.docx,.doc,.odt,.epub,.rtf,.json,.csv,.xml,.log,.css,.js,.mjs,.ts,.jsx,.tsx,.py,.rb,.go,.rs,.java,.c,.h,.cpp,.yml,.yaml,.toml,.ini,.cfg" multiple hidden>
         <div class="menu-wrap">
           <button class="icon-btn" id="exportBtn" title="Export" aria-haspopup="true" aria-expanded="false">📤</button>
           <div id="exportMenu" class="menu" hidden>
@@ -92,19 +91,24 @@
             <button data-export="epub">E-book (.epub)</button>
             <div class="context-sep"></div>
             <button data-export="pdf">Print to PDF (.pdf)</button>
+            <button data-export="pdffile">Save as PDF file (.pdf)</button>
+            <div class="context-sep"></div>
+            <button data-export="json">Backup workspace (.json)</button>
           </div>
         </div>
         <button class="icon-btn" id="printBtn" title="Print">🖨️</button>
         <div class="menu-wrap">
-          <button class="icon-btn" id="saveBtn" title="Save" aria-haspopup="true" aria-expanded="false">💾</button>
+          <button class="icon-btn primary" id="saveBtn" title="Save" aria-haspopup="true" aria-expanded="false">💾</button>
           <div id="saveMenu" class="menu" hidden>
-            <button data-save="local">Save to my account</button>
+            <button data-save="local">Save to this device</button>
+            <button data-save="cloud" id="saveCloudBtn">Save to your account</button>
             <div class="context-sep"></div>
             <button data-save="download">Download as file</button>
           </div>
         </div>
         <span id="saveStatus" class="save-status">Ready</span>
         <button class="icon-btn" id="themeBtn" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false">🌙</button>
+        <button class="avatar" id="avatarBtn" title="Account">Z</button>
       </div>
     </header>
     <aside class="explorer" id="explorerPanel">
@@ -120,119 +124,229 @@
             <h2 class="home-recent-title">Recent</h2>
             <div id="homeRecent" class="home-recent"></div>
             <div id="installBanner" class="install-banner"><span>Get Werket as an app for offline writing.</span><button class="ib-yes" id="installYes">Install</button><button class="ib-no" id="installNo">Not now</button></div>
-            <footer class="app-footer">Werket (ወርቀት) — a free Amharic editor for Ethiopia and the diaspora.<br>Works offline · <a href="/privacy/">Privacy policy</a></footer>
+            <footer class="app-footer">Werket (ወርቀት) — a free Amharic editor for Ethiopia and the diaspora.<br>Works offline · Private · <a href="/privacy">Privacy policy</a></footer>
           </div>
         </section>
         <div id="tabs" class="tabs"></div>
         <section class="editor-toolbar" aria-label="Editor toolbar">
           <div class="toolbar-left">
-            <button class="tool" id="undoBtn" title="Undo">↶</button>
-            <button class="tool" id="redoBtn" title="Redo">↷</button>
+            <button class="tool" id="undoBtn" title="Undo (Ctrl+Z)">↶</button>
+            <button class="tool" id="redoBtn" title="Redo (Ctrl+Shift+Z)">↷</button>
             <div class="toolbar-divider"></div>
-            <select id="fontFamily" class="toolbar-select font-select">
+            <select id="paragraphStyle" class="toolbar-select style-select" title="Paragraph Style">
+              <option value="body">Body</option>
+              <option value="heading1">Heading 1</option>
+              <option value="heading2">Heading 2</option>
+              <option value="heading3">Heading 3</option>
+              <option value="title">Title</option>
+              <option value="subtitle">Subtitle</option>
+              <option value="caption">Caption</option>
+              <option value="code">Code</option>
+              <option value="blockquote">Blockquote</option>
+            </select>
+            <select id="fontFamily" class="toolbar-select font-select" title="Font">
               <option value="Noto Sans Ethiopic">Noto Sans Ethiopic</option>
               <option value="Abyssinica SIL">Abyssinica SIL</option>
               <option value="Nyala">Nyala</option>
               <option value="Aptos">Aptos</option>
               <option value="Georgia">Georgia</option>
+              <option value="system-ui">System UI</option>
             </select>
-            <select id="fontSize" class="toolbar-select size-select">
+            <select id="fontSize" class="toolbar-select size-select" title="Font Size">
+              <option value="12">12</option>
               <option value="14">14</option>
               <option value="16">16</option>
               <option value="18" selected>18</option>
               <option value="20">20</option>
               <option value="24">24</option>
               <option value="28">28</option>
+              <option value="32">32</option>
+              <option value="36">36</option>
+              <option value="48">48</option>
             </select>
             <div class="toolbar-divider"></div>
             <button class="tool" data-command="bold" title="Bold (Ctrl+B)"><b>B</b></button>
             <button class="tool" data-command="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+            <button class="tool" data-command="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+            <button class="tool" data-command="strikethrough" title="Strikethrough">S</button>
             <div class="toolbar-divider"></div>
-            <button class="tool" data-command="formatBlock" data-value="h1" title="Heading 1">H1</button>
-            <button class="tool" data-command="formatBlock" data-value="h2" title="Heading 2">H2</button>
-            <div class="toolbar-divider"></div>
-            <button class="tool" data-command="insertUnorderedList" title="Bullet list">•</button>
-            <button class="tool" data-command="insertOrderedList" title="Numbered list">1.</button>
+            <button class="tool" data-command="insertUnorderedList" title="Bullet list (Ctrl+Shift+8)">•</button>
+            <button class="tool" data-command="insertOrderedList" title="Numbered list (Ctrl+Shift+7)">1.</button>
+            <button class="tool" id="pageBreakBtn" title="Page Break (Ctrl+Enter)">⎐</button>
+          </div>
+          <div class="toolbar-center">
+            <button class="tool" id="tocBtn" title="Table of Contents">☰</button>
+            <button class="tool" id="thumbnailsBtn" title="Page Thumbnails">⧉</button>
+            <button class="tool" id="inspectorBtn" title="Format Inspector" aria-pressed="false">⚙</button>
           </div>
           <div class="toolbar-right">
-            <button class="tool" data-align="left" title="Align left">⫷</button>
-            <button class="tool" data-align="center" title="Center">☰</button>
-            <button class="tool" data-align="right" title="Align right">⫸</button>
+            <button class="tool" data-align="left" title="Align Left (Ctrl+L)">⫷</button>
+            <button class="tool" data-align="center" title="Center (Ctrl+E)">☰</button>
+            <button class="tool" data-align="right" title="Align Right (Ctrl+R)">⫸</button>
+            <button class="tool" data-align="justify" title="Justify (Ctrl+J)">⫹</button>
             <div class="toolbar-divider"></div>
-            <select id="zoom" class="toolbar-select zoom-select">
+            <select id="zoom" class="toolbar-select zoom-select" title="Zoom">
+              <option value="0.75">75%</option>
               <option value="0.9">90%</option>
               <option value="1" selected>100%</option>
               <option value="1.1">110%</option>
               <option value="1.25">125%</option>
+              <option value="1.5">150%</option>
+              <option value="2">200%</option>
             </select>
-            <button class="tool" id="findBtn" title="Find in document">🔍</button>
+            <button class="tool" id="findBtn" title="Find (Ctrl+F)">🔍</button>
           </div>
         </section>
-        <div class="editor-row">
-          <section class="document-stage">
-            <div class="find-bar" id="findBar">
-              <input id="findInput" placeholder="Find in document">
-              <span id="findCount"></span>
-              <button id="findPrev">↑</button>
-              <button id="findNext">↓</button>
-              <button id="closeFind">×</button>
-            </div>
-            <div class="document-paper">
+        <section class="document-stage">
+          <div class="find-bar" id="findBar">
+            <input id="findInput" placeholder="Find in document">
+            <span id="findCount"></span>
+            <button id="findPrev">↑</button>
+            <button id="findNext">↓</button>
+            <button id="closeFind">×</button>
+          </div>
+          <div class="document-paper-wrapper">
+            <div class="document-paper" id="documentPaper">
               <div id="editor" class="document-editor" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off" data-placeholder="Start writing in Amharic..."></div>
             </div>
-          </section>
-          <div id="inspectorScrim" class="inspector-scrim" hidden></div>
-          <aside id="inspectorPanel" class="inspector" hidden>
-            <div class="inspector-head"><b>Words</b><button id="closeInspector" title="Hide word suggestions" aria-label="Hide word suggestions">×</button></div>
-            <div class="inspector-section">
-              <div class="inspector-subhead">Word suggestions</div>
-              <div id="keyboardSuggestions" class="keyboard-suggest-row"><span class="keyboard-suggest-label">Suggestions</span><span class="empty">Type to see dictionary words</span></div>
+          </div>
+        </section>
+        <aside id="inspectorSidebar" class="inspector-sidebar" hidden>
+          <div class="inspector-header">
+            <div class="inspector-tabs">
+              <button class="inspector-tab active" data-inspector="style">Style</button>
+              <button class="inspector-tab" data-inspector="text">Text</button>
+              <button class="inspector-tab" data-inspector="layout">Layout</button>
             </div>
-            <div class="inspector-section">
-              <div class="inspector-subhead">Spell check</div>
-              <div class="inspector-spell">
+            <button id="closeInspector" class="inspector-close" title="Close Inspector">×</button>
+          </div>
+          <div class="inspector-content">
+            <div id="inspectorStyle" class="inspector-panel">
+              <div class="inspector-section">
+                <label>Paragraph Style</label>
+                <select id="inspectorParagraphStyle" class="inspector-select"></select>
+              </div>
+              <div class="inspector-section">
+                <label>Character Style</label>
+                <select id="inspectorCharacterStyle" class="inspector-select">
+                  <option value="none">None</option>
+                  <option value="emphasis">Emphasis</option>
+                  <option value="strong">Strong</option>
+                  <option value="link">Link</option>
+                </select>
+              </div>
+              <div class="inspector-section">
+                <label>List Style</label>
+                <select id="inspectorListStyle" class="inspector-select">
+                  <option value="none">None</option>
+                  <option value="bullet">Bullet</option>
+                  <option value="number">Numbered</option>
+                  <option value="letter">Lettered</option>
+                  <option value="roman">Roman</option>
+                </select>
+              </div>
+            </div>
+            <div id="inspectorText" class="inspector-panel" hidden>
+              <div class="inspector-section">
+                <label>Font</label>
+                <select id="inspectorFontFamily" class="inspector-select"></select>
+              </div>
+              <div class="inspector-row">
+                <div><label>Size</label><input id="inspectorFontSize" type="number" class="inspector-input" min="6" max="144" step="1"></div>
+                <div><label>Color</label><input id="inspectorFontColor" type="color" class="inspector-color"></div>
+              </div>
+              <div class="inspector-row">
+                <div><label>Line Spacing</label><select id="inspectorLineSpacing" class="inspector-select"><option value="1">Single</option><option value="1.15">1.15</option><option value="1.5" selected>1.5</option><option value="2">Double</option><option value="2.5">2.5</option><option value="3">Triple</option></select></div>
+                <div><label>Paragraph Spacing</label><select id="inspectorParaSpacing" class="inspector-select"><option value="0">None</option><option value="6">6 pt</option><option value="12" selected>12 pt</option><option value="18">18 pt</option><option value="24">24 pt</option></select></div>
+              </div>
+              <div class="inspector-section">
+                <label>Text Effects</label>
+                <div class="inspector-toggles">
+                  <label class="switch-label"><input type="checkbox" id="inspectorBold"><span>Bold</span></label>
+                  <label class="switch-label"><input type="checkbox" id="inspectorItalic"><span>Italic</span></label>
+                  <label class="switch-label"><input type="checkbox" id="inspectorUnderline"><span>Underline</span></label>
+                  <label class="switch-label"><input type="checkbox" id="inspectorStrike"><span>Strikethrough</span></label>
+                </div>
+              </div>
+            </div>
+            <div id="inspectorLayout" class="inspector-panel" hidden>
+              <div class="inspector-section">
+                <label>Paper Size</label>
+                <select id="inspectorPaperSize" class="inspector-select">
+                  <option value="a4">A4 (210 × 297 mm)</option>
+                  <option value="letter">US Letter (8.5 × 11 in)</option>
+                  <option value="legal">US Legal (8.5 × 14 in)</option>
+                  <option value="a5">A5 (148 × 210 mm)</option>
+                  <option value="a3">A3 (297 × 420 mm)</option>
+                  <option value="custom">Custom...</option>
+                </select>
+              </div>
+              <div class="inspector-row">
+                <div><label>Width (mm)</label><input id="inspectorPaperWidth" type="number" class="inspector-input" min="50" max="1000" step="1"></div>
+                <div><label>Height (mm)</label><input id="inspectorPaperHeight" type="number" class="inspector-input" min="50" max="1000" step="1"></div>
+              </div>
+              <div class="inspector-section">
+                <label>Margins (mm)</label>
+                <div class="inspector-row">
+                  <div><label>Top</label><input id="inspectorMarginTop" type="number" class="inspector-input" min="0" max="100" step="1"></div>
+                  <div><label>Bottom</label><input id="inspectorMarginBottom" type="number" class="inspector-input" min="0" max="100" step="1"></div>
+                  <div><label>Left</label><input id="inspectorMarginLeft" type="number" class="inspector-input" min="0" max="100" step="1"></div>
+                  <div><label>Right</label><input id="inspectorMarginRight" type="number" class="inspector-input" min="0" max="100" step="1"></div>
+                </div>
+              </div>
+              <div class="inspector-section">
+                <label>Header / Footer</label>
+                <div class="inspector-toggles">
+                  <label class="switch-label"><input type="checkbox" id="inspectorHeader"><span>Header</span></label>
+                  <label class="switch-label"><input type="checkbox" id="inspectorFooter"><span>Footer</span></label>
+                  <label class="switch-label"><input type="checkbox" id="inspectorPageNumbers"><span>Page Numbers</span></label>
+                </div>
+                <div class="inspector-row">
+                  <div><label>Header Height</label><input id="inspectorHeaderHeight" type="number" class="inspector-input" min="10" max="100" step="1"></div>
+                  <div><label>Footer Height</label><input id="inspectorFooterHeight" type="number" class="inspector-input" min="10" max="100" step="1"></div>
+                </div>
+              </div>
+              <div class="inspector-section">
+                <label>Columns</label>
+                <select id="inspectorColumns" class="inspector-select">
+                  <option value="1">1 Column</option>
+                  <option value="2">2 Columns</option>
+                  <option value="3">3 Columns</option>
+                </select>
+                <div class="inspector-row" style="margin-top:8px;">
+                  <div><label>Column Gap</label><input id="inspectorColumnGap" type="number" class="inspector-input" min="0" max="50" step="1"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+        <div class="editor-status"><span id="fileStatus">Plain text · UTF-8</span><span id="editorStats">0 words · 0 dictionary words · 0 characters</span><button class="tool" id="keyboardBtn" title="Show keyboard">⌃</button></div>
+         <section id="keyboardPanel" class="keyboard-panel" hidden>
+          <div class="keyboard-grab" aria-hidden="true"></div>
+          <div id="keyboardSuggestions" class="keyboard-suggest-row"><span class="keyboard-suggest-label">Suggestions</span><span class="empty">Type to see dictionary words</span></div>
+          <div id="keyboard" class="keyboard"></div>
+           <div class="keyboard-info-row">
+              <div class="keyboard-info-section">
+                <label class="switch-label"><input id="phoneticToggle" type="checkbox" checked><span>Phonetic</span></label>
+                <button id="deviceKbBtn" class="small-btn" title="Use your phone's keyboard instead">Device keyboard</button>
+                <button id="closeKeyboard" class="small-btn">Hide</button>
+              </div>
+              <div class="keyboard-info-divider"></div>
+              <div class="keyboard-info-section">
                 <span class="keyboard-info-badge" id="spellBadge">CLEAN</span>
                 <span id="spellSummary" class="keyboard-info-text">All words checked</span>
               </div>
-              <div id="errors" class="spell-error-list"></div>
+              <div class="keyboard-info-divider"></div>
+              <div class="keyboard-info-section keyboard-shortcuts">
+                <span class="kbd-hint"><kbd>Tab</kbd> suggest</span>
+                <span class="kbd-hint"><kbd>Ctrl+Click</kbd> correct</span>
+                <span class="kbd-hint"><kbd>Ctrl+B</kbd> bold</span>
+                <span class="kbd-hint"><kbd>Ctrl+Z</kbd> undo</span>
+              </div>
             </div>
-            <div class="inspector-section inspector-shortcuts">
-              <div class="inspector-subhead">Shortcuts</div>
-              <span class="kbd-hint"><kbd>Tab</kbd> suggest</span>
-              <span class="kbd-hint"><kbd>Ctrl+Click</kbd> correct</span>
-              <span class="kbd-hint"><kbd>Ctrl+B</kbd> bold</span>
-              <span class="kbd-hint"><kbd>Ctrl+Z</kbd> undo</span>
-            </div>
-          </aside>
-        </div>
-        <div class="editor-status">
-          <span id="fileStatus">Plain text · UTF-8</span>
-          <span id="editorStats">0 words · 0 dictionary words · 0 characters</span>
-          <div class="status-controls">
-            <button class="status-toggle" id="inspectorToggle" title="Show word suggestions" aria-label="Show word suggestions" aria-pressed="false">🔤</button>
-            <button class="status-toggle" id="keyboardBtn" title="Show keyboard" aria-label="Show keyboard">⌨️⬆️</button>
-          </div>
-        </div>
-        <section id="keyboardPanel" class="keyboard-panel" hidden>
-          <div class="keyboard-toolbar">
-            <button type="button" class="key fn kb-tool" id="kbBold" title="Bold"><b>B</b></button>
-            <button type="button" class="key fn kb-tool" id="kbItalic" title="Italic"><i>I</i></button>
-            <div class="keyboard-toolbar-divider"></div>
-            <button type="button" class="key fn kb-tool" id="kbUndo" title="Undo">↶</button>
-            <button type="button" class="key fn kb-tool" id="kbRedo" title="Redo">↷</button>
-            <div class="keyboard-toolbar-divider"></div>
-            <button type="button" class="key fn kb-tool" id="kbSoftBreak" title="Soft break (Shift+Enter)">↵</button>
-            <button type="button" class="key fn kb-tool" id="kbFind" title="Find in document">🔍</button>
-          </div>
-          <div id="keyboard" class="keyboard"></div>
-          <div class="keyboard-info-row">
-            <div class="keyboard-info-section">
-              <label class="switch-label"><input id="phoneticToggle" type="checkbox" checked><span>Phonetic</span></label>
-              <button id="deviceKbBtn" class="small-btn" title="Use your phone's keyboard instead">Device keyboard</button>
-              <button id="closeKeyboard" class="small-btn">Hide</button>
-            </div>
-          </div>
-        </section>
+<div id="errors" class="spell-error-list"></div>
+         </section>
+
        </main>
   </div>
   <div id="contextMenu" class="context-menu" hidden role="menu">
@@ -248,17 +362,104 @@
     <button data-context="delete" role="menuitem" class="danger-action">Delete</button>
   </div>
   <dialog id="templateDialog" class="template-dialog"><div class="dialog-head"><div><b>Start a new project</b><span>Choose a structure and begin writing.</span></div><button id="closeTemplates">×</button></div><div id="templateGrid" class="template-grid"></div></dialog>
-  <script src="{% static 'fidel.js' %}?v=16"></script>
-  <script src="{% static 'formats.js' %}?v=16"></script>
-  <script>
-    window.WERKET_INITIAL = {
-      documents: {{ documents_json|safe }},
-      prefs: {{ prefs_json|safe }},
-      username: "{{ request.user.username|escapejs }}",
-      csrf: "{{ csrf_token }}"
-    };
-  </script>
-  <script src="{% static 'werket.js' %}?v=16"></script>
+  <dialog id="newDocDialog" class="newdoc-dialog">
+    <div class="newdoc-head"><div><b id="newDocPickedName">New document</b><span id="newDocPickedDesc">Choose a language and name your document.</span></div><button id="newDocCancel" class="newdoc-close" type="button" title="Cancel">×</button></div>
+    <form id="newDocForm" class="newdoc-form">
+    <div class="newdoc-body">
+      <div class="newdoc-section">
+        <label class="newdoc-label">1. Choose a language</label>
+        <div class="newdoc-langs">
+          <label class="newdoc-lang"><input type="radio" name="newDocLang" id="newDocLangAm" checked><span class="newdoc-lang-badge">አማ</span><b>Amharic</b><small>አማርኛ</small></label>
+          <label class="newdoc-lang"><input type="radio" name="newDocLang" id="newDocLangEn"><span class="newdoc-lang-badge">EN</span><b>English</b><small>English</small></label>
+        </div>
+      </div>
+      <div class="newdoc-section">
+        <label class="newdoc-label" for="newDocName" id="newDocNameLabel">2. Name your document</label>
+        <input id="newDocName" class="newdoc-name" type="text" placeholder="Untitled.md" autocomplete="off">
+        <div id="newDocError" class="newdoc-error" hidden></div>
+      </div>
+      <div class="newdoc-section">
+        <label class="newdoc-label">Template</label>
+        <div id="newDocTemplateGrid" class="newdoc-templates"></div>
+      </div>
+      <label id="newDocOskWrap" class="newdoc-osk">
+        <input type="checkbox" id="newDocOsk" checked>
+        <span>Show the on-screen Amharic keyboard <small>(አማርኛ ቁልፍ ሰሌዳ)</small></span>
+      </label>
+    </div>
+    <div class="newdoc-foot"><button id="newDocCreate" class="newdoc-create">Create document</button></div>
+    </form>
+  </dialog>
+  <dialog id="authDialog" class="auth-dialog">
+    <div class="auth-panel">
+      <div class="auth-header">
+        <svg class="brand-mark" viewBox="0 0 512 512" width="40" height="40" aria-hidden="true">
+          <defs>
+            <linearGradient id="lionGradSmall" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#f5d06e;stop-opacity:1" />
+              <stop offset="50%" style="stop-color:#e8b84d;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#d4a03a;stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="maneGradSmall" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#c4741e;stop-opacity:1" />
+              <stop offset="50%" style="stop-color:#a85d18;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#8b4513;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <!-- Mane back -->
+          <path fill="url(#maneGradSmall)" d="M140 120 Q100 100 80 140 Q60 180 100 220 Q140 260 180 260 Q220 260 260 220 Q300 180 280 140 Q260 100 220 120 Q180 140 140 120 Z"/>
+          <!-- Face -->
+          <ellipse cx="256" cy="200" rx="110" ry="100" fill="url(#lionGradSmall)"/>
+          <!-- Mane front -->
+          <path fill="url(#maneGradSmall)" d="M160 140 Q120 120 100 160 Q80 200 120 240 Q160 280 200 280 Q240 280 280 240 Q320 200 300 160 Q280 120 240 140 Q200 160 160 140 Z"/>
+          <!-- Ears -->
+          <ellipse cx="150" cy="110" rx="25" ry="35" fill="url(#lionGradSmall)" transform="rotate(-20 150 110)"/>
+          <ellipse cx="362" cy="110" rx="25" ry="35" fill="url(#lionGradSmall)" transform="rotate(20 362 110)"/>
+          <!-- Eyes -->
+          <ellipse cx="200" cy="180" rx="18" ry="22" fill="#fff"/>
+          <ellipse cx="200" cy="180" rx="8" ry="10" fill="#1a1a2e"/>
+          <ellipse cx="312" cy="180" rx="18" ry="22" fill="#fff"/>
+          <ellipse cx="312" cy="180" rx="8" ry="10" fill="#1a1a2e"/>
+          <!-- Nose -->
+          <ellipse cx="256" cy="210" rx="20" ry="16" fill="#2d1810"/>
+          <!-- Mouth (roaring) -->
+          <path fill="#1a0f08" d="M256 225 Q240 240 230 265 Q240 290 256 310 Q272 290 282 265 Q272 240 256 225 Z"/>
+          <!-- Tongue -->
+          <ellipse cx="256" cy="275" rx="15" ry="12" fill="#c0392b"/>
+          <!-- Crown -->
+          <path fill="none" stroke="#f5d06e" stroke-width="2" stroke-dasharray="8,4" d="M256 70 Q200 80 180 130 Q160 180 200 220 Q240 260 256 280"/>
+          <circle cx="256" cy="70" r="6" fill="#f5d06e"/>
+        </svg>
+        <div><b id="authTitle">Sign in to Werket</b><span class="auth-sub">Save your work across devices</span></div>
+        <button id="closeAuth" class="auth-close">×</button>
+      </div>
+      <form id="authForm" class="auth-form" autocomplete="on">
+        <div id="authNameField" class="auth-field" style="display:none">
+          <label for="authName">Name</label>
+          <input id="authName" type="text" placeholder="Your name" autocomplete="name">
+        </div>
+        <div class="auth-field">
+          <label for="authEmail">Email</label>
+          <input id="authEmail" type="email" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label for="authPassword">Password</label>
+          <input id="authPassword" type="password" placeholder="4+ characters" required minlength="4" autocomplete="current-password">
+        </div>
+        <div id="authError" class="auth-error" hidden></div>
+        <button type="submit" class="auth-submit" id="authSubmitBtn">Sign in</button>
+      </form>
+      <div class="auth-switch">
+        <span id="authSwitchText">Don't have an account?</span>
+        <button id="authSwitchBtn" type="button">Create one</button>
+      </div>
+      <div class="auth-local">
+        <button id="authStayLocal" type="button">Continue without account</button>
+      </div>
+    </div>
+  </dialog>
+  <script src="/static/formats.js?v=12"></script>
+  <script src="/static/werket.js?v=12"></script>
   <script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});</script>
 </body>
 </html>

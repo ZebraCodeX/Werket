@@ -5,3 +5,14 @@ services:
     plan: free
     autoDeploy: true
     healthCheckPath: /
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: werket.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://werket.onrender.com
+      - key: DEBUG
+        value: "false"

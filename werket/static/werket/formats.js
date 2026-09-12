@@ -579,6 +579,161 @@
   /* ---------- PDF (JPEG pages) ---------- */
 
 
+  /* ---------- ZIP / deflate reader (unzip of import formats) ---------- */
+
+  function inflate(data, start) {
+    var bitPos = 0;
+    function readBits(n) {
+      var v = 0;
+      for (var i = 0; i < n; i++) {
+        var idx = (start + (bitPos >> 3));
+        var bit = ((data[idx] || 0) >> (bitPos & 7)) & 1;
+        v |= bit << i;
+        bitPos++;
+      }
+      return v;
+    }
+    function readBit() { return readBits(1); }
+    function tree(lengths) {
+      var nodes = [{ b0: -1, b1: -1, s: -1 }], bl = new Int16Array(16), next = new Int16Array(16), c = 0, i, k;
+      for (i = 0; i < lengths.length; i++) if (lengths[i]) bl[lengths[i]]++;
+      for (i = 1; i <= 15; i++) { c = (c + bl[i - 1]) << 1; next[i] = c; }
+      for (i = 0; i < lengths.length; i++) {
+        if (!lengths[i]) continue;
+        var bc = next[lengths[i]]++, node = 0;
+        for (k = lengths[i] - 1; k >= 0; k--) {
+          var key = ((bc >> k) & 1) ? 'b1' : 'b0';
+          if (nodes[node][key] < 0) { nodes.push({ b0: -1, b1: -1, s: -1 }); nodes[node][key] = nodes.length - 1; }
+          node = nodes[node][key];
+        }
+        nodes[node].s = i;
+      }
+      return nodes;
+    }
+    function dec(t) {
+      var node = 0;
+      for (var depth = 0; depth < 32; depth++) {
+        var n = t[node], nx = n[readBit() ? 'b1' : 'b0'];
+        if (nx < 0) return -1;
+        if (t[nx].s >= 0 && t[nx].b0 < 0 && t[nx].b1 < 0) return t[nx].s;
+        node = nx;
+      }
+      return -1;
+    }
+    var lit = [], dist = [], i;
+    for (i = 0; i < 144; i++) lit.push(8); for (i = 144; i < 256; i++) lit.push(9); for (i = 256; i < 280; i++) lit.push(7); for (i = 280; i < 288; i++) lit.push(8);
+    for (i = 0; i < 30; i++) dist.push(5);
+    var tLit = tree(lit), tDist = tree(dist);
+    var lenB = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+    var lenE = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+    var dBase = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+    var dExtra = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+    var out = [], cap = 32 * 1024 * 1024;
+    function byte(b) { if (out.length < cap) out.push(b); }
+    var last;
+    do {
+      last = readBit();
+      var btype = readBits(2);
+      if (btype === 3) return null;
+      if (btype === 0) {
+        var aligned = (bitPos + 7) & ~7;
+        bitPos = aligned;
+        var len = readBits(16); readBits(16);
+        for (i = 0; i < len; i++) byte(data[start + (bitPos >> 3) + i] || 0);
+        bitPos += len * 8;
+      } else {
+        var tl, td;
+        if (btype === 1) { tl = tLit; td = tDist; }
+        else {
+          var hlit = readBits(5) + 257, hdist = readBits(5) + 1, hclen = readBits(4) + 4;
+          var order = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+          var cl = new Array(19).fill(0);
+          for (i = 0; i < hclen; i++) cl[order[i]] = readBits(3);
+          var tCL = tree(cl);
+          var lens = new Array(hlit + hdist).fill(0), li = 0;
+          while (li < lens.length) {
+            var sym = dec(tCL);
+            if (sym < 0) return null;
+            if (sym < 16) lens[li++] = sym;
+            else if (sym === 16) { var r = 3 + readBits(2); while (r--) lens[li++] = lens[li - 1]; }
+            else if (sym === 17) { var r2 = 3 + readBits(3); while (r2--) lens[li++] = 0; }
+            else { var r3 = 11 + readBits(7); while (r3--) lens[li++] = 0; }
+          }
+          tl = tree(lens.slice(0, hlit));
+          td = tree(lens.slice(hlit));
+        }
+        for (var guard = 0; ; guard++) {
+          if (guard > 20000000) return null;
+          var s2 = dec(tl);
+          if (s2 < 0) return null;
+          if (s2 < 256) { byte(s2); continue; }
+          if (s2 === 256) break;
+          if (s2 > 285) return null;
+          var le = s2 - 257, ln = lenB[le] + (lenE[le] ? readBits(lenE[le]) : 0);
+          if (!(ln >= 3 && ln <= 258)) return null;
+          var ds = dec(td);
+          if (ds < 0 || ds >= 30) return null;
+          var dd = dBase[ds] + (dExtra[ds] ? readBits(dExtra[ds]) : 0);
+          if (dd < 1 || dd > out.length) return null;
+          while (ln--) { byte(out[out.length - dd]); }
+        }
+      }
+    } while (!last);
+    return new Uint8Array(out);
+  }
+
+  function u16(bytes, at) { return ((bytes[at] & 0xff) | ((bytes[at + 1] & 0xff) << 8)) >>> 0; }
+  function u32(bytes, at) { return u16(bytes, at) | (u16(bytes, at + 2) << 16); }
+  function sliceName(bytes, at, len) {
+    var chunk = bytes.subarray(at, at + len);
+    var text = '';
+    var decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8') : null;
+    if (decoder) { try { return decoder.decode(chunk); } catch (e) {} }
+    for (var i = 0; i < chunk.length; i++) text += String.fromCharCode(chunk[i]);
+    return text;
+  }
+  function readZip(bytes) {
+    var entries = [], i;
+    var eocd = -1;
+    for (i = bytes.length - 22; i >= 0; i--) {
+      if (bytes[i] === 0x50 && bytes[i + 1] === 0x4b && bytes[i + 2] === 0x05 && bytes[i + 3] === 0x06) { eocd = i; break; }
+    }
+    if (eocd < 0) return null;
+    var count = u16(bytes, eocd + 10);
+    var cdOffset = u32(bytes, eocd + 16);
+    var pos = cdOffset;
+    for (var n = 0; n < count && pos + 46 <= bytes.length; n++) {
+      if (bytes[pos] !== 0x50 || bytes[pos + 1] !== 0x4b || bytes[pos + 2] !== 0x01 || bytes[pos + 3] !== 0x02) break;
+      var method = u16(bytes, pos + 10);
+      var compSize = u32(bytes, pos + 20);
+      var uncSize = u32(bytes, pos + 24);
+      var nameLen = u16(bytes, pos + 28);
+      var extraLen = u16(bytes, pos + 30);
+      var commentLen = u16(bytes, pos + 32);
+      var lho = u32(bytes, pos + 42);
+      var name = sliceName(bytes, pos + 46, nameLen);
+      var data = null;
+      if (lho + 30 <= bytes.length) {
+        var lhNameLen = u16(bytes, lho + 26);
+        var lhExtraLen = u16(bytes, lho + 28);
+        var startData = lho + 30 + lhNameLen + lhExtraLen;
+        var raw = bytes.subarray(startData, startData + compSize);
+        if (method === 0) data = raw.slice();
+        else if (method === 8) data = inflate(bytes, startData);
+      }
+      if (data != null) entries.push({ name: name, data: data, method: method, size: uncSize });
+      pos += 46 + nameLen + extraLen + commentLen;
+    }
+    return entries;
+  }
+  function bytesToText(bytes) {
+    var decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8') : null;
+    if (decoder) { try { return decoder.decode(bytes); } catch (e) {} }
+    var chunk = '', out = '';
+    for (var i = 0; i < bytes.length; i++) chunk += String.fromCharCode(bytes[i]);
+    return chunk;
+  }
+
   var WerketFormats = {
     htmlToBlocks: htmlToBlocks,
     blockText: blockText,
@@ -592,7 +747,10 @@
     buildRtf: buildRtf,
     buildEpub: buildEpub,
     escapeXml: escapeXml,
-    decodeEntities: decodeEntities
+    decodeEntities: decodeEntities,
+    inflate: inflate,
+    readZip: readZip,
+    bytesToText: bytesToText
   };
   global.WerketFormats = WerketFormats;
   if (typeof module !== 'undefined' && module.exports) module.exports = WerketFormats;
