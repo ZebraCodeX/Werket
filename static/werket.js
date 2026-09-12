@@ -123,10 +123,6 @@
       var next = count + node.nodeValue.length;
       if (offset < next) return {node: node, offset: Math.max(0, offset - count)};
       if (offset === next) {
-        var container = node.parentElement;
-        if (container && /^(P|H1|H2|H3|DIV)$/i.test(container.nodeName) && container.nextElementSibling && /^(P|H1|H2|H3|DIV)$/i.test(container.nextElementSibling.nodeName)) {
-          return {node: container.nextElementSibling, offset: 0};
-        }
         text = {node: node, offset: node.nodeValue.length};
       }
       count = next;
@@ -1238,7 +1234,14 @@ function addImportedFile(name, content) {
     $('homeScreen').hidden = true;
     document.body.classList.remove('home-open');
   }
-
+  // Allow clicking the document or home background to dismiss the home overlay
+  // (users expect to click the paper to start writing)
+  try {
+    var _homeEl = document.getElementById('homeScreen');
+    if (_homeEl) _homeEl.addEventListener('click', function(e){ if (e.target === _homeEl) { hideHome(); focusEditor(); }});
+    var _stageEl = document.querySelector('.document-stage');
+    if (_stageEl) _stageEl.addEventListener('click', function(e){ if (isHome() && !e.target.closest('#homeScreen')) { hideHome(); }});
+  } catch(e) {}
   function render() { renderTree(); renderTabs(); loadActiveIntoEditor(); }
   function openFile(id) {
     if (!workspace.files.some(function (f) { return f.id === id; })) return;
