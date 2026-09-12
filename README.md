@@ -1,7 +1,6 @@
 # Werket
 
-Werket is a standalone Amharic file editor inspired by VS Code, Pages, and
-Word. It combines a workspace/file tree, tabs, a paper-like editor, Fidel
+Werket is a standalone Amharic file editor inspired by Pages. It combines a file tree, tabs, a paper-like editor, Fidel
 phonetic typing, direct seven-order letter families, dictionary-backed spell
 checking, predictive words/sentences, book templates, local document storage,
 import, export, printing, and a mobile/desktop-installable PWA.
