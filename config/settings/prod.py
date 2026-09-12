@@ -25,7 +25,7 @@ CSRF_TRUSTED_ORIGINS = _csrf
 
 # Always include wildcard to avoid DisallowedHost with Render proxy env vars
 _ALLOWED = os.environ.get('ALLOWED_HOSTS', '')
-ALLOWED_HOSTS = ['*'] + [h for h in _allowed.split(',') if h]
+ALLOWED_HOSTS = ['*'] + [h for h in _ALLOWED.split(',') if h]
 
 STORAGES = {
     'default': {
