@@ -3,7 +3,12 @@ from .base import *  # noqa: F403,F401
 
 DEBUG = False
 
-SECURE_SSL_REDIRECT = True
+# Render terminates TLS at its proxy and forwards http internally with
+# X-Forwarded-Proto: https. Without this Django thinks every request is
+# http and SECURE_SSL_REDIRECT would loop on the health-check.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'false').lower() == 'true'
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = 31536000
