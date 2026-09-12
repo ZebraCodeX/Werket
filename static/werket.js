@@ -7,6 +7,7 @@
   var oskPrefKey = 'werket-osk';
   var saveTimer, suggestTimer, spellTimer;
   var lastFullSpellCheck = 0;
+  var inspectorOpen = localStorage.getItem('werket-inspector') === '1';
   var phoneticBuffer = '', phoneticStart = 0, phoneticRendered = '';
   var undoStack = [], redoStack = [], applyingHistory = false;
   var oskOpen = false;
@@ -388,7 +389,6 @@
       $('keyboardPanel').hidden = true;
       $('keyboardBtn').hidden = true;
       document.body.classList.remove('osk-open', 'touch-writing');
-      document.body.style.setProperty('--kb-h', '0px');
       allowNativeKeyboard();
       hideOrders();
       return;
@@ -406,8 +406,6 @@
     $('keyboardBtn').setAttribute('aria-label', oskOpen ? 'Hide keyboard' : 'Show keyboard');
     localStorage.setItem(oskPrefKey, oskOpen ? '1' : '0');
     hideOrders();
-    var kbH = oskOpen ? $('keyboardPanel').offsetHeight : 0;
-    document.body.style.setProperty('--kb-h', kbH + 'px');
     measurePageHeight();
     if (oskOpen) {
       suppressNativeKeyboard();
@@ -433,6 +431,28 @@
       $('keyboardBtn').textContent = oskOpen ? '⌨️⬇️' : '⌨️⬆️';
       if (oskOpen) setOsk(true);
     }
+  }
+  function setInspector(open) {
+    inspectorOpen = !!open;
+    localStorage.setItem('werket-inspector', inspectorOpen ? '1' : '0');
+    applyInspector();
+  }
+  function applyInspector() {
+    var panel = $('inspectorPanel');
+    var btn = $('inspectorToggle');
+    var scrim = $('inspectorScrim');
+    if (!panel) return;
+    panel.hidden = !inspectorOpen;
+    if (scrim) scrim.hidden = !(inspectorOpen && window.matchMedia('(max-width: 768px)').matches);
+    if (btn) {
+      btn.classList.toggle('active', inspectorOpen);
+      btn.setAttribute('aria-pressed', inspectorOpen ? 'true' : 'false');
+      btn.setAttribute('aria-label', inspectorOpen ? 'Hide word suggestions' : 'Show word suggestions');
+      btn.title = inspectorOpen ? 'Hide word suggestions' : 'Show word suggestions';
+    }
+    if (inspectorOpen) refreshSuggestions();
+    measurePageHeight();
+    updatePagination();
   }
 
   function renderTree() {
@@ -577,11 +597,9 @@ updateStats(); refreshSuggestions(); checkSpelling();
     function measurePageHeight() {
       var stage = document.querySelector('.document-stage');
       if (!stage) return;
-      var kb = $('keyboardPanel');
-      var kbH = (oskOpen && kb) ? (kb.offsetHeight || 0) : 0;
       var st = window.getComputedStyle(stage);
       var padTop = parseFloat(st.paddingTop) || 0;
-      var padBottom = oskOpen ? kbH : ((parseFloat(st.paddingBottom) || 0) + kbH);
+      var padBottom = parseFloat(st.paddingBottom) || 0;
       var fit = Math.max(320, Math.min(920, stage.clientHeight - padTop - padBottom - 56));
       if (fit === pageH) return;
       pageH = fit;
@@ -1503,6 +1521,9 @@ var errorsEl = $('errors');
   $('sidebarToggle').onclick = toggleExplorer;
   $('closeTemplates').onclick = closeTemplates;
   $('keyboardBtn').onclick = function () { deviceKeyboardMode = false; setOsk(!oskOpen); };
+  $('inspectorToggle').onclick = function () { setInspector(!inspectorOpen); };
+  $('closeInspector').onclick = function () { setInspector(false); };
+  $('inspectorScrim').onclick = function () { setInspector(false); };
   $('closeKeyboard').onclick = function () { setOsk(false); };
   $('deviceKbBtn').onclick = function () {
     deviceKeyboardMode = true;
@@ -1725,6 +1746,7 @@ var errorsEl = $('errors');
   renderKeyboard();
   render();
   layoutChrome();
+  applyInspector();
   measurePageHeight();
   updatePagination();
   var emptyWorkspace = workspace.files.every(function (f) { return !(f.text || '').trim(); });

@@ -52,7 +52,7 @@
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
   }
   </script>
-  <link rel="stylesheet" href="/static/werket.css?v=15">
+  <link rel="stylesheet" href="/static/werket.css?v=16">
 </head>
 <body>
   <div class="app-shell">
@@ -167,22 +167,52 @@
             <button class="tool" id="findBtn" title="Find in document">🔍</button>
           </div>
         </section>
-        <section class="document-stage">
-          <div class="find-bar" id="findBar">
-            <input id="findInput" placeholder="Find in document">
-            <span id="findCount"></span>
-            <button id="findPrev">↑</button>
-            <button id="findNext">↓</button>
-            <button id="closeFind">×</button>
+        <div class="editor-row">
+          <section class="document-stage">
+            <div class="find-bar" id="findBar">
+              <input id="findInput" placeholder="Find in document">
+              <span id="findCount"></span>
+              <button id="findPrev">↑</button>
+              <button id="findNext">↓</button>
+              <button id="closeFind">×</button>
+            </div>
+            <div class="document-paper">
+              <div id="editor" class="document-editor" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off" data-placeholder="Start writing in Amharic..."></div>
+            </div>
+          </section>
+          <div id="inspectorScrim" class="inspector-scrim" hidden></div>
+          <aside id="inspectorPanel" class="inspector" hidden>
+            <div class="inspector-head"><b>Words</b><button id="closeInspector" title="Hide word suggestions" aria-label="Hide word suggestions">×</button></div>
+            <div class="inspector-section">
+              <div class="inspector-subhead">Word suggestions</div>
+              <div id="keyboardSuggestions" class="keyboard-suggest-row"><span class="keyboard-suggest-label">Suggestions</span><span class="empty">Type to see dictionary words</span></div>
+            </div>
+            <div class="inspector-section">
+              <div class="inspector-subhead">Spell check</div>
+              <div class="inspector-spell">
+                <span class="keyboard-info-badge" id="spellBadge">CLEAN</span>
+                <span id="spellSummary" class="keyboard-info-text">All words checked</span>
+              </div>
+              <div id="errors" class="spell-error-list"></div>
+            </div>
+            <div class="inspector-section inspector-shortcuts">
+              <div class="inspector-subhead">Shortcuts</div>
+              <span class="kbd-hint"><kbd>Tab</kbd> suggest</span>
+              <span class="kbd-hint"><kbd>Ctrl+Click</kbd> correct</span>
+              <span class="kbd-hint"><kbd>Ctrl+B</kbd> bold</span>
+              <span class="kbd-hint"><kbd>Ctrl+Z</kbd> undo</span>
+            </div>
+          </aside>
+        </div>
+        <div class="editor-status">
+          <span id="fileStatus">Plain text · UTF-8</span>
+          <span id="editorStats">0 words · 0 dictionary words · 0 characters</span>
+          <div class="status-controls">
+            <button class="status-toggle" id="inspectorToggle" title="Show word suggestions" aria-label="Show word suggestions" aria-pressed="false">🔤</button>
+            <button class="status-toggle" id="keyboardBtn" title="Show keyboard" aria-label="Show keyboard">⌨️⬆️</button>
           </div>
-          <div class="document-paper">
-            <div id="editor" class="document-editor" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off" data-placeholder="Start writing in Amharic..."></div>
-          </div>
-        </section>
-        <div class="editor-status"><span id="fileStatus">Plain text · UTF-8</span><span id="editorStats">0 words · 0 dictionary words · 0 characters</span><button class="tool" id="keyboardBtn" title="Show keyboard" aria-label="Show keyboard">⌨️⬆️</button></div>
-         <section id="keyboardPanel" class="keyboard-panel" hidden>
-          <div class="keyboard-grab" aria-hidden="true"></div>
-          <div id="keyboardSuggestions" class="keyboard-suggest-row"><span class="keyboard-suggest-label">Suggestions</span><span class="empty">Type to see dictionary words</span></div>
+        </div>
+        <section id="keyboardPanel" class="keyboard-panel" hidden>
           <div class="keyboard-toolbar">
             <button type="button" class="key fn kb-tool" id="kbBold" title="Bold"><b>B</b></button>
             <button type="button" class="key fn kb-tool" id="kbItalic" title="Italic"><i>I</i></button>
@@ -194,27 +224,14 @@
             <button type="button" class="key fn kb-tool" id="kbFind" title="Find in document">🔍</button>
           </div>
           <div id="keyboard" class="keyboard"></div>
-           <div class="keyboard-info-row">
-              <div class="keyboard-info-section">
-                <label class="switch-label"><input id="phoneticToggle" type="checkbox" checked><span>Phonetic</span></label>
-                <button id="deviceKbBtn" class="small-btn" title="Use your phone's keyboard instead">Device keyboard</button>
-                <button id="closeKeyboard" class="small-btn">Hide</button>
-              </div>
-              <div class="keyboard-info-divider"></div>
-              <div class="keyboard-info-section">
-                <span class="keyboard-info-badge" id="spellBadge">CLEAN</span>
-                <span id="spellSummary" class="keyboard-info-text">All words checked</span>
-              </div>
-              <div class="keyboard-info-divider"></div>
-              <div class="keyboard-info-section keyboard-shortcuts">
-                <span class="kbd-hint"><kbd>Tab</kbd> suggest</span>
-                <span class="kbd-hint"><kbd>Ctrl+Click</kbd> correct</span>
-                <span class="kbd-hint"><kbd>Ctrl+B</kbd> bold</span>
-                <span class="kbd-hint"><kbd>Ctrl+Z</kbd> undo</span>
-              </div>
+          <div class="keyboard-info-row">
+            <div class="keyboard-info-section">
+              <label class="switch-label"><input id="phoneticToggle" type="checkbox" checked><span>Phonetic</span></label>
+              <button id="deviceKbBtn" class="small-btn" title="Use your phone's keyboard instead">Device keyboard</button>
+              <button id="closeKeyboard" class="small-btn">Hide</button>
             </div>
-<div id="errors" class="spell-error-list"></div>
-         </section>
+          </div>
+        </section>
        </main>
   </div>
   <div id="contextMenu" class="context-menu" hidden role="menu">
@@ -230,9 +247,9 @@
     <button data-context="delete" role="menuitem" class="danger-action">Delete</button>
   </div>
   <dialog id="templateDialog" class="template-dialog"><div class="dialog-head"><div><b>Start a new project</b><span>Choose a structure and begin writing.</span></div><button id="closeTemplates">×</button></div><div id="templateGrid" class="template-grid"></div></dialog>
-  <script src="/static/fidel.js?v=15"></script>
-  <script src="/static/formats.js?v=15"></script>
-  <script src="/static/werket.js?v=15"></script>
+  <script src="/static/fidel.js?v=16"></script>
+  <script src="/static/formats.js?v=16"></script>
+  <script src="/static/werket.js?v=16"></script>
   <script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});</script>
 </body>
 </html>

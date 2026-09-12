@@ -1,4 +1,4 @@
-const C = 'werket-v15';
+const C = 'werket-v16';
 const S = [
   '/',
   '/manifest.json',
