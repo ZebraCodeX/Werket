@@ -6,7 +6,26 @@ phonetic typing, direct seven-order letter families, dictionary-backed spell
 checking, predictive words/sentences, book templates, local document storage,
 import, export, printing, and a mobile/desktop-installable PWA.
 
-## Run
+## Run (Django)
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py runserver
+```
+
+Open `http://localhost:8000`. Create an account from the login page; documents
+are stored per-user on the server and sync automatically as you type. A
+superuser for the Django admin is created with:
+
+```bash
+.venv/bin/python manage.py createsuperuser   # then visit /admin/
+```
+
+## Run (standalone, no accounts)
+
+The original no-auth server is still available:
 
 ```bash
 python3 app.py

@@ -1,0 +1,63 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account — Werket | ወርቀት</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/svg+xml" href="{% static 'icon.svg' %}">
+  <link rel="stylesheet" href="{% static 'werket.css' %}">
+  <style>
+    .auth-wrap { min-height: 100vh; display: grid; place-items: center; background: var(--bg); padding: 24px; }
+    .auth-card { width: 100%; max-width: 400px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 32px; }
+    .auth-card h1 { font-size: 22px; color: var(--ink); margin: 0 0 4px; }
+    .auth-card p.sub { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+    .auth-card .brand { font-size: 28px; }
+    .auth-card label { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 4px; }
+    .auth-card input { width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--ink); background: var(--paper); font-size: 14px; }
+    .auth-card input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,113,227,.12); outline: none; }
+    .auth-card .btn { width: 100%; margin-top: 18px; }
+    .auth-card .auth-errors { background: #fdecea; color: #a42733; border: 1px solid #f5c6cb; border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; margin-bottom: 8px; }
+    .auth-card .auth-errors li { margin-left: 16px; }
+    .auth-card .auth-links { margin-top: 18px; font-size: 13px; color: var(--muted); text-align: center; }
+    .auth-card .auth-links a { color: var(--accent); text-decoration: none; }
+    .auth-card .auth-links a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="brand">📄</div>
+      <h1>Create your Werket account</h1>
+      <p class="sub">ወርቀት — start writing in Amharic</p>
+      {% if form.errors %}
+        <div class="auth-errors">
+          {% for field in form %}
+            {% for error in field.errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <label for="id_username">Username</label>
+        {{ form.username }}
+        <label for="id_email">Email</label>
+        {{ form.email }}
+        <label for="id_password1">Password</label>
+        {{ form.password1 }}
+        <label for="id_password2">Confirm password</label>
+        {{ form.password2 }}
+        <button type="submit" class="btn icon-btn primary">Create account</button>
+      </form>
+      <div class="auth-links">
+        Already have an account? <a href="{% url 'login' %}">Log in</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
