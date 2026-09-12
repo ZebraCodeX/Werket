@@ -26,12 +26,14 @@
   var currentPaperSize = 'a4';
   var margins = {top:72,right:72,bottom:72,left:72};
   var headerFooter = {header:true,footer:true,pageNumbers:true,headerHeight:36,footerHeight:36};
-  var families = ['ሀ','ለ','ሐ','መ','ሠ','ረ','ሰ','ሸ','ቀ','በ','ተ','ቸ','ኀ','ነ','ኘ','አ','ከ','ኸ','ወ','ዐ','ዘ','ዠ','የ','ደ','ጀ','ገ','ጠ','ጨ','ጰ','ጸ','ፀ'];
-  var roman = ['h','l','H','m','S','r','s','sh','q','b','t','c','x','n','N','a','k','K','w','E','z','Z','y','d','j','g','T','C','P','S','D'];
-  var orders = ['e','u','i','a','ie','silent','o'];
+  var F = window.WerketFidel || {};
+  var families = F.FAMILIES || ['ሀ','ለ','ሐ','መ','ሠ','ረ','ሰ','ሸ','ቀ','በ','ተ','ቸ','ኀ','ነ','ኘ','አ','ከ','ኸ','ወ','ዐ','ዘ','ዠ','የ','ደ','ጀ','ገ','ጠ','ጨ','ጰ','ጸ','ፀ'];
+  var roman = F.ROMAN || ['h','l','H','m','S','r','s','sh','q','b','t','c','x','n','N','a','k','K','w','E','z','Z','y','d','j','g','T','C','P','ts','D'];
+  var orders = F.ORDERS || ['e','u','i','a','ie','silent','o'];
   var symbols = ['።','፣','፤','፥','፦','፧','፨','፩','፪','፫','፬','፭','፮','፯','፰','፱','፲','?','!',',','.'];
-  var phon = {h:'ሀ',H:'ሐ',l:'ለ',m:'መ',s:'ሰ',r:'ረ',S:'ሠ',b:'በ',t:'ተ',c:'ቸ',C:'ጨ',q:'ቀ',k:'ከ',x:'ኀ',n:'ነ',N:'ኘ',a:'አ',w:'ወ',z:'ዘ',y:'የ',d:'ደ',j:'ጀ',g:'ገ',T:'ጠ',p:'ፐ',f:'ፈ',v:'ቨ',D:'ፀ'};
-  var vowels = {e:0,u:1,i:2,a:3,ie:4,ee:4,'':5,o:6};
+  var phon = F.PHONETIC || {h:'ሀ',H:'ሐ',l:'ለ',m:'መ',s:'ሰ',r:'ረ',S:'ሠ',b:'በ',t:'ተ',c:'ቸ',C:'ጨ',q:'ቀ',k:'ከ',x:'ኀ',n:'ነ',N:'ኘ',a:'አ',w:'ወ',z:'ዘ',Z:'ዠ',y:'የ',d:'ደ',j:'ጀ',g:'ገ',T:'ጠ',p:'ፐ',f:'ፈ',v:'ቨ',D:'ፀ',K:'ኸ',E:'ዐ',P:'ጰ',F:'ፈ',V:'ቨ'};
+  var vowels = F.VOWELS || {e:0,u:1,i:2,a:3,ie:4,ee:4,'':5,o:6};
+  var DIGRAPHS = F.DIGRAPHS || {sh:'ሸ',ch:'ቸ',nh:'ኘ',ts:'ጸ',ph:'ፈ'};
   var templates = [
     {id:'blank', icon:'□', artwork:'blank', name:{en:'Blank document', am:'ባዶ ሰነድ'}, description:{en:'A clean page for notes or free writing.', am:'ለማስታወሻ ወይም ለነጻ ጽሕፈት ንጹህ ገጽ።'}, defaultName:{en:'Untitled.md', am:'አዲስ ሰነድ.md'}, files:{en:[['Untitled.md','']], am:[['አዲስ ሰነድ.md','']]}},
     {id:'letter', icon:'✉', artwork:'letter', name:{en:'Letter', am:'ደብዳቤ'}, description:{en:'Greeting, body, and closing for a formal note.', am:'መንከባከቢያ ለመደበኛ ማስታወቂያ፤ መግቢያ፣ ይዘት እና መዝጊያ።'}, defaultName:{en:'Letter.md', am:'ደብዳቤ.md'}, files:{en:[['Letter.md','<h1>Letter</h1><p>[Date]</p><p>Dear [Name],</p><p>I hope this letter finds you well. [Write your message here.]</p><p>Thank you for your time and consideration.</p><p>Sincerely,</p><p>[Your name]</p>']], am:[['ደብዳቤ.md','<h1>ደብዳቤ</h1><p>[ቀን]</p><p>ውድ [ስም]፣</p><p>ይህ ደብዳቤ ደህንነትን እያመጣልህ/ሽ ተመንጄያለሁ። [መልእክትዎን እዚህ ይጻፉ።]</p><p>ለጊዜዎና ለትኩረትዎ እናመሰግናለን።</p><p>በአክብሮት፣</p><p>[ስምዎ]</p>']]}},
@@ -59,7 +61,12 @@
   function activeFile() { return workspace.files.find(function (f) { return f.id === workspace.activeId; }) || null; }
   function saveWorkspace() { localStorage.setItem(workspaceKey, JSON.stringify(workspace)); }
   function setStatus(text) { $('saveStatus').textContent = text; }
-  function editorText() { return (editor.innerText || '').replace(/\u00a0/g, ' '); }
+  function editorText() {
+    var blocks = editor.querySelectorAll('p,h1,h2,h3,div,li,blockquote');
+    var parts = Array.prototype.map.call(blocks, function (b) { return (b.innerText || b.textContent || '').replace(/\u00a0/g, ' '); }).filter(function (p) { return p !== ''; });
+    var joined = parts.join('\n');
+    return joined ? joined : ((editor.innerText || '') + '').replace(/\u00a0/g, ' ');
+  }
   function editorHtml() {
     var clone = editor.cloneNode(true);
     clone.querySelectorAll('.spell-error').forEach(function (el) {
@@ -84,6 +91,7 @@
   var BLOCK_RE = /^(P|H[1-6]|DIV|UL|OL|LI|BLOCKQUOTE|TABLE)$/i;
   function setEditorContent(value) {
     var source = String(value || '');
+    if (!source) { editor.innerHTML = '<p><br></p>'; normalizeEditorBlocks(); return; }
     editor.innerHTML = /^\s*<(?:h[1-6]|p|div|strong|em|ul|ol|li|br|blockquote)\b/i.test(source) ? source : markdownToHtml(source);
     normalizeEditorBlocks();
   }
@@ -106,42 +114,136 @@
     if (changed) { restoreSelection(offsets.start, offsets.end); editor.normalize(); }
     return changed;
   }
+  function rawTextCount(node, offset) {
+    var walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT), count = 0, n;
+    while ((n = walker.nextNode())) {
+      if (n === node) return count + Math.min(offset, n.nodeValue.length);
+      count += n.nodeValue.length;
+    }
+    return count;
+  }
   function selectionOffsets() {
     var selection = window.getSelection();
     if (!selection || !selection.rangeCount || !editor.contains(selection.anchorNode)) return {start: caretStart, end: caretEnd};
-    var range = selection.getRangeAt(0), before = range.cloneRange();
-    before.selectNodeContents(editor);
-    before.setEnd(range.startContainer, range.startOffset);
-    var selected = range.cloneRange();
-    selected.selectNodeContents(editor);
-    selected.setEnd(range.endContainer, range.endOffset);
-    return {start: before.toString().length, end: selected.toString().length};
+    var range = selection.getRangeAt(0);
+    return {
+      start: rawTextCount(range.startContainer, range.startOffset),
+      end: rawTextCount(range.endContainer, range.endOffset)
+    };
   }
-  function nodeAtOffset(root, offset) {
+  function nodeAtOffset(root, offset, preferNext) {
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), node, count = 0, text = null;
     while ((node = walker.nextNode())) {
       var next = count + node.nodeValue.length;
       if (offset < next) return {node: node, offset: Math.max(0, offset - count)};
       if (offset === next) {
+        if (preferNext) {
+          var following = walker.nextNode();
+          if (following) return {node: following, offset: 0};
+        }
         text = {node: node, offset: node.nodeValue.length};
       }
       count = next;
     }
-    return text || {node: root, offset: root.childNodes.length};
+    return text || {node: root, offset: Math.min(offset, root.childNodes.length)};
+  }
+  function leafPoint(node, offset) {
+    if (node.nodeType === 3) return {node: node, offset: offset};
+    var children = node.childNodes;
+    if (!children.length) return {node: node, offset: 0};
+    if (offset === 0) {
+      var first = children[0];
+      if (first.nodeType === 3) return {node: first, offset: 0};
+      if (first.nodeName === 'BR' || first.nodeName === 'IMG') return {node: node, offset: 0};
+      return leafPoint(first, 0);
+    }
+    if (offset >= children.length) {
+      var last = children[children.length - 1];
+      if (last.nodeType === 3) return {node: last, offset: last.nodeValue.length};
+      if (last.nodeName === 'BR' || last.nodeName === 'IMG') return {node: node, offset: children.length - 1};
+      return leafPoint(last, last.childNodes.length);
+    }
+    var mid = children[offset];
+    if (mid.nodeType === 3) return {node: mid, offset: 0};
+    if (mid.nodeName === 'BR' || mid.nodeName === 'IMG') return {node: node, offset: offset};
+    return leafPoint(mid, 0);
   }
   function restoreSelection(start, end) {
-    var startPoint = nodeAtOffset(editor, start), endPoint = nodeAtOffset(editor, end), range = document.createRange(), selection = window.getSelection();
+    var selection = window.getSelection();
+    var sp0 = null, lp0 = null;
+    if (selection && selection.rangeCount && editor.contains(selection.anchorNode)) {
+      var current = selectionOffsets();
+      if (current.start === start && current.end === end) {
+        sp0 = nodeAtOffset(editor, start, true); lp0 = leafPoint(sp0.node, sp0.offset);
+        if (selection.anchorNode === lp0.node && selection.anchorOffset === lp0.offset) {
+          caretStart = start; caretEnd = end; return;
+        }
+      }
+    }
+    if (!sp0) { sp0 = nodeAtOffset(editor, start, true); }
+    if (!lp0) { lp0 = leafPoint(sp0.node, sp0.offset); }
+    var startPoint = lp0, endPoint = leafPoint(nodeAtOffset(editor, end).node, nodeAtOffset(editor, end).offset);
+    var range = document.createRange();
     try {
       range.setStart(startPoint.node, startPoint.offset); range.setEnd(endPoint.node, endPoint.offset);
       selection.removeAllRanges(); selection.addRange(range);
       caretStart = start; caretEnd = end;
     } catch (e) {}
   }
+  function commitText(range, block, text) {
+    range.deleteContents();
+    if (!range.startContainer.isConnected && range.endContainer.isConnected) {
+      try { range.setStart(range.endContainer, range.endOffset); } catch (e) {}
+    }
+    range.insertNode(document.createTextNode(text));
+    if (block && block.nodeType === 1 && block.isConnected) block.normalize();
+  }
+  function domReplaceAtCaret(start, end, text) {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) { replaceTextRange(start, end, text); return; }
+    var range0 = sel.getRangeAt(0);
+    if (!editor.contains(range0.startContainer)) { replaceTextRange(start, end, text); return; }
+    if (!range0.collapsed) {
+      var blk0 = range0.startContainer.nodeType === 3 ? range0.startContainer.parentNode : range0.startContainer;
+      commitText(range0, blk0, text);
+      restoreSelection(start + text.length, start + text.length);
+      try { editor.dispatchEvent(new Event('input', {bubbles: true})); } catch (e) {}
+      return;
+    }
+    var anchor = range0.startContainer, anchorOffset = range0.startOffset;
+    if (anchor.nodeType !== 3) { replaceTextRange(start, end, text); return; }
+    var need = end - start, back = anchor, backOffset = anchorOffset;
+    while (need > 0) {
+      if (backOffset >= need) { backOffset -= need; need = 0; break; }
+      need -= backOffset; backOffset = 0;
+      var prev = back.previousSibling;
+      while (prev && prev.nodeType !== 3) prev = prev.previousSibling;
+      if (!prev) break;
+      back = prev; backOffset = prev.nodeValue.length;
+    }
+    try { range0.setStart(back, backOffset); } catch (e) { replaceTextRange(start, end, text); return; }
+    commitText(range0, anchor.parentNode, text);
+    restoreSelection(start + text.length, start + text.length);
+    try { editor.dispatchEvent(new Event('input', {bubbles: true})); } catch (e) {}
+  }
   function replaceTextRange(start, end, text) {
-    var startPoint = nodeAtOffset(editor, start), endPoint = nodeAtOffset(editor, end), range = document.createRange();
-    range.setStart(startPoint.node, startPoint.offset); range.setEnd(endPoint.node, endPoint.offset); range.deleteContents();
-    var inserted = document.createTextNode(text); range.insertNode(inserted); range.setStartAfter(inserted); range.collapse(true);
-    var selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range); caretStart = caretEnd = start + text.length;
+    var sel = window.getSelection(), range = document.createRange(), live = null;
+    if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
+      var outc = selectionOffsets();
+      if (outc.start === start && outc.end === end) live = sel.getRangeAt(0);
+    }
+    var block = null;
+    if (live) {
+      range.setStart(live.startContainer, live.startOffset); range.setEnd(live.endContainer, live.endOffset);
+      block = live.startContainer.nodeType === 3 ? live.startContainer.parentNode : live.startContainer;
+    } else {
+      var sp = nodeAtOffset(editor, start, true), ep = nodeAtOffset(editor, end);
+      var startPoint = leafPoint(sp.node, sp.offset), endPoint = leafPoint(ep.node, ep.offset);
+      block = startPoint.node.parentNode;
+      try { range.setStart(startPoint.node, startPoint.offset); range.setEnd(endPoint.node, endPoint.offset); } catch (e) { return; }
+    }
+    commitText(range, block, text);
+    restoreSelection(start + text.length, start + text.length);
     try { editor.dispatchEvent(new Event('input', {bubbles: true})); } catch (e) {}
   }
   function applyTheme(theme) {
@@ -1305,7 +1407,7 @@ function addImportedFile(name, content) {
     if (!snap) return;
     if (snap.id && snap.id !== workspace.activeId) openFile(snap.id);
     applyingHistory = true;
-    editor.innerHTML = snap.html != null ? snap.html : markdownToHtml(snap.text);
+    setEditorContent(snap.html != null ? snap.html : markdownToHtml(snap.text));
     restoreSelection(snap.start, snap.end);
     applyingHistory = false;
     changed();
@@ -1355,6 +1457,7 @@ function addImportedFile(name, content) {
   }
   function insertNewLine() {
     pushUndo();
+    phoneticBuffer = ''; phoneticRendered = '';
     normalizeEditorBlocks();
     var sel = window.getSelection();
     if (!sel || !sel.rangeCount) return;
@@ -1447,6 +1550,7 @@ function addImportedFile(name, content) {
   }
   function insertSoftBreak() {
     pushUndo();
+    phoneticBuffer = ''; phoneticRendered = '';
     editor.focus({preventScroll: true});
     var sel = window.getSelection();
     if (!sel || !sel.rangeCount) return;
@@ -1568,7 +1672,7 @@ function addImportedFile(name, content) {
       }
     }
     var offsets = selectionOffsets();
-    replaceTextRange(offsets.start, offsets.end, text);
+    domReplaceAtCaret(offsets.start, offsets.end, text);
     changed();
     restoreCaret();
     // Ensure focus is maintained after insert
@@ -1628,6 +1732,7 @@ function addImportedFile(name, content) {
     if (after) frag.appendChild(document.createTextNode(after));
     parent.replaceChild(frag, text);
   }
+  var lastSpellKey = null;
   function markActiveLineSpelling(words) {
     var block = activeBlock();
     if (!block) return;
@@ -1643,6 +1748,9 @@ function addImportedFile(name, content) {
         caret = before.toString().length;
       }
     } catch (e) {}
+    var key = block.innerText || '';
+    if (key === lastSpellKey) return;
+    lastSpellKey = key;
     markingSpell = true;
     clearSpellMarks(block);
     (words || []).filter(function (item) { return !item.known; }).slice().reverse().forEach(function (item) {
@@ -1692,13 +1800,18 @@ function addImportedFile(name, content) {
    }
 
   function compose(raw) {
-    var map = phon, result = '', index = 0;
-    while (index < raw.length) {
-      var family = map[raw[index]];
-      if (!family) { result += raw[index++]; continue; }
-      index++; var vowel = '';
-      if ((raw.slice(index, index + 2).toLowerCase() === 'ie') || (raw.slice(index, index + 2).toLowerCase() === 'ee')) { vowel = raw.slice(index, index + 2).toLowerCase(); index += 2; }
-      else if (Object.prototype.hasOwnProperty.call(vowels, (raw[index] || '').toLowerCase())) { vowel = (raw[index] || '').toLowerCase(); index++; }
+    if (F.compose) return F.compose(raw);
+    var result = '', index = 0, len = (raw || '').length;
+    while (index < len) {
+      var family = null;
+      var pair = raw.slice(index, index + 2).toLowerCase();
+      if (Object.prototype.hasOwnProperty.call(DIGRAPHS, pair)) { family = DIGRAPHS[pair]; index += 2; }
+      else if (Object.prototype.hasOwnProperty.call(phon, raw[index])) { family = phon[raw[index]]; index++; }
+      if (!family) { result += raw[index]; index++; continue; }
+      var next = raw.slice(index, index + 2).toLowerCase();
+      var vowel;
+      if (next === 'ie' || next === 'ee') { vowel = next; index += 2; }
+      else { vowel = (raw[index] || '').toLowerCase(); if (Object.prototype.hasOwnProperty.call(vowels, vowel)) index++; else vowel = ''; }
       result += String.fromCodePoint(family.codePointAt(0) + vowels[vowel]);
     }
     return result;
@@ -1714,9 +1827,9 @@ function addImportedFile(name, content) {
       if (position !== phoneticStart + phoneticRendered.length) phoneticBuffer = '';
       if (!phoneticBuffer) { phoneticStart = position; phoneticRendered = ''; pushUndo(); }
       phoneticBuffer += key; var rendered = compose(phoneticBuffer);
-      replaceTextRange(phoneticStart, phoneticStart + phoneticRendered.length, rendered); phoneticRendered = rendered; changed(); event.preventDefault(); return true;
+      domReplaceAtCaret(phoneticStart, phoneticStart + phoneticRendered.length, rendered); phoneticRendered = rendered; changed(); event.preventDefault(); return true;
     }
-    if (key === 'Backspace' && phoneticBuffer) { phoneticBuffer = phoneticBuffer.slice(0, -1); var next = compose(phoneticBuffer); replaceTextRange(phoneticStart, phoneticStart + phoneticRendered.length, next); phoneticRendered = next; changed(); event.preventDefault(); return true; }
+    if (key === 'Backspace' && phoneticBuffer) { phoneticBuffer = phoneticBuffer.slice(0, -1); var next = compose(phoneticBuffer); domReplaceAtCaret(phoneticStart, phoneticStart + phoneticRendered.length, next); phoneticRendered = next; changed(); event.preventDefault(); return true; }
     if (key.length === 1 || key === 'Enter') { phoneticBuffer = ''; phoneticRendered = ''; }
     return false;
   }

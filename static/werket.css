@@ -471,45 +471,12 @@ body.sidebar-open .editor-area {
 .size-select { width: 60px; }
 .zoom-select { width: 70px; }
 
-/* Document Stage — Centered paper like Pages */
+/* Document Stage — Centered paper like Apple Pages */
 .document-stage {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 40px clamp(40px, 10vw, 160px);
   background: var(--bg);
-}
-
-.document-paper {
-  display: flex;
-  min-height: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-  background: var(--paper);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 12px 40px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.3s ease;
-}
-
-.document-paper:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 16px 48px rgba(0, 0, 0, 0.08);
-}
-
-/* Document Editor — Clean writing surface */
-.document-editor {
-  flex: 1;
-  min-width: 0;
-  min-height: 800px;
-  padding: 72px 80px 120px;
-  outline: none;
-  background: transparent;
-  color: var(--ink);
-  font-family: 'Noto Sans Ethiopic', Georgia, 'Times New Roman', serif;
-  font-size: 18px;
-  line-height: 1.5;
-  direction: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
 }
 
 .document-editor:empty::before {
@@ -2005,37 +1972,35 @@ html[data-theme="dark"] .auth-field input {
 
 /* Document stage with sidebars */
 .document-stage {
-  position: relative;
   flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  background: #e8e8e8;
 }
 
 .document-paper-wrapper {
-  flex: 1;
+  min-height: 100%;
+  padding: 40px 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  overflow: auto;
-  background: var(--bg);
-  position: relative;
+  background: #e8e8e8;
 }
 
-/* Page layout — A4 paper with margins like Pages */
+/* Page layout — A4 paper with margins like Apple Pages */
 .document-paper {
   position: relative;
-  width: 794px; /* A4 at 96 DPI: 210mm = 794px */
-  min-height: 1123px; /* A4 height: 297mm = 1123px */
-  margin: 40px auto;
+  width: 794px;
+  min-height: 1123px;
   background: var(--paper);
-  border-radius: 2px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 4px 20px rgba(0,0,0,0.08);
+  flex-shrink: 0;
+  margin-bottom: 40px;
 }
 
 .document-paper:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15), 0 8px 24px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15), 0 8px 28px rgba(0,0,0,0.1);
 }
 
 .document-paper[data-paper="letter"] {
@@ -2076,10 +2041,9 @@ html[data-theme="dark"] .auth-field input {
 }
 
 .document-editor {
-  flex: 1;
   min-width: 0;
-  min-height: calc(100% - var(--margin-top, 72px) - var(--margin-bottom, 72px));
-  padding: var(--margin-top, 72px) var(--margin-right, 72px) var(--margin-bottom, 72px) var(--margin-left, 72px);
+  min-height: 1050px;
+  padding: 72px 72px 120px;
   outline: none;
   background: transparent;
   color: var(--ink);
@@ -2089,6 +2053,8 @@ html[data-theme="dark"] .auth-field input {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   box-sizing: border-box;
+  word-wrap: break-word;
+  overflow: hidden;
 }
 
 /* Page break element */
