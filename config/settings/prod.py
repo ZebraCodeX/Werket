@@ -23,6 +23,9 @@ for _o in ['https://werket.onrender.com', 'https://werket-q5pm.onrender.com']:
         _csrf.append(_o)
 CSRF_TRUSTED_ORIGINS = _csrf
 
+# Allow both Render hosts even if dashboard env lags (DisallowedHost fix)
+ALLOWED_HOSTS = ['*']
+
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
