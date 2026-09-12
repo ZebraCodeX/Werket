@@ -8,7 +8,12 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-secret-key-change-in-produ
 
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+_env_hosts = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
+# Always allow Render hosts (dashboard env may lag behind render.yaml)
+for _h in ['werket.onrender.com', 'werket-q5pm.onrender.com', '.onrender.com', 'localhost', '127.0.0.1']:
+    if _h not in _env_hosts:
+        _env_hosts.append(_h)
+ALLOWED_HOSTS = _env_hosts
 
 INSTALLED_APPS = [
     'django.contrib.admin',

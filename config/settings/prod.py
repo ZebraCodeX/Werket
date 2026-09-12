@@ -17,7 +17,11 @@ SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
-CSRF_TRUSTED_ORIGINS = [x for x in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if x]
+_csrf = [x for x in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if x]
+for _o in ['https://werket.onrender.com', 'https://werket-q5pm.onrender.com']:
+    if _o not in _csrf:
+        _csrf.append(_o)
+CSRF_TRUSTED_ORIGINS = _csrf
 
 STORAGES = {
     'default': {
