@@ -55,15 +55,17 @@ class WerketHttpTest(unittest.TestCase):
         status, body = self.get('/')
         html = body.decode('utf-8')
         self.assertEqual(status, 200)
-        for marker in ('authDialog', 'authForm', 'authTitle', 'assistantBtn', 'assistantPanel',
-                       'avatarBtn', 'saveCloudBtn', 'bibleSearch', 'rewriteGenerateBtn',
-                       'pdffile'):
+        for marker in ('assistantBtn', 'assistantPanel', 'bibleSearch', 'rewriteGenerateBtn',
+                       'aggregateRating'):
             self.assertNotIn(marker, html, marker)
+        for marker in ('authDialog', 'authForm', 'authTitle', 'avatarBtn', 'saveCloudBtn'):
+            self.assertIn(marker, html, marker)
         status, js_body = self.get('/static/werket.js')
         js = js_body.decode('utf-8')
-        for marker in ('importPdf', 'pdfInflate', 'checkSession', 'syncToCloud', 'currentUser',
-                       '__werketTest'):
-            self.assertNotIn(marker, js, marker)
+        for marker in ('importPdf', 'pdfInflate', 'pdfExtractText', '__werketTest'):
+            self.assertIn(marker, js, marker)
+        for marker in ('checkSession', 'syncToCloud', 'currentUser'):
+            self.assertIn(marker, js, marker)
 
     def test_post_is_not_supported(self):
         request = urllib.request.Request(self.base + '/api/register', data=b'{}', method='POST')

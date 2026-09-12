@@ -24,7 +24,8 @@ for _o in ['https://werket.onrender.com', 'https://werket-q5pm.onrender.com']:
 CSRF_TRUSTED_ORIGINS = _csrf
 
 # Allow both Render hosts even if dashboard env lags (DisallowedHost fix)
-ALLOWED_HOSTS = ['*']
+_ALLOWED = os.environ.get('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = [h for h in _allowed.split(',') if h] if _allowed else ['*']
 
 STORAGES = {
     'default': {

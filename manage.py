@@ -1,3 +1,4 @@
+# cache-bust-2026-09-12
 #!/usr/bin/env python3
 """Django's command-line utility for administrative tasks."""
 import os
