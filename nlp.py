@@ -58,8 +58,13 @@ def _next_words(last, second=''):
     for word, count in MODEL.get('bigram', {}).get(last, {}).items(): counts[word] = counts.get(word, 0) + count
     return [word for word, _ in sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))[:6]]
 
+_CORR_CACHE = {}
+
 def _corrections(word, limit=5):
     target = fold(word)
+    cached = _CORR_CACHE.get(target)
+    if cached is not None:
+        return cached[:limit]
     candidates = []
     for item in WORDS:
         candidate = item['w']; folded = fold(candidate)
@@ -67,8 +72,12 @@ def _corrections(word, limit=5):
         if distance <= 2:
             candidates.append((distance, -int(item.get('n', 1)), candidate))
     candidates.sort()
-    return [{'word': word, 'distance': distance, 'frequency': -freq}
-            for distance, freq, word in candidates[:limit]]
+    result = [{'word': word, 'distance': distance, 'frequency': -freq}
+              for distance, freq, word in candidates[:limit]]
+    if len(_CORR_CACHE) >= 2000:
+        _CORR_CACHE.pop(next(iter(_CORR_CACHE)))
+    _CORR_CACHE[target] = result
+    return result
 
 def check(text):
     results = []
@@ -89,6 +98,4 @@ def suggest(text):
     last = tokens[-1] if tokens else ''
     second = tokens[-2] if len(tokens) > 1 else ''
     next_words = _next_words(last, second) if not partial else []
-    sentences = MODEL.get('common_sentences', [])[:4] if not tokens else []
-    return {'words': words, 'next': next_words, 'sentences': sentences,
-            'dictionary_size': len(WORDS)}
+    return {'words': words, 'next': next_words, 'dictionary_size': len(WORDS)}

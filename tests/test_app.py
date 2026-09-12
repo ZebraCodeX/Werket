@@ -1,6 +1,7 @@
 import json
 import threading
 import unittest
+import urllib.error
 import urllib.parse
 import urllib.request
 from http.server import ThreadingHTTPServer
@@ -49,6 +50,29 @@ class WerketHttpTest(unittest.TestCase):
         self.assertIn('https://werket.onrender.com/', html)
         self.assertNotIn('werket-ug86.onrender.com', html)
         self.assertNotIn('id="lineNumbers"', html)
+
+    def test_removed_features_are_gone(self):
+        status, body = self.get('/')
+        html = body.decode('utf-8')
+        self.assertEqual(status, 200)
+        for marker in ('authDialog', 'authForm', 'authTitle', 'assistantBtn', 'assistantPanel',
+                       'avatarBtn', 'saveCloudBtn', 'bibleSearch', 'rewriteGenerateBtn',
+                       'pdffile'):
+            self.assertNotIn(marker, html, marker)
+        status, js_body = self.get('/static/werket.js')
+        js = js_body.decode('utf-8')
+        for marker in ('importPdf', 'pdfInflate', 'checkSession', 'syncToCloud', 'currentUser',
+                       '__werketTest'):
+            self.assertNotIn(marker, js, marker)
+
+    def test_post_is_not_supported(self):
+        request = urllib.request.Request(self.base + '/api/register', data=b'{}', method='POST')
+        try:
+            urllib.request.urlopen(request, timeout=10)
+            self.fail('expected HTTP 501')
+        except urllib.error.HTTPError as exc:
+            self.assertEqual(exc.code, 501)
+            exc.close()
 
     def test_manifest_has_store_icons(self):
         status, body = self.get('/manifest.json')

@@ -578,75 +578,6 @@
 
   /* ---------- PDF (JPEG pages) ---------- */
 
-  function parseJpegSize(bytes) {
-    var i = 2;
-    while (i + 9 < bytes.length) {
-      if (bytes[i] !== 0xff) { i++; continue; }
-      var marker = bytes[i + 1];
-      if (marker === 0xd8 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { i += 2; continue; }
-      if (marker === 0xd9 || marker === 0xda) break;
-      var length = (bytes[i + 2] << 8) | bytes[i + 3];
-      if ((marker >= 0xc0 && marker <= 0xcf) && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
-        return { height: (bytes[i + 5] << 8) | bytes[i + 6], width: (bytes[i + 7] << 8) | bytes[i + 8] };
-      }
-      i += 2 + length;
-    }
-    return null;
-  }
-  function pdfEscapeString(text) {
-    return String(text).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
-  }
-  function buildPdf(pages, options) {
-    options = options || {};
-    var pageWidth = options.pageWidth || 595.28, pageHeight = options.pageHeight || 841.89;
-    if (!pages.length) pages = [{ jpeg: new Uint8Array(0), width: pageWidth, height: pageHeight }];
-    var chunks = [], lengths = [];
-    function push(text) {
-      var bytes = strToBytes(text);
-      chunks.push(bytes); lengths.push(bytes.length);
-    }
-    function pushRaw(bytes) { chunks.push(bytes); lengths.push(bytes.length); }
-    function totalSoFar() { var t = 0; for (var i = 0; i < lengths.length; i++) t += lengths[i]; return t; }
-    var objectCount = 2 + pages.length * 3 + 1;
-    var infoId = objectCount;
-    push('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
-    var offsets = new Array(objectCount + 1);
-    offsets[1] = totalSoFar();
-    push('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
-    offsets[2] = totalSoFar();
-    var kids = [];
-    for (var p = 0; p < pages.length; p++) kids.push((3 + p * 3) + ' 0 R');
-    push('2 0 obj\n<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + pages.length + ' >>\nendobj\n');
-    for (p = 0; p < pages.length; p++) {
-      var pageId = 3 + p * 3, contentId = pageId + 1, imageId = pageId + 2;
-      offsets[pageId] = totalSoFar();
-      push(pageId + ' 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pageWidth.toFixed(2) + ' ' + pageHeight.toFixed(2) + '] '
-        + '/Resources << /XObject << /Im' + p + ' ' + imageId + ' 0 R >> >> /Contents ' + contentId + ' 0 R >>\nendobj\n');
-      offsets[contentId] = totalSoFar();
-      var stream = 'q\n' + pageWidth.toFixed(2) + ' 0 0 ' + pageHeight.toFixed(2) + ' 0 0 cm\n/Im' + p + ' Do\nQ\n';
-      push(contentId + ' 0 obj\n<< /Length ' + stream.length + ' >>\nstream\n' + stream + 'endstream\nendobj\n');
-      offsets[imageId] = totalSoFar();
-      var jpeg = pages[p].jpeg;
-      push(imageId + ' 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + Math.round(pages[p].width)
-        + ' /Height ' + Math.round(pages[p].height) + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpeg.length + ' >>\nstream\n');
-      pushRaw(jpeg);
-      push('\nendstream\nendobj\n');
-    }
-    offsets[infoId] = totalSoFar();
-    push(infoId + ' 0 obj\n<< /Producer (Werket ' + pdfEscapeString(options.producer || '') + ') /Title (' + pdfEscapeString(options.title || '') + ') >>\nendobj\n');
-    var xrefOffset = totalSoFar();
-    var xref = 'xref\n0 ' + (objectCount + 1) + '\n0000000000 65535 f \n';
-    for (var o = 1; o <= objectCount; o++) {
-      xref += ('0000000000' + offsets[o]).slice(-10) + ' 00000 n \n';
-    }
-    push(xref);
-    push('trailer\n<< /Size ' + (objectCount + 1) + ' /Root 1 0 R /Info ' + infoId + ' 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF');
-    var total = 0;
-    for (var k = 0; k < lengths.length; k++) total += lengths[k];
-    var result = new Uint8Array(total), pos = 0;
-    for (k = 0; k < chunks.length; k++) { result.set(chunks[k], pos); pos += chunks[k].length; }
-    return result;
-  }
 
   var WerketFormats = {
     htmlToBlocks: htmlToBlocks,
@@ -660,8 +591,6 @@
     buildOdt: buildOdt,
     buildRtf: buildRtf,
     buildEpub: buildEpub,
-    buildPdf: buildPdf,
-    parseJpegSize: parseJpegSize,
     escapeXml: escapeXml,
     decodeEntities: decodeEntities
   };
