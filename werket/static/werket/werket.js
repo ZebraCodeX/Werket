@@ -1704,6 +1704,8 @@ function addImportedFile(name, content) {
     return result;
   }
   function phoneticKey(event) {
+    var _af = activeFile && activeFile();
+    if (_af && _af.lang === 'en') return false;
     if (!$('phoneticToggle').checked || event.ctrlKey || event.metaKey || event.altKey) return false;
     var key = event.key, offsets = selectionOffsets(), position = offsets.start;
     if (key === 'Tab') { var ks = document.getElementById('keyboardSuggestions'); var suggestion = ks ? ks.querySelector('[data-word]') : null; if (suggestion) { event.preventDefault(); replaceSuggestion(suggestion.dataset.word); return true; } return false; }
