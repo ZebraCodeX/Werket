@@ -10,8 +10,6 @@ services:
         value: config.settings.prod
       - key: DJANGO_SECRET_KEY
         generateValue: true
-      - key: ALLOWED_HOSTS
-        value: werket-q5pm.onrender.com,werket.onrender.com,localhost
       - key: CSRF_TRUSTED_ORIGINS
         value: https://werket-q5pm.onrender.com,https://werket.onrender.com
       - key: DEBUG
