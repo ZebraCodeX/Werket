@@ -38,6 +38,28 @@ DATABASES = {
     }
 }
 
+# Render provides DATABASE_URL — override individual vars if set
+import os as _os
+_database_url = _os.environ.get('DATABASE_URL')
+if _database_url:
+    import re as _re
+    _url = _re.match(
+        r'^(?:postgresql|postgresql://|postgres://)(?P<user>[^:@]+)(?::(?P<password>[^@]*))?@(?P<host>[^:/]+)(?::(?P<port>\d+))?(?:/(?P<name>.+))?$',
+        _database_url,
+    )
+    if _url:
+        _d = _url.groupdict()
+        DATABASES['default'] = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': _d.get('name') or 'werket',
+            'USER': _d.get('user') or 'werket',
+            'PASSWORD': _d.get('password') or '',
+            'HOST': _d.get('host') or 'localhost',
+            'PORT': _d.get('port') or '5432',
+            'CONN_MAX_AGE': 60,
+            'OPTIONS': {'sslmode': 'require'},
+        }
+
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
