@@ -8,10 +8,6 @@ const initialState: EditorState = {
   undoStack: [],
   redoStack: [],
   applyingHistory: false,
-  blockType: 'body',
-  font: 'Noto Sans Ethiopic',
-  fontSize: 18,
-  alignment: 'left',
 };
 
 const MAX_HISTORY = 100;
@@ -73,26 +69,7 @@ const editorSlice = createSlice({
         state.applyingHistory = false;
       }
     },
-    clearHistory: (state) => {
-      state.undoStack = [];
-      state.redoStack = [];
     },
-    setApplyingHistory: (state, action: PayloadAction<boolean>) => {
-      state.applyingHistory = action.payload;
-    },
-    setBlockType: (state, action: PayloadAction<string>) => {
-      state.blockType = action.payload;
-    },
-    setFont: (state, action: PayloadAction<string>) => {
-      state.font = action.payload;
-    },
-    setFontSize: (state, action: PayloadAction<number>) => {
-      state.fontSize = action.payload;
-    },
-    setAlignment: (state, action: PayloadAction<'left' | 'center' | 'right' | 'justify'>) => {
-      state.alignment = action.payload;
-    },
-  },
 });
 
 export const {
@@ -101,12 +78,6 @@ export const {
   pushUndo,
   undo,
   redo,
-  clearHistory,
-  setApplyingHistory,
-  setBlockType,
-  setFont,
-  setFontSize,
-  setAlignment,
 } = editorSlice.actions;
 
 export default editorSlice.reducer;

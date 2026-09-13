@@ -3,7 +3,6 @@ import authReducer from './authSlice';
 import workspaceReducer from './workspaceSlice';
 import editorReducer from './editorSlice';
 import keyboardReducer from './keyboardSlice';
-import spellReducer from './spellSlice';
 import uiReducer from './uiSlice';
 
 export const store = configureStore({
@@ -12,7 +11,6 @@ export const store = configureStore({
     workspace: workspaceReducer,
     editor: editorReducer,
     keyboard: keyboardReducer,
-    spell: spellReducer,
     ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>

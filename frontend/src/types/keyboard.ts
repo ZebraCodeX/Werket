@@ -12,19 +12,10 @@ export interface KeyboardState {
   layer: KeyboardLayer;
   phoneticMode: boolean;
   deviceKeyboardMode: boolean;
-  suggestions: string[];
-  nextWords: string[];
-  spellStatus: 'clean' | 'checking' | 'errors';
-  spellSummary: string;
 }
 
 export interface SuggestionItem {
   word: string;
   distance?: number;
   frequency?: number;
-}
-
-export interface NextWordItem {
-  word: string;
-  count: number;
 }

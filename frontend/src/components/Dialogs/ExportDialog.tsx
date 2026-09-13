@@ -19,14 +19,12 @@ export const ExportDialog: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { exportDialogOpen, exportFormat } = useSelector((state: RootState) => state.ui);
   const { activeId, files, projectName } = useSelector((state: RootState) => state.workspace);
-
-  if (!exportDialogOpen || !exportFormat) return null;
-
   const activeFile = files.find(f => f.id === activeId);
-  const editor = document.getElementById('editor') as HTMLElement | null;
 
   const handleExport = useCallback(async (format: string) => {
-    if (!editor || !activeFile) return;
+    if (!activeFile) return;
+    const editor = document.getElementById('editor') as HTMLElement | null;
+    if (!editor) return;
 
     const html = editor.innerHTML;
     const baseName = activeFile.name.replace(/\.[^.]+$/, '') || 'document';
@@ -99,7 +97,9 @@ export const ExportDialog: React.FC = () => {
       dispatch({ type: 'ui/addToast', payload: { message: 'Export failed', type: 'error' } });
     }
     dispatch(closeExportDialog());
-  }, [activeFile, activeId, files, projectName, dispatch]);
+  }, [activeFile, files, projectName, dispatch]);
+
+  if (!exportDialogOpen || !exportFormat) return null;
 
   return (
     <dialog id="exportDialog" className="export-dialog" open={exportDialogOpen} onClose={() => dispatch(closeExportDialog())}>

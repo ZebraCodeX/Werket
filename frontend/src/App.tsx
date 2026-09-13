@@ -20,7 +20,8 @@ import { Home } from './components/Home/Home';
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { theme, sidebarOpen, keyboardOpen, pdfViewerOpen, homeOpen } = useSelector((state: RootState) => state.ui);
+  const { theme, sidebarOpen, pdfViewerOpen, homeOpen } = useSelector((state: RootState) => state.ui);
+  const keyboardOpen = useSelector((state: RootState) => state.keyboard.open);
   const { user } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {

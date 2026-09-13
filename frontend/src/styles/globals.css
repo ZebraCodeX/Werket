@@ -396,12 +396,20 @@ a:hover {
   background: var(--chrome);
   border-top: 1px solid var(--line);
   flex-shrink: 0;
+  max-height: 0;
+  overflow: hidden;
   transition: transform 0.2s ease, max-height 0.2s ease;
 }
 
 .keyboard-panel.open {
   max-height: 50vh;
   overflow: auto;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .keyboard-panel {
+    display: none;
+  }
 }
 
 .keyboard-grab {
@@ -779,6 +787,37 @@ a:hover {
   font-size: 16px;
   color: var(--muted);
   margin-bottom: 20px;
+}
+
+.home-continue {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.home-continue:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.home-continue-name {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.85;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .home-lang-toggle {

@@ -1,12 +1,11 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
-import { 
-  closeNewDocDialog, 
-  setNewDocLang, 
-  setNewDocName, 
-  setNewDocTemplate, 
-  setNewDocShowKeyboard,
+import {
+  closeNewDocDialog,
+  setNewDocLang,
+  setNewDocName,
+  setNewDocTemplate,
   setHomeOpen,
 } from '../../store/uiSlice';
 import { addFile } from '../../store/workspaceSlice';
@@ -15,8 +14,17 @@ import { TEMPLATES } from '../../utils/constants';
 export const NewDocDialog: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { newDocDialogOpen, newDocData } = useSelector((state: RootState) => state.ui);
+  const workspaceLang = useSelector((state: RootState) => state.workspace.lang);
+  const previousOpen = useRef(false);
 
-  if (!newDocDialogOpen) return null;
+  // Remember the user's language choice: re-initialize language each time the
+  // dialog opens, using the workspace language persisted on the Home screen.
+  useEffect(() => {
+    if (newDocDialogOpen && !previousOpen.current) {
+      dispatch(setNewDocLang(workspaceLang));
+    }
+    previousOpen.current = newDocDialogOpen;
+  }, [newDocDialogOpen, workspaceLang, dispatch]);
 
   const handleCreate = useCallback(() => {
     const template = TEMPLATES.find(t => t.id === newDocData.templateId);
@@ -39,6 +47,8 @@ export const NewDocDialog: React.FC = () => {
       dispatch(setNewDocName(template.defaultName[newDocData.lang] || template.defaultName.en));
     }
   }, [dispatch, newDocData.lang]);
+
+  if (!newDocDialogOpen) return null;
 
   return (
     <dialog id="newDocDialog" className="newdoc-dialog" open={newDocDialogOpen} onClose={() => dispatch(closeNewDocDialog())}>
@@ -102,15 +112,6 @@ export const NewDocDialog: React.FC = () => {
               ))}
             </div>
           </div>
-          <label id="newDocOskWrap" className="newdoc-osk">
-            <input
-              type="checkbox"
-              id="newDocOsk"
-              checked={newDocData.showKeyboard}
-              onChange={e => dispatch(setNewDocShowKeyboard(e.target.checked))}
-            />
-            <span>Show the on-screen Amharic keyboard <small>(አማርኛ ቁልፍ ሰሌዳ)</small></span>
-          </label>
         </div>
         <div className="newdoc-foot">
           <button id="newDocCreate" className="newdoc-create" type="submit">Create document</button>

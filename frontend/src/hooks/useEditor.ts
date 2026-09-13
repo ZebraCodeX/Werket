@@ -4,7 +4,6 @@ import type { RootState, AppDispatch } from '../store';
 import {
   setContent,
   setSelection,
-  pushUndo,
   undo,
   redo,
 } from '../store/editorSlice';
@@ -59,83 +58,6 @@ function wrapSelection(tag: string) {
   range.selectNodeContents(wrapper);
   sel.removeAllRanges();
   sel.addRange(range);
-}
-
-function toggleInlineStyle(style: string) {
-  const sel = window.getSelection();
-  if (!sel || !sel.rangeCount) return;
-  const range = sel.getRangeAt(0);
-  const parent = range.startContainer.parentElement;
-  if (parent && parent.tagName === 'SPAN' && parent.getAttribute('style')?.includes(style)) {
-    const text = parent.textContent || '';
-    const textNode = document.createTextNode(text);
-    parent.parentNode?.replaceChild(textNode, parent);
-  } else {
-    const span = document.createElement('span');
-    span.style.cssText = style;
-    try {
-      range.surroundContents(span);
-    } catch {
-      const frag = range.extractContents();
-      span.appendChild(frag);
-      range.insertNode(span);
-    }
-  }
-}
-
-function formatBlock(tag: string) {
-  const sel = window.getSelection();
-  if (!sel || !sel.rangeCount) return;
-  const range = sel.getRangeAt(0);
-  let node: Node | null = range.startContainer;
-  while (node && node !== document.getElementById('editor')) {
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const el = node as HTMLElement;
-      const blockTags = ['P', 'H1', 'H2', 'H3', 'H4', 'DIV', 'BLOCKQUOTE'];
-      if (blockTags.includes(el.tagName)) {
-        const newEl = document.createElement(tag);
-        newEl.innerHTML = el.innerHTML;
-        el.parentNode?.replaceChild(newEl, el);
-        return;
-      }
-    }
-    node = node.parentNode;
-  }
-  const p = document.createElement(tag);
-  p.innerHTML = range.toString() || '<br>';
-  range.deleteContents();
-  range.insertNode(p);
-}
-
-function setAlignmentValue(align: string) {
-  const sel = window.getSelection();
-  if (!sel || !sel.rangeCount) return;
-  const range = sel.getRangeAt(0);
-  let node: Node | null = range.startContainer;
-  while (node && node !== document.getElementById('editor')) {
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const el = node as HTMLElement;
-      if (['P', 'H1', 'H2', 'H3', 'H4', 'DIV'].includes(el.tagName)) {
-        el.style.textAlign = align;
-        return;
-      }
-    }
-    node = node.parentNode;
-  }
-}
-
-function insertTable(rows: number, cols: number) {
-  let html = '<table style="border-collapse:collapse;width:100%;margin:1em 0">';
-  for (let r = 0; r < rows; r++) {
-    html += '<tr>';
-    for (let c = 0; c < cols; c++) {
-      const tag = r === 0 ? 'th' : 'td';
-      html += `<${tag} style="border:1px solid var(--line);padding:8px;min-width:60px"><br></${tag}>`;
-    }
-    html += '</tr>';
-  }
-  html += '</table><p><br></p>';
-  insertAtCursor(html);
 }
 
 function imageToDataUrl(file: File): Promise<string> {
@@ -304,72 +226,6 @@ export function useEditor() {
     editorRef.current?.dispatchEvent(new Event('input', { bubbles: true }));
   }, []);
 
-  const executeCommand = useCallback((_command: string, value?: string) => {
-    if (!editorRef.current) return;
-    editorRef.current.focus();
-    dispatch(pushUndo({ html: getEditorHtml(), selection: selectionOffsets(editorRef.current) }));
-
-    switch (_command) {
-      case 'bold': wrapSelection('strong'); break;
-      case 'italic': wrapSelection('em'); break;
-      case 'underline': wrapSelection('u'); break;
-      case 'strikethrough': wrapSelection('s'); break;
-      case 'formatBlock': formatBlock(value || 'p'); break;
-      case 'justifyLeft': setAlignmentValue('left'); break;
-      case 'justifyCenter': setAlignmentValue('center'); break;
-      case 'justifyRight': setAlignmentValue('right'); break;
-      case 'justifyFull': setAlignmentValue('justify'); break;
-      case 'insertUnorderedList': insertAtCursor('<ul><li><br></li></ul><p><br></p>'); break;
-      case 'insertOrderedList': insertAtCursor('<ol><li><br></li></ol><p><br></p>'); break;
-      case 'fontName':
-        if (value) {
-          const sel = window.getSelection();
-          if (sel && sel.rangeCount) {
-            const span = document.createElement('span');
-            span.style.fontFamily = value;
-            const range = sel.getRangeAt(0);
-            try { range.surroundContents(span); } catch { const f = range.extractContents(); span.appendChild(f); range.insertNode(span); }
-          }
-        }
-        break;
-      case 'insertHTML': insertAtCursor(value || ''); break;
-    }
-
-    editorRef.current.dispatchEvent(new Event('input', { bubbles: true }));
-  }, [dispatch, getEditorHtml]);
-
-  const setBlockType = useCallback((type: string) => {
-    executeCommand('formatBlock', type);
-  }, [executeCommand]);
-
-  const setFont = useCallback((font: string) => {
-    executeCommand('fontName', font);
-  }, [executeCommand]);
-
-  const setFontSize = useCallback((_size: string) => {
-  }, []);
-
-  const setAlignment = useCallback((align: string) => {
-    executeCommand('justify' + align.charAt(0).toUpperCase() + align.slice(1));
-  }, [executeCommand]);
-
-  const insertTableHandler = useCallback((rows: number, cols: number) => {
-    if (!editorRef.current) return;
-    editorRef.current.focus();
-    dispatch(pushUndo({ html: getEditorHtml(), selection: selectionOffsets(editorRef.current) }));
-    insertTable(rows, cols);
-    editorRef.current.dispatchEvent(new Event('input', { bubbles: true }));
-  }, [dispatch, getEditorHtml]);
-
-  const insertImageFromUpload = useCallback(async (file: File) => {
-    if (!editorRef.current) return;
-    const dataUrl = await imageToDataUrl(file);
-    editorRef.current.focus();
-    dispatch(pushUndo({ html: getEditorHtml(), selection: selectionOffsets(editorRef.current) }));
-    insertImage(dataUrl, file.name);
-    editorRef.current.dispatchEvent(new Event('input', { bubbles: true }));
-  }, [dispatch, getEditorHtml]);
-
   useEffect(() => {
     if (editorRef.current && activeFile && !applyingHistory) {
       editorRef.current.innerHTML = activeFile.text || '<p><br></p>';
@@ -405,13 +261,6 @@ export function useEditor() {
     handleSelectionChange,
     handleKeyDown,
     handlePaste,
-    executeCommand,
-    setBlockType,
-    setFont,
-    setFontSize,
-    setAlignment,
-    insertTable: insertTableHandler,
-    insertImage: insertImageFromUpload,
     phoneticState,
     setPhoneticState,
   };

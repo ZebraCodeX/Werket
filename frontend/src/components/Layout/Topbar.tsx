@@ -1,24 +1,29 @@
 import React, { useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
-import { 
-  toggleSidebar, 
-  openAuthDialog, 
-  showSaveMenu, 
-  showExportMenu, 
+import {
+  toggleSidebar,
+  openAuthDialog,
+  openExportDialog,
   openNewDocDialog,
   openPdfViewer,
   addToast,
   setHomeOpen,
 } from '../../store/uiSlice';
-import { setProjectName, addFile } from '../../store/workspaceSlice';
+import { setProjectName, addFile, saveToCloud } from '../../store/workspaceSlice';
 
 export const Topbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { projectName } = useSelector((state: RootState) => state.workspace);
+  const { projectName, saving, lastSynced } = useSelector((state: RootState) => state.workspace);
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
   const projectNameRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSave = useCallback(() => {
+    dispatch(saveToCloud());
+  }, [dispatch]);
+
+  const saveStatus = saving ? 'Saving…' : lastSynced ? 'Synced' : 'Ready';
 
   const handleProjectNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setProjectName(e.target.value));
@@ -89,13 +94,13 @@ export const Topbar: React.FC = () => {
           onChange={handleFilesSelected}
         />
         <div className="menu-wrap">
-          <button className="icon-btn" id="exportBtn" title="Export" onClick={() => dispatch(showExportMenu())}>📤</button>
+          <button className="icon-btn" id="exportBtn" title="Export" onClick={() => dispatch(openExportDialog('pdf'))}>📤</button>
         </div>
         <button className="icon-btn" id="printBtn" title="Print" onClick={() => window.print()}>🖨️</button>
         <div className="menu-wrap">
-          <button className="icon-btn primary" id="saveBtn" title="Save" onClick={() => dispatch(showSaveMenu())}>💾</button>
+          <button className="icon-btn primary" id="saveBtn" title="Save" onClick={handleSave}>💾</button>
         </div>
-        <span id="saveStatus" className="save-status">Ready</span>
+        <span id="saveStatus" className="save-status">{saveStatus}</span>
         <button className="icon-btn" id="themeBtn" title="Toggle theme" onClick={() => dispatch({ type: 'ui/toggleTheme' })}>
           🌙
         </button>

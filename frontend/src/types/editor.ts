@@ -16,10 +16,6 @@ export interface EditorState {
   undoStack: UndoEntry[];
   redoStack: UndoEntry[];
   applyingHistory: boolean;
-  blockType: string;
-  font: string;
-  fontSize: number;
-  alignment: 'left' | 'center' | 'right' | 'justify';
 }
 
 export interface ParagraphStyle {

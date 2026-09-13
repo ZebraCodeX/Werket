@@ -6,11 +6,9 @@ import { loginUser, registerUser } from '../../store/authSlice';
 
 export const AuthDialog: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { user, loading, error, mode } = useSelector((state: RootState) => state.auth);
+  const { loading, error } = useSelector((state: RootState) => state.auth);
   const { authDialogOpen, authMode } = useSelector((state: RootState) => state.ui);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
-
-  if (!authDialogOpen) return null;
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +25,8 @@ export const AuthDialog: React.FC = () => {
     dispatch(setAuthMode(authMode === 'login' ? 'signup' : 'login'));
     setFormData({ name: '', email: '', password: '' });
   }, [authMode, dispatch]);
+
+  if (!authDialogOpen) return null;
 
   return (
     <dialog id="authDialog" className="auth-dialog" open={authDialogOpen} onClose={() => dispatch(closeAuthDialog())}>

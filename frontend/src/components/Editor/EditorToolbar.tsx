@@ -1,7 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
-import { setBlockType, setFont, setFontSize, setAlignment } from '../../store/editorSlice';
+import { undo, redo } from '../../store/editorSlice';
 import { PARAGRAPH_STYLES, FONT_FAMILIES, FONT_SIZES, ZOOM_LEVELS } from '../../utils/constants';
 import { toggleInspector, setFindOpen } from '../../store/uiSlice';
 
@@ -92,6 +92,21 @@ function insertTable(rows: number, cols: number) {
   insertAtCursor(html);
 }
 
+function applyInlineStyle(css: string) {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  const span = document.createElement('span');
+  span.style.cssText = css;
+  try {
+    range.surroundContents(span);
+  } catch {
+    const frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+}
+
 function fireInput() {
   const editor = getEditor();
   if (editor) editor.dispatchEvent(new Event('input', { bubbles: true }));
@@ -104,20 +119,36 @@ export const EditorToolbar: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleParagraphStyle = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    dispatch(setBlockType(e.target.value));
-  }, [dispatch]);
+    const editor = getEditor();
+    if (!editor) return;
+    editor.focus();
+    formatBlock(e.target.value);
+    fireInput();
+  }, []);
 
   const handleFontFamily = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    dispatch(setFont(e.target.value));
-  }, [dispatch]);
+    const editor = getEditor();
+    if (!editor) return;
+    editor.focus();
+    applyInlineStyle(`font-family: "${e.target.value}"`);
+    fireInput();
+  }, []);
 
   const handleFontSize = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    dispatch(setFontSize(parseInt(e.target.value, 10)));
-  }, [dispatch]);
+    const editor = getEditor();
+    if (!editor) return;
+    editor.focus();
+    applyInlineStyle(`font-size: ${e.target.value}px`);
+    fireInput();
+  }, []);
 
   const handleAlignment = useCallback((align: 'left' | 'center' | 'right' | 'justify') => {
-    dispatch(setAlignment(align));
-  }, [dispatch]);
+    const editor = getEditor();
+    if (!editor) return;
+    editor.focus();
+    setAlignmentValue(align);
+    fireInput();
+  }, []);
 
   const handleFormat = useCallback((command: string) => {
     const editor = getEditor();
@@ -193,8 +224,8 @@ export const EditorToolbar: React.FC = () => {
   return (
     <section className="editor-toolbar" aria-label="Editor toolbar">
       <div className="toolbar-left">
-        <button className="toolbar-btn" title="Undo (Ctrl+Z)" onClick={() => dispatch({ type: 'editor/undo' })}>↶</button>
-        <button className="toolbar-btn" title="Redo (Ctrl+Shift+Z)" onClick={() => dispatch({ type: 'editor/redo' })}>↷</button>
+        <button className="toolbar-btn" title="Undo (Ctrl+Z)" onClick={() => dispatch(undo())}>↶</button>
+        <button className="toolbar-btn" title="Redo (Ctrl+Shift+Z)" onClick={() => dispatch(redo())}>↷</button>
         <div className="toolbar-divider" />
         <select className="toolbar-select style-select" value="" onChange={handleParagraphStyle} title="Paragraph Style">
           {PARAGRAPH_STYLES.map(style => (

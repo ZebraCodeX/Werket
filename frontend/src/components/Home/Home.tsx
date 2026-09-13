@@ -1,14 +1,14 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
-import { setLang, setActiveFile } from '../../store/workspaceSlice';
+import { setLang, setActiveFile, createFileFromTemplate } from '../../store/workspaceSlice';
 import { TEMPLATES } from '../../utils/constants';
 
 interface HomeProps {
   onOpenEditor: () => void;
 }
 
-export const Home: React.FC<HomeProps> = ({ onOpenEditor }) => {
+export const Home: React.FC<HomeProps> = React.memo(({ onOpenEditor }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { files, lang } = useSelector((state: RootState) => state.workspace);
   const [, setTick] = useState(0);
@@ -19,26 +19,39 @@ export const Home: React.FC<HomeProps> = ({ onOpenEditor }) => {
     return () => clearInterval(id);
   }, []);
 
-  const recentFiles = [...files]
-    .sort((a, b) => b.updated - a.updated)
-    .slice(0, 6);
+  const recentFiles = useMemo(
+    () => [...files].sort((a, b) => b.updated - a.updated).slice(0, 6),
+    [files],
+  );
 
-  const handleTemplateSelect = useCallback((_templateId: string) => {
+  const formatTime = useCallback((ts: number) => {
+    const diff = Date.now() - ts;
+    if (diff < 60000) return lang === 'am' ? 'አሁን' : 'just now';
+    if (diff < 3600000) return lang === 'am' ? `${Math.floor(diff / 60000)} ደ.` : `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return lang === 'am' ? `${Math.floor(diff / 3600000)} ሰ.` : `${Math.floor(diff / 3600000)}h ago`;
+    return lang === 'am' ? `${Math.floor(diff / 86400000)} ቀ.` : `${Math.floor(diff / 86400000)}d ago`;
+  }, [lang]);
+
+  const handleTemplateSelect = useCallback((templateId: string) => {
+    const template = TEMPLATES.find(t => t.id === templateId);
+    if (template) {
+      const templateLang = lang;
+      const templateFiles = template.files[templateLang] || template.files.en;
+      templateFiles.forEach(([name, text]) => {
+        dispatch(createFileFromTemplate({ name, text, lang: templateLang }));
+      });
+    } else {
+      dispatch(createFileFromTemplate({ name: 'Untitled.md', text: '', lang }));
+    }
     onOpenEditor();
-  }, [onOpenEditor]);
+  }, [dispatch, lang, onOpenEditor]);
 
   const handleRecentClick = useCallback((fileId: string) => {
     dispatch(setActiveFile(fileId));
     onOpenEditor();
   }, [dispatch, onOpenEditor]);
 
-  const formatTime = (ts: number) => {
-    const diff = Date.now() - ts;
-    if (diff < 60000) return lang === 'am' ? 'አሁን' : 'just now';
-    if (diff < 3600000) return lang === 'am' ? `${Math.floor(diff / 60000)} ደ.` : `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return lang === 'am' ? `${Math.floor(diff / 3600000)} ሰ.` : `${Math.floor(diff / 3600000)}h ago`;
-    return lang === 'am' ? `${Math.floor(diff / 86400000)} ቀ.` : `${Math.floor(diff / 86400000)}d ago`;
-  };
+  const continueDoc = recentFiles[0];
 
   return (
     <div className="home">
@@ -54,6 +67,15 @@ export const Home: React.FC<HomeProps> = ({ onOpenEditor }) => {
               ? 'በአማርኛ እና በእንግሊዝኛ የጽሁፍ ሥራ ቦታ'
               : 'Write in Amharic and English'}
           </p>
+          {continueDoc && (
+            <button
+              className="home-continue"
+              onClick={() => handleRecentClick(continueDoc.id)}
+            >
+              {lang === 'am' ? 'መጻፍ ቀጥል' : 'Continue writing'}
+              <span className="home-continue-name">{continueDoc.name}</span>
+            </button>
+          )}
           <div className="home-lang-toggle">
             <button
               className={`home-lang-btn ${lang === 'am' ? 'active' : ''}`}
@@ -118,6 +140,6 @@ export const Home: React.FC<HomeProps> = ({ onOpenEditor }) => {
       </div>
     </div>
   );
-};
+});
 
 export default Home;

@@ -1,16 +1,13 @@
-import React, { useMemo, useCallback, useState, useRef } from 'react';
+import React, { useMemo, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import {
   nextLayer,
   setPhoneticMode,
   setDeviceKeyboardMode,
-  setSuggestions,
-  setNextWords,
   setOpen,
 } from '../../store/keyboardSlice';
-import { FAMILIES, ordersFor, charFor, KEYBOARD_LAYERS, FUNCTION_KEYS } from '../../utils/fidel';
-import { dictionaryApi } from '../../api/dictionary';
+import { FAMILIES, ordersFor, KEYBOARD_LAYERS, FUNCTION_KEYS } from '../../utils/fidel';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 
 interface FidelKeyProps {
@@ -49,9 +46,9 @@ const FidelKey: React.FC<FidelKeyProps> = ({ family, orders, onSelect }) => {
   );
 };
 
-export const FidelKeyboard: React.FC = () => {
+export const FidelKeyboard: React.FC = React.memo(() => {
   const dispatch = useDispatch<AppDispatch>();
-  const { layer, phoneticMode, deviceKeyboardMode, suggestions } = useSelector((state: RootState) => state.keyboard);
+  const { open, layer, phoneticMode, deviceKeyboardMode } = useSelector((state: RootState) => state.keyboard);
   const grabRef = useRef<HTMLDivElement>(null);
 
   useSwipeGesture(grabRef, {
@@ -135,21 +132,6 @@ export const FidelKeyboard: React.FC = () => {
     }
   }, [dispatch, handleKeyClick]);
 
-  const handleFamilyClick = useCallback((family: string) => {
-    const defaultChar = charFor(family, 'silent');
-    handleKeyClick(defaultChar);
-  }, [handleKeyClick]);
-
-  const handleFamilyLongPress = useCallback(async (family: string) => {
-    try {
-      const response = await dictionaryApi.suggest(family);
-      dispatch(setSuggestions(response.data.words));
-      dispatch(setNextWords(response.data.next));
-    } catch {
-      // Ignore
-    }
-  }, [dispatch]);
-
   const handlePhoneticToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setPhoneticMode(e.target.checked));
   }, [dispatch]);
@@ -167,21 +149,8 @@ export const FidelKeyboard: React.FC = () => {
   if (deviceKeyboardMode) return null;
 
   return (
-    <section id="keyboardPanel" className="keyboard-panel open">
+    <section id="keyboardPanel" className={`keyboard-panel${open ? ' open' : ''}`}>
       <div ref={grabRef} className="keyboard-grab" aria-hidden="true" />
-      
-      <div id="keyboardSuggestions" className="keyboard-suggest-row">
-        <span className="keyboard-suggest-label">Suggestions</span>
-        {suggestions.length > 0 ? (
-          suggestions.map((s, i) => (
-            <button key={i} className="suggestion" onClick={() => handleKeyClick(s)}>
-              {s}
-            </button>
-          ))
-        ) : (
-          <span className="empty">Type to see dictionary words</span>
-        )}
-      </div>
 
       <div id="keyboard" className="keyboard">
         {layer === 'fidel' ? (
@@ -267,6 +236,6 @@ export const FidelKeyboard: React.FC = () => {
       </div>
     </section>
   );
-};
+});
 
 export default FidelKeyboard;

@@ -14,7 +14,6 @@ interface UIState {
     lang: 'am' | 'en';
     name: string;
     templateId: string;
-    showKeyboard: boolean;
   };
   exportDialogOpen: boolean;
   exportFormat: string | null;
@@ -36,9 +35,6 @@ interface UIState {
   };
   toasts: Array<{ id: number; message: string; type: 'info' | 'success' | 'error' | 'warning' }>;
   zoom: number;
-  keyboardOpen: boolean;
-  saveMenuOpen: boolean;
-  exportMenuOpen: boolean;
   pdfViewerOpen: boolean;
   pdfUrl: string | null;
   pdfFileName: string | null;
@@ -59,7 +55,6 @@ const initialState: UIState = {
     lang: 'am',
     name: 'Untitled.md',
     templateId: 'blank',
-    showKeyboard: true,
   },
   exportDialogOpen: false,
   exportFormat: null,
@@ -78,9 +73,6 @@ const initialState: UIState = {
   },
   toasts: [],
   zoom: 1,
-  keyboardOpen: false,
-  saveMenuOpen: false,
-  exportMenuOpen: false,
   pdfViewerOpen: false,
   pdfUrl: null,
   pdfFileName: null,
@@ -146,9 +138,6 @@ const uiSlice = createSlice({
     setNewDocTemplate: (state, action: PayloadAction<string>) => {
       state.newDocData.templateId = action.payload;
     },
-    setNewDocShowKeyboard: (state, action: PayloadAction<boolean>) => {
-      state.newDocData.showKeyboard = action.payload;
-    },
     openExportDialog: (state, action: PayloadAction<string>) => {
       state.exportDialogOpen = true;
       state.exportFormat = action.payload;
@@ -156,18 +145,6 @@ const uiSlice = createSlice({
     closeExportDialog: (state) => {
       state.exportDialogOpen = false;
       state.exportFormat = null;
-    },
-    showSaveMenu: (state) => {
-      state.saveMenuOpen = true;
-    },
-    closeSaveMenu: (state) => {
-      state.saveMenuOpen = false;
-    },
-    showExportMenu: (state) => {
-      state.exportMenuOpen = true;
-    },
-    closeExportMenu: (state) => {
-      state.exportMenuOpen = false;
     },
     showContextMenu: (state, action: PayloadAction<{ x: number; y: number; fileId: string | null }>) => {
       state.contextMenu = {
@@ -229,12 +206,6 @@ const uiSlice = createSlice({
     setZoom: (state, action: PayloadAction<number>) => {
       state.zoom = action.payload;
     },
-    toggleKeyboard: (state) => {
-      state.keyboardOpen = !state.keyboardOpen;
-    },
-    setKeyboardOpen: (state, action: PayloadAction<boolean>) => {
-      state.keyboardOpen = action.payload;
-    },
     openPdfViewer: (state, action: PayloadAction<{ url: string; fileName: string }>) => {
       state.pdfViewerOpen = true;
       state.pdfUrl = action.payload.url;
@@ -272,13 +243,8 @@ export const {
   setNewDocLang,
   setNewDocName,
   setNewDocTemplate,
-  setNewDocShowKeyboard,
   openExportDialog,
   closeExportDialog,
-  showSaveMenu,
-  closeSaveMenu,
-  showExportMenu,
-  closeExportMenu,
   showContextMenu,
   showSpellErrorMenu,
   hideContextMenu,
@@ -289,8 +255,6 @@ export const {
   addToast,
   removeToast,
   setZoom,
-  toggleKeyboard,
-  setKeyboardOpen,
   openPdfViewer,
   closePdfViewer,
   setHomeOpen,
