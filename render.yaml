@@ -22,6 +22,9 @@ services:
         fromDatabase:
           name: werket-db
           property: connectionString
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
 databases:
   - name: werket-db
     plan: free

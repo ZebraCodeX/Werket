@@ -1,5 +1,7 @@
 """Production settings for Werket."""
 from .base import *  # noqa: F403,F401
+import os
+import re
 
 DEBUG = False
 
@@ -23,41 +25,92 @@ CSRF_TRUSTED_ORIGINS = _csrf
 _ALLOWED = config('ALLOWED_HOSTS', default='')
 ALLOWED_HOSTS = ['*'] + [h for h in _ALLOWED.split(',') if h]
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('POSTGRES_DB', default='werket'),
-        'USER': config('POSTGRES_USER', default='werket'),
-        'PASSWORD': config('POSTGRES_PASSWORD', default=''),
-        'HOST': config('POSTGRES_HOST', default='localhost'),
-        'PORT': config('POSTGRES_PORT', default='5432'),
-        'CONN_MAX_AGE': 60,
-        'OPTIONS': {
-            'sslmode': 'require',
-        },
-    }
-}
+# ---------------------------------------------------------------------------
+# Database — try DATABASE_URL, then POSTGRES_*, then fallback to SQLite
+# ---------------------------------------------------------------------------
 
-# Render provides DATABASE_URL — override individual vars if set
-import os as _os
-_database_url = _os.environ.get('DATABASE_URL')
-if _database_url:
-    import re as _re
-    _url = _re.match(
-        r'^(?:postgresql|postgresql://|postgres://)(?P<user>[^:@]+)(?::(?P<password>[^@]*))?@(?P<host>[^:/]+)(?::(?P<port>\d+))?(?:/(?P<name>.+))?$',
-        _database_url,
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
+
+def _parse_database_url(url):
+    """Parse postgres://user:pass@host:port/dbname?params into a dict."""
+    url = url.strip()
+    # Strip query params (e.g. ?sslmode=require)
+    if '?' in url:
+        url = url.split('?')[0]
+    # Match: postgres://user:pass@host:port/dbname
+    m = re.match(
+        r'^(?:postgres(?:ql)?://)(?P<user>[^:@]+)'
+        r'(?::(?P<password>[^@]*))?'
+        r'@(?P<host>[^:/]+)'
+        r'(?::(?P<port>\d+))?'
+        r'/(?P<name>[^\s]+)$',
+        url,
     )
-    if _url:
-        _d = _url.groupdict()
-        DATABASES['default'] = {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': _d.get('name') or 'werket',
-            'USER': _d.get('user') or 'werket',
-            'PASSWORD': _d.get('password') or '',
-            'HOST': _d.get('host') or 'localhost',
-            'PORT': _d.get('port') or '5432',
-            'CONN_MAX_AGE': 60,
-            'OPTIONS': {'sslmode': 'require'},
+    if m:
+        return m.groupdict()
+    return None
+
+if DATABASE_URL:
+    parsed = _parse_database_url(DATABASE_URL)
+    if parsed:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': parsed.get('name') or 'werket',
+                'USER': parsed.get('user') or 'werket',
+                'PASSWORD': parsed.get('password') or '',
+                'HOST': parsed.get('host') or 'localhost',
+                'PORT': parsed.get('port') or '5432',
+                'CONN_MAX_AGE': 60,
+                'OPTIONS': {'sslmode': 'require'},
+            }
+        }
+    else:
+        # DATABASE_URL set but unparseable — log and fail clearly
+        import logging
+        logging.getLogger('django').error(
+            'DATABASE_URL is set but could not be parsed: %s', DATABASE_URL
+        )
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': config('POSTGRES_DB', default='werket'),
+                'USER': config('POSTGRES_USER', default='werket'),
+                'PASSWORD': config('POSTGRES_PASSWORD', default=''),
+                'HOST': config('POSTGRES_HOST', default='localhost'),
+                'PORT': config('POSTGRES_PORT', default='5432'),
+                'CONN_MAX_AGE': 60,
+                'OPTIONS': {'sslmode': 'require'},
+            }
+        }
+else:
+    # No DATABASE_URL — check for individual POSTGRES_* vars
+    _pg_host = os.environ.get('POSTGRES_HOST', '')
+    if _pg_host:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': os.environ.get('POSTGRES_DB', 'werket'),
+                'USER': os.environ.get('POSTGRES_USER', 'werket'),
+                'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
+                'HOST': _pg_host,
+                'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+                'CONN_MAX_AGE': 60,
+                'OPTIONS': {'sslmode': 'require'},
+            }
+        }
+    else:
+        # Fallback to SQLite so the app at least starts
+        import logging
+        logging.getLogger('django').warning(
+            'No DATABASE_URL or POSTGRES_HOST set — falling back to SQLite. '
+            'Set DATABASE_URL in your Render environment variables.'
+        )
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
         }
 
 STORAGES = {
