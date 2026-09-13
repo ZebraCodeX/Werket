@@ -32,6 +32,11 @@ urlpatterns = [
         content_type='text/html; charset=utf-8'
     ), name='privacy'),
 
+    # Auth pages
+    path('login/', views.login_view, name='login'),
+    path('signup/', views.signup_view, name='signup'),
+    path('logout/', views.logout_view, name='logout'),
+
     # SPA entry point - catch all other routes
     path('', TemplateView.as_view(template_name='base.html'), name='index'),
     path('<path:path>', TemplateView.as_view(template_name='base.html'), name='spa_catch_all'),

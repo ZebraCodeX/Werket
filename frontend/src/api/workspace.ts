@@ -8,6 +8,6 @@ export const workspaceApi = {
   },
 
   async save(data: WorkspaceData): Promise<void> {
-    await apiClient.put('/workspace/', data);
+    await apiClient.post('/workspace/', data);
   },
 };
