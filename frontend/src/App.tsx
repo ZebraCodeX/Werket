@@ -1,0 +1,79 @@
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { RootState, AppDispatch } from './store';
+import { checkSession } from './store/authSlice';
+import { loadFromCloud } from './store/workspaceSlice';
+import { setTheme } from './store/uiSlice';
+import { Topbar, Tabs, StatusBar } from './components/Layout';
+import { DocumentPaper, EditorToolbar, FindBar } from './components/Editor';
+import { FidelKeyboard } from './components/Keyboard';
+import { FileTree } from './components/FileTree/FileTree';
+import { InspectorSidebar } from './components/Inspector';
+import { AuthDialog } from './components/Dialogs/AuthDialog';
+import { TemplateDialog } from './components/Dialogs/TemplateDialog';
+import { NewDocDialog } from './components/Dialogs/NewDocDialog';
+import { ExportDialog } from './components/Dialogs/ExportDialog';
+import { ContextMenu } from './components/common/ContextMenu';
+import { ToastContainer } from './components/common/ToastContainer';
+
+function App() {
+  const dispatch = useDispatch<AppDispatch>();
+  const { theme, sidebarOpen, inspectorOpen, findOpen, keyboardOpen } = useSelector((state: RootState) => state.ui);
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    // Initialize theme
+    const savedTheme = localStorage.getItem('werket-theme') as 'light' | 'dark' | null;
+    if (savedTheme) {
+      dispatch(setTheme(savedTheme));
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      dispatch(setTheme('dark'));
+    }
+
+    // Check auth session
+    dispatch(checkSession());
+
+    // Handle PWA install prompt
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      dispatch({ type: 'ui/setInstallPromptAvailable', payload: true });
+      (e as any).prompt = e;
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, [dispatch]);
+
+  useEffect(() => {
+    // Apply theme to document
+    document.documentElement.dataset.theme = theme;
+  }, [theme, dispatch]);
+
+  useEffect(() => {
+    // Load workspace from cloud if user is logged in
+    if (user) {
+      dispatch(loadFromCloud());
+    }
+  }, [user, dispatch]);
+
+  return (
+    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''} ${keyboardOpen ? 'osk-open' : ''}`}>
+      <Topbar />
+      <FileTree />
+      <main className="editor-area">
+        <EditorToolbar />
+        <FindBar />
+        <DocumentPaper />
+        <InspectorSidebar />
+      </main>
+      <FidelKeyboard />
+      <ContextMenu />
+      <AuthDialog />
+      <TemplateDialog />
+      <NewDocDialog />
+      <ExportDialog />
+      <ToastContainer />
+    </div>
+  );
+}
+
+export default App;

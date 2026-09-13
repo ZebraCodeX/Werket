@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="am">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Werket — Amharic Editor | ወርቀት</title>
+  <meta name="description" content="Werket (ወርቀት) is a free Pages-style editor for Amharic. Write letters, journals, and books with a Fidel keyboard, phonetic typing, spell check, and templates.">
+  <meta name="keywords" content="Amharic editor, Amharic word processor, Fidel keyboard, አማርኛ, ወርቀት, Amharic spell check, Ethiopian writing app, Geez typing">
+  <meta name="author" content="Werket">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#233b7a">
+  <meta name="color-scheme" content="light">
+  <link rel="canonical" href="https://werket.onrender.com/">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Werket">
+  <meta name="application-name" content="Werket">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Werket">
+  <meta property="og:title" content="Werket — Amharic Editor">
+  <meta property="og:description" content="Write Amharic beautifully. A free Pages-style editor with a Fidel keyboard, phonetic typing, and spell check.">
+  <meta property="og:url" content="https://werket.onrender.com/">
+  <meta property="og:image" content="https://werket.onrender.com/icon-512.png">
+  <meta property="og:locale" content="am_ET">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Werket — Amharic Editor">
+  <meta name="twitter:description" content="Write Amharic beautifully. Fidel keyboard, phonetic typing, and spell check.">
+  <meta name="twitter:image" content="https://werket.onrender.com/icon-512.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Werket — Amharic Editor",
+    "alternateName": "ወርቀት",
+    "operatingSystem": "Web, Android, iOS",
+    "applicationCategory": "ProductivityApplication",
+    "description": "A free Pages-style editor for Amharic with a Fidel keyboard, phonetic typing, spell check, and book templates.",
+    "url": "https://werket.onrender.com/",
+    "image": "https://werket.onrender.com/icon-512.png",
+    "inLanguage": ["am", "en"],
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').catch(function() {});
+      });
+    }
+  </script>
+</body>
+</html>

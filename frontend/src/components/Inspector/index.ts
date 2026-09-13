@@ -1,0 +1,1 @@
+export { InspectorSidebar } from './InspectorSidebar';
