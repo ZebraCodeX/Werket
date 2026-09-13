@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useRef } from 'react';
+import React, { useMemo, useCallback, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import {
@@ -7,7 +7,7 @@ import {
   setDeviceKeyboardMode,
   setOpen,
 } from '../../store/keyboardSlice';
-import { FAMILIES, ordersFor, KEYBOARD_LAYERS, FUNCTION_KEYS } from '../../utils/fidel';
+import { FAMILIES, charFor, ordersFor, KEYBOARD_LAYERS, FUNCTION_KEYS } from '../../utils/fidel';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 
 interface FidelKeyProps {
