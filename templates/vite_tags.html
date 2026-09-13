@@ -1,0 +1,6 @@
+{% for css_url in css_urls %}
+<link rel="stylesheet" href="{{ css_url }}">
+{% endfor %}
+{% if js_url %}
+<script type="module" src="{{ js_url }}"></script>
+{% endif %}
