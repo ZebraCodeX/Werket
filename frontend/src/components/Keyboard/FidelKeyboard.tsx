@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import {
@@ -11,6 +11,7 @@ import {
 } from '../../store/keyboardSlice';
 import { FAMILIES, ordersFor, charFor, KEYBOARD_LAYERS, FUNCTION_KEYS } from '../../utils/fidel';
 import { dictionaryApi } from '../../api/dictionary';
+import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 
 interface FidelKeyProps {
   family: string;
@@ -50,7 +51,14 @@ const FidelKey: React.FC<FidelKeyProps> = ({ family, orders, onSelect }) => {
 
 export const FidelKeyboard: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { layer, phoneticMode, deviceKeyboardMode, suggestions, nextWords } = useSelector((state: RootState) => state.keyboard);
+  const { layer, phoneticMode, deviceKeyboardMode, suggestions } = useSelector((state: RootState) => state.keyboard);
+  const grabRef = useRef<HTMLDivElement>(null);
+
+  useSwipeGesture(grabRef, {
+    onSwipeDown: () => dispatch(setOpen(false)),
+    onSwipeUp: () => {},
+    threshold: 50,
+  });
 
   const fidelKeys = useMemo(() => {
     return FAMILIES.map((family) => ({
@@ -84,19 +92,46 @@ export const FidelKeyboard: React.FC = () => {
   }, []);
 
   const handleFunctionKey = useCallback((key: string) => {
+    const editor = document.getElementById('editor') as HTMLElement | null;
     switch (key) {
-      case 'backspace':
-        document.execCommand('delete');
+      case 'backspace': {
+        if (editor) {
+          const sel = window.getSelection();
+          if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
+            const range = sel.getRangeAt(0);
+            if (range.collapsed && range.startOffset > 0) {
+              range.setStart(range.startContainer, range.startOffset - 1);
+              range.deleteContents();
+            } else if (!range.collapsed) {
+              range.deleteContents();
+            }
+          }
+          editor.dispatchEvent(new Event('input', { bubbles: true }));
+        }
         break;
+      }
       case 'layer':
         dispatch(nextLayer());
         break;
       case ' ':
         handleKeyClick(' ');
         break;
-      case '\n':
-        document.execCommand('insertHTML', false, '<br>');
+      case '\n': {
+        if (editor) {
+          const sel = window.getSelection();
+          if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
+            const range = sel.getRangeAt(0);
+            range.deleteContents();
+            const br = document.createElement('br');
+            range.insertNode(br);
+            range.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(range);
+          }
+          editor.dispatchEvent(new Event('input', { bubbles: true }));
+        }
         break;
+      }
     }
   }, [dispatch, handleKeyClick]);
 
@@ -133,7 +168,7 @@ export const FidelKeyboard: React.FC = () => {
 
   return (
     <section id="keyboardPanel" className="keyboard-panel open">
-      <div className="keyboard-grab" aria-hidden="true" />
+      <div ref={grabRef} className="keyboard-grab" aria-hidden="true" />
       
       <div id="keyboardSuggestions" className="keyboard-suggest-row">
         <span className="keyboard-suggest-label">Suggestions</span>
@@ -228,18 +263,6 @@ export const FidelKeyboard: React.FC = () => {
           <button id="closeKeyboard" className="small-btn" onClick={closeKeyboard}>
             Hide
           </button>
-        </div>
-        <div className="keyboard-info-divider" />
-        <div className="keyboard-info-section">
-          <span className="keyboard-info-badge">CLEAN</span>
-          <span className="keyboard-info-text">All words checked</span>
-        </div>
-        <div className="keyboard-info-divider" />
-        <div className="keyboard-info-section keyboard-shortcuts">
-          <span className="kbd-hint"><kbd>Tab</kbd> suggest</span>
-          <span className="kbd-hint"><kbd>Ctrl+Click</kbd> correct</span>
-          <span className="kbd-hint"><kbd>Ctrl+B</kbd> bold</span>
-          <span className="kbd-hint"><kbd>Ctrl+Z</kbd> undo</span>
         </div>
       </div>
     </section>

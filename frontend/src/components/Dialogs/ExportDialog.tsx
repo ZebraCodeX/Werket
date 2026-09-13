@@ -10,6 +10,7 @@ import {
   buildOdt, 
   buildRtf, 
   buildEpub, 
+  buildPdf,
   htmlToHtml,
   downloadBlob 
 } from '../../utils/exports';
@@ -77,13 +78,8 @@ export const ExportDialog: React.FC = () => {
           break;
         }
         case 'pdf': {
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(htmlToHtml(html, { title }));
-            printWindow.document.close();
-            printWindow.focus();
-            setTimeout(() => printWindow.print(), 300);
-          }
+          const pdfBytes = await buildPdf(html, { title });
+          downloadBlob(pdfBytes, baseName + '.pdf', 'application/pdf');
           break;
         }
         case 'json': {

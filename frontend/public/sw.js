@@ -1,59 +1,60 @@
-const CACHE_NAME = 'werket-v12';
-const ASSETS = [
+const CACHE_NAME = 'werket-v1';
+const PRECACHE_ASSETS = [
   '/',
+  '/index.html',
   '/manifest.json',
-  '/static/werket.css',
-  '/static/werket.js',
-  '/static/formats.js',
-  '/static/icon.svg',
-  '/static/icon-192.png',
-  '/static/icon-512.png',
-  '/static/icon-maskable-512.png',
-  '/static/apple-touch-icon.png',
-  '/static/template-blank.svg',
-  '/static/template-letter.svg',
-  '/static/template-journal.svg',
-  '/static/template-meeting.svg',
-  '/static/template-book.svg'
 ];
 
-self.addEventListener('install', function (event) {
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(function (cache) {
-      return cache.addAll(ASSETS);
-    }).then(function () {
-      return self.skipWaiting();
-    })
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(PRECACHE_ASSETS);
+    }).then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('activate', function (event) {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(function (keys) {
-      return Promise.all(keys.filter(function (key) {
-        return key !== CACHE_NAME;
-      }).map(function (key) {
-        return caches.delete(key);
-      }));
-    }).then(function () {
-      return self.clients.claim();
-    })
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', function (event) {
+self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  var url = new URL(event.request.url);
-  if (url.pathname.indexOf('/api/') === 0) return;
+
+  const url = new URL(event.request.url);
+
+  if (url.pathname.startsWith('/api/')) return;
+
   event.respondWith(
-    caches.match(event.request).then(function (cached) {
-      if (cached) return cached;
-      return fetch(event.request).then(function (response) {
-        caches.open(CACHE_NAME).then(function (cache) {
-          cache.put(event.request, response.clone());
-        });
+    caches.match(event.request).then((cached) => {
+      const fetchPromise = fetch(event.request).then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
         return response;
+      }).catch(() => {
+        if (cached) return cached;
+        if (event.request.mode === 'navigate') {
+          return caches.match('/index.html');
+        }
+        return new Response('Offline', { status: 503 });
       });
+
+      return cached || fetchPromise;
     })
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

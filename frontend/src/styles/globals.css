@@ -276,3 +276,552 @@ a:hover {
     display: none;
   }
 }
+
+/* ========== Mobile-first responsive layout ========== */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.editor-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.document-stage {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ========== Topbar ========== */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 8px;
+  gap: 4px;
+  background: var(--chrome);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  z-index: 50;
+}
+
+.topbar-left,
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.topbar-center {
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px;
+}
+
+.doc-title {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  text-align: center;
+  outline: none;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.doc-title:focus {
+  background: var(--bg);
+}
+
+.save-status {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ========== Editor toolbar ========== */
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--chrome);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.editor-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.toolbar-left,
+.toolbar-center,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.toolbar-center {
+  margin: 0 auto;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--line);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* ========== Keyboard panel (mobile) ========== */
+
+.keyboard-panel {
+  background: var(--chrome);
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+  transition: transform 0.2s ease, max-height 0.2s ease;
+}
+
+.keyboard-panel.open {
+  max-height: 50vh;
+  overflow: auto;
+}
+
+.keyboard-grab {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0 2px;
+  cursor: grab;
+}
+
+.keyboard-grab::after {
+  content: '';
+  width: 36px;
+  height: 4px;
+  background: var(--line);
+  border-radius: 2px;
+}
+
+.keyboard {
+  padding: 4px 8px 8px;
+}
+
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.key {
+  min-width: 36px;
+  height: 40px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.key:active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.key.fn {
+  font-size: 12px;
+  min-width: 44px;
+}
+
+.key.fn.space {
+  flex: 2.6;
+}
+
+.key.fn.enter {
+  flex: 1.3;
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.keyboard-suggest-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.keyboard-suggest-row::-webkit-scrollbar {
+  display: none;
+}
+
+.suggestion {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.suggestion:active {
+  background: var(--accent-soft);
+}
+
+.keyboard-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 8px;
+  font-size: 11px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.keyboard-info-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.keyboard-info-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--line);
+}
+
+.switch-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.small-btn {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 11px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.small-btn:active {
+  background: var(--accent-soft);
+}
+
+/* ========== Document paper ========== */
+
+.document-paper {
+  position: relative;
+}
+
+.document-editor {
+  outline: none;
+  min-height: 400px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.document-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.document-editor table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+
+.document-editor td,
+.document-editor th {
+  border: 1px solid var(--line);
+  padding: 8px;
+  min-width: 60px;
+}
+
+.document-editor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+/* ========== Context menu ========== */
+
+.context-menu {
+  position: fixed;
+  z-index: 200;
+  min-width: 180px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.context-menu button {
+  width: 100%;
+  padding: 6px 12px;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.context-menu button:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.context-menu .danger-action {
+  color: var(--danger);
+}
+
+.context-menu .danger-action:hover {
+  background: var(--danger);
+  color: white;
+}
+
+.spell-fix-row {
+  padding: 4px 8px;
+}
+
+.spell-fix-title {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.spell-fix-item {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.spell-fix-item:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ========== Export dialog ========== */
+
+.export-dialog {
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 480px;
+  width: 90vw;
+  padding: 0;
+  background: var(--chrome);
+}
+
+.export-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.dialog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dialog-head b {
+  display: block;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.dialog-head span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.template-card {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  text-align: left;
+  background: var(--bg);
+  transition: border-color 0.15s ease;
+}
+
+.template-card:hover {
+  border-color: var(--accent);
+}
+
+.template-card b {
+  display: block;
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.template-card span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ========== Toast ========== */
+
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: white;
+  box-shadow: var(--shadow-md);
+  animation: toastIn 0.2s ease;
+}
+
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+.toast.warning { background: var(--warning); }
+.toast.info { background: var(--accent); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== Responsive: Desktop ========== */
+
+@media (min-width: 768px) {
+  .topbar {
+    padding: 0 16px;
+  }
+
+  .editor-toolbar {
+    padding: 6px 16px;
+    flex-wrap: nowrap;
+    overflow-x: visible;
+  }
+
+  .key {
+    min-width: 40px;
+    height: 44px;
+    font-size: 17px;
+  }
+
+  .fidel-family-key {
+    min-width: 48px;
+    height: 48px;
+  }
+}
+
+/* ========== Responsive: hide OSK toggle on desktop ========== */
+
+@media (hover: hover) and (pointer: fine) {
+  #closeKeyboard,
+  #deviceKbBtn,
+  .keyboard-info-row .small-btn {
+    display: none;
+  }
+}
+
+/* ========== Touch gestures (swipe to dismiss keyboard) ========== */
+
+@media (pointer: coarse) {
+  .keyboard-grab {
+    touch-action: none;
+  }
+
+  .key {
+    min-width: 40px;
+    height: 44px;
+  }
+
+  .fidel-family-key {
+    min-width: 44px;
+    height: 44px;
+  }
+
+  .order-key {
+    min-width: 44px;
+    height: 44px;
+  }
+
+  .toolbar-btn {
+    min-width: 36px;
+    height: 36px;
+  }
+}
+
+/* ========== Print styles ========== */
+
+@media print {
+  .topbar,
+  .editor-toolbar,
+  .keyboard-panel,
+  .file-tree,
+  .inspector-sidebar,
+  .find-bar {
+    display: none !important;
+  }
+
+  .document-stage {
+    overflow: visible;
+  }
+
+  .document-paper {
+    box-shadow: none;
+    border: none;
+  }
+}
