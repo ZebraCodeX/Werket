@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
-import { closeTemplateDialog } from '../../store/uiSlice';
+import { closeTemplateDialog, setHomeOpen } from '../../store/uiSlice';
 import { createFileFromTemplate } from '../../store/workspaceSlice';
 import { TEMPLATES } from '../../utils/constants';
 import { AiTopicDialog } from './AiTopicDialog';
@@ -33,6 +33,7 @@ export const TemplateDialog: React.FC = () => {
       dispatch(createFileFromTemplate({ name, text, lang: templateLang }));
     });
     dispatch(closeTemplateDialog());
+    dispatch(setHomeOpen(false));
     setShowAi(false);
   }, [dispatch, lang]);
 

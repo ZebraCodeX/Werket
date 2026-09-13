@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
-import { closeTemplateDialog } from '../../store/uiSlice';
+import { closeTemplateDialog, setHomeOpen } from '../../store/uiSlice';
 import { createFileFromTemplate } from '../../store/workspaceSlice';
 import { generateContent } from '../../api/ai';
 
@@ -45,6 +45,7 @@ export const AiTopicDialog: React.FC = () => {
         lang,
       }));
       dispatch(closeTemplateDialog());
+      dispatch(setHomeOpen(false));
     } catch (err: any) {
       setError(err.message || (lang === 'am' ? 'ስህተት ተፈጥሯል' : 'Generation failed'));
     } finally {

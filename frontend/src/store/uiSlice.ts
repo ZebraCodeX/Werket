@@ -42,6 +42,7 @@ interface UIState {
   pdfViewerOpen: boolean;
   pdfUrl: string | null;
   pdfFileName: string | null;
+  homeOpen: boolean;
 }
 
 const initialState: UIState = {
@@ -83,6 +84,7 @@ const initialState: UIState = {
   pdfViewerOpen: false,
   pdfUrl: null,
   pdfFileName: null,
+  homeOpen: true,
 };
 
 let toastId = 0;
@@ -246,6 +248,9 @@ const uiSlice = createSlice({
       state.pdfUrl = null;
       state.pdfFileName = null;
     },
+    setHomeOpen: (state, action: PayloadAction<boolean>) => {
+      state.homeOpen = action.payload;
+    },
   },
 });
 
@@ -288,6 +293,7 @@ export const {
   setKeyboardOpen,
   openPdfViewer,
   closePdfViewer,
+  setHomeOpen,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

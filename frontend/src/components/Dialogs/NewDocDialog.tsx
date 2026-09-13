@@ -6,7 +6,8 @@ import {
   setNewDocLang, 
   setNewDocName, 
   setNewDocTemplate, 
-  setNewDocShowKeyboard 
+  setNewDocShowKeyboard,
+  setHomeOpen,
 } from '../../store/uiSlice';
 import { addFile } from '../../store/workspaceSlice';
 import { TEMPLATES } from '../../utils/constants';
@@ -28,6 +29,7 @@ export const NewDocDialog: React.FC = () => {
       dispatch(addFile({ name: newDocData.name, text: '', lang: newDocData.lang }));
     }
     dispatch(closeNewDocDialog());
+    dispatch(setHomeOpen(false));
   }, [dispatch, newDocData]);
 
   const handleTemplateClick = useCallback((templateId: string) => {

@@ -9,6 +9,7 @@ import {
   openNewDocDialog,
   openPdfViewer,
   addToast,
+  setHomeOpen,
 } from '../../store/uiSlice';
 import { setProjectName, addFile } from '../../store/workspaceSlice';
 
@@ -61,7 +62,7 @@ export const Topbar: React.FC = () => {
     <header className="topbar">
       <div className="topbar-left">
         <button className="icon-btn" id="sidebarToggle" title="Toggle sidebar" onClick={() => dispatch(toggleSidebar())}>☰</button>
-        <button className="icon-btn" id="brandHome" title="Home" onClick={() => dispatch(openNewDocDialog())}>🏠</button>
+        <button className="icon-btn" id="brandHome" title="Home" onClick={() => dispatch(setHomeOpen(true))}>🏠</button>
       </div>
       <div className="topbar-center">
         <input
