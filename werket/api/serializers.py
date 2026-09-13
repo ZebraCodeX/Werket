@@ -53,3 +53,20 @@ class CheckWordSerializer(serializers.Serializer):
 class CheckSerializer(serializers.Serializer):
     text = serializers.CharField()
     words = CheckWordSerializer(many=True)
+
+
+class AiGenerateSerializer(serializers.Serializer):
+    topic = serializers.CharField(max_length=500)
+    lang = serializers.ChoiceField(choices=['am', 'en'], default='am')
+    type = serializers.ChoiceField(
+        choices=['summary', 'story', 'essay', 'outline'],
+        default='summary'
+    )
+
+
+class AiGenerateResponseSerializer(serializers.Serializer):
+    content = serializers.CharField()
+    topic = serializers.CharField()
+    lang = serializers.CharField()
+    type = serializers.CharField()
+    method = serializers.CharField()

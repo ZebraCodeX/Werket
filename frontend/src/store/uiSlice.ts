@@ -39,6 +39,9 @@ interface UIState {
   keyboardOpen: boolean;
   saveMenuOpen: boolean;
   exportMenuOpen: boolean;
+  pdfViewerOpen: boolean;
+  pdfUrl: string | null;
+  pdfFileName: string | null;
 }
 
 const initialState: UIState = {
@@ -77,6 +80,9 @@ const initialState: UIState = {
   keyboardOpen: false,
   saveMenuOpen: false,
   exportMenuOpen: false,
+  pdfViewerOpen: false,
+  pdfUrl: null,
+  pdfFileName: null,
 };
 
 let toastId = 0;
@@ -227,6 +233,19 @@ const uiSlice = createSlice({
     setKeyboardOpen: (state, action: PayloadAction<boolean>) => {
       state.keyboardOpen = action.payload;
     },
+    openPdfViewer: (state, action: PayloadAction<{ url: string; fileName: string }>) => {
+      state.pdfViewerOpen = true;
+      state.pdfUrl = action.payload.url;
+      state.pdfFileName = action.payload.fileName;
+    },
+    closePdfViewer: (state) => {
+      state.pdfViewerOpen = false;
+      if (state.pdfUrl && state.pdfUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(state.pdfUrl);
+      }
+      state.pdfUrl = null;
+      state.pdfFileName = null;
+    },
   },
 });
 
@@ -267,6 +286,8 @@ export const {
   setZoom,
   toggleKeyboard,
   setKeyboardOpen,
+  openPdfViewer,
+  closePdfViewer,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

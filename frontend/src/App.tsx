@@ -6,6 +6,7 @@ import { loadFromCloud } from './store/workspaceSlice';
 import { setTheme } from './store/uiSlice';
 import { Topbar, Tabs, StatusBar } from './components/Layout';
 import { DocumentPaper, EditorToolbar, FindBar } from './components/Editor';
+import { PdfViewer } from './components/Editor/PdfViewer';
 import { FidelKeyboard } from './components/Keyboard';
 import { FileTree } from './components/FileTree/FileTree';
 import { InspectorSidebar } from './components/Inspector';
@@ -18,7 +19,7 @@ import { ToastContainer } from './components/common/ToastContainer';
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { theme, sidebarOpen, inspectorOpen, findOpen, keyboardOpen } = useSelector((state: RootState) => state.ui);
+  const { theme, sidebarOpen, inspectorOpen, findOpen, keyboardOpen, pdfViewerOpen } = useSelector((state: RootState) => state.ui);
   const { user } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
@@ -72,6 +73,7 @@ function App() {
       <NewDocDialog />
       <ExportDialog />
       <ToastContainer />
+      {pdfViewerOpen && <PdfViewer />}
     </div>
   );
 }

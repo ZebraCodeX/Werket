@@ -108,6 +108,18 @@ export const TEMPLATES: Template[] = [
       ],
     },
   },
+  {
+    id: 'ai-starter',
+    icon: '✦',
+    artwork: 'ai',
+    name: { en: 'AI Starter', am: 'AI መነሻ' },
+    description: { en: 'Generate a one-page content summary from any topic.', am: 'ከማንኛውም ርዕስ አንድ ገጽ ይዘት ያመጡ።' },
+    defaultName: { en: 'AI Generated.md', am: 'AI የሰራ ሰነድ.md' },
+    files: {
+      en: [['AI Generated.md', '']],
+      am: [['AI የሰራ ሰነድ.md', '']],
+    },
+  },
 ];
 
 export const PAPER_SIZES = {

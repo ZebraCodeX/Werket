@@ -710,6 +710,155 @@ a:hover {
   color: var(--muted);
 }
 
+.template-art {
+  width: 100%;
+  height: 60px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 8px;
+  color: var(--muted);
+  background: var(--line);
+}
+
+.artwork-ai {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+/* ========== AI Topic Dialog ========== */
+
+.ai-topic-panel {
+  padding: 0;
+}
+
+.ai-topic-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.ai-topic-header .ai-icon {
+  font-size: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-topic-header b {
+  display: block;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.ai-topic-header span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.ai-topic-field {
+  margin-bottom: 16px;
+}
+
+.ai-topic-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.ai-topic-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--paper);
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.ai-topic-input:focus {
+  border-color: var(--accent);
+}
+
+.ai-topic-input::placeholder {
+  color: var(--muted);
+}
+
+.ai-type-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.ai-type-btn {
+  flex: 1;
+  padding: 8px 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.ai-type-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ai-type-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.ai-error {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--danger);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.ai-topic-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ai-generate-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--transition);
+}
+
+.ai-generate-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.ai-generate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ========== Toast ========== */
 
 .toast-container {
@@ -804,6 +953,105 @@ a:hover {
   }
 }
 
+/* ========== PDF Viewer ========== */
+
+.pdf-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.pdf-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--chrome);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.pdf-viewer-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.pdf-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.pdf-viewer-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.pdf-ctrl-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+}
+
+.pdf-ctrl-btn:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.pdf-zoom-label {
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 36px;
+  text-align: center;
+}
+
+.pdf-close-btn {
+  margin-left: 8px;
+}
+
+.pdf-viewer-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  background: var(--line);
+}
+
+.pdf-loading {
+  text-align: center;
+  padding: 48px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.pdf-error {
+  text-align: center;
+  padding: 48px;
+  font-size: 14px;
+  color: var(--danger);
+}
+
 /* ========== Print styles ========== */
 
 @media print {
@@ -812,7 +1060,8 @@ a:hover {
   .keyboard-panel,
   .file-tree,
   .inspector-sidebar,
-  .find-bar {
+  .find-bar,
+  .pdf-viewer-overlay {
     display: none !important;
   }
 

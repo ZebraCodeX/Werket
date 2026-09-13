@@ -17,8 +17,11 @@ from .serializers import (
     WorkspaceDataSerializer,
     SuggestionSerializer,
     CheckSerializer,
+    AiGenerateSerializer,
+    AiGenerateResponseSerializer,
 )
 from ..api import suggest, check
+from ..ai_engine import generate as ai_generate, _llm_available
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
@@ -172,3 +175,34 @@ class DictionaryViewSet(viewsets.ViewSet):
         result = {'text': text, 'words': check(text)}
         serializer = CheckSerializer(result)
         return Response(serializer.data)
+
+
+class AiGenerateView(APIView):
+    """AI content generation endpoint."""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = AiGenerateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        topic = serializer.validated_data['topic']
+        lang = serializer.validated_data['lang']
+        content_type = serializer.validated_data['type']
+
+        try:
+            content = ai_generate(topic, lang, content_type)
+            method = 'llm' if _llm_available() else 'nlp'
+            response_data = {
+                'content': content,
+                'topic': topic,
+                'lang': lang,
+                'type': content_type,
+                'method': method,
+            }
+            resp_serializer = AiGenerateResponseSerializer(response_data)
+            return Response(resp_serializer.data)
+        except Exception as e:
+            return Response(
+                {'error': f'Generation failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
