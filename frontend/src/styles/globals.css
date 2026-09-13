@@ -1331,3 +1331,36 @@ a:hover {
     border: none;
   }
 }
+/* ========== Main Sidebar ========== */
+
+.app-shell.sidebar-open {
+  & .file-tree {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  & .editor-area {
+    margin-left: 260px;
+  }
+}
+
+.file-tree {
+  position: fixed;
+  top: 0;
+  left: -260px;
+  bottom: 0;
+  width: 260px;
+  z-index: 100;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  pointer-events: none;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.file-tree.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}

@@ -21,6 +21,12 @@ export const Editor: React.FC = () => {
     }
   }, [dispatch]);
 
+  // Responsive font size: smaller on mobile, larger on desktop
+  const fontSize = size || 18;
+  const effectiveFontSize = window.matchMedia('(hover: hover) and (pointer: fine)') 
+    ? fontSize 
+    : Math.max(14, fontSize - 4);
+
   return (
     <div
       ref={editorRef}
@@ -40,7 +46,7 @@ export const Editor: React.FC = () => {
       onFocus={handleSelectionChange}
       style={{
         fontFamily: `"${font}", "Noto Sans Ethiopic", "Abyssinica SIL", Georgia, serif`,
-        fontSize: `${size}px`,
+        fontSize: `${effectiveFontSize}px`,
         textAlign: align,
       }}
     />
