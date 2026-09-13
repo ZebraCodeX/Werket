@@ -1364,3 +1364,198 @@ a:hover {
   opacity: 1;
   pointer-events: auto;
 }
+
+/* ========== File Explorer ========== */
+
+.explorer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 320px;
+  z-index: 105;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  overflow: hidden;
+  transition: transform 0.3s ease;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+}
+
+.explorer.closed {
+  transform: translateX(-320px);
+}
+
+.explorer .panel-heading {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--chrome);
+  cursor: move;
+  user-select: none;
+}
+
+.explorer .panel-heading span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.explorer .panel-heading button {
+  margin-left: 12px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.explorer .panel-heading button:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+
+.explorer .file-tree {
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  padding: 12px 20px;
+}
+
+.explorer .tree-file {
+  display: flex;
+  align-items: center;
+  padding: 8px 4px;
+  margin: 2px 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.explorer .tree-file.active {
+  background: var(--chrome);
+}
+
+.explorer .tree-file:hover:not(.active) {
+  background: var(--line);
+}
+
+.explorer .tree-file .file-icon {
+  width: 20px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.explorer .tree-file .file-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.explorer .tree-file .close-tab {
+  margin-left: 8px;
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.explorer .tree-file:hover .close-tab,
+.explorer .tree-file.active .close-tab {
+  color: var(--ink);
+}
+
+.explorer .tree-folder {
+  padding: 4px 0;
+  margin: 4px 0;
+  border-top: 1px solid var(--line);
+}
+
+.explorer .tree-folder .tree-folder-label {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.explorer .tree-folder .tree-folder-label:hover {
+  background: var(--chrome);
+}
+
+.explorer .tree-folder .file-icon {
+  margin-right: 6px;
+  font-size: 10px;
+}
+
+.explorer .explorer-bottom {
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.explorer .outline-action {
+  padding: 6px 12px;
+  background: var(--chrome);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.explorer .outline-action:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+
+.explorer .file-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.explorer .file-actions button {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.explorer .file-actions button:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+
+/* Mobile: hide explorer by default, show hamburger */
+@media (max-width: 768px) {
+  .explorer {
+    transform: translateX(-320px);
+  }
+  
+  .explorer.open {
+    transform: translateX(0);
+  }
+  
+  .file-tree {
+    max-height: none;
+  }
+}
