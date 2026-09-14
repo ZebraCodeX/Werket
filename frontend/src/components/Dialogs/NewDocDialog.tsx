@@ -1,18 +1,19 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import type { RootState, AppDispatch } from '../../store';
 import {
   closeNewDocDialog,
   setNewDocLang,
   setNewDocName,
   setNewDocTemplate,
-  setHomeOpen,
 } from '../../store/uiSlice';
 import { addFile } from '../../store/workspaceSlice';
 import { TEMPLATES } from '../../utils/constants';
 
 export const NewDocDialog: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { newDocDialogOpen, newDocData } = useSelector((state: RootState) => state.ui);
   const workspaceLang = useSelector((state: RootState) => state.workspace.lang);
   const previousOpen = useRef(false);
@@ -37,8 +38,8 @@ export const NewDocDialog: React.FC = () => {
       dispatch(addFile({ name: newDocData.name, text: '', lang: newDocData.lang }));
     }
     dispatch(closeNewDocDialog());
-    dispatch(setHomeOpen(false));
-  }, [dispatch, newDocData]);
+    navigate('/editor');
+  }, [dispatch, navigate, newDocData]);
 
   const handleTemplateClick = useCallback((templateId: string) => {
     dispatch(setNewDocTemplate(templateId));

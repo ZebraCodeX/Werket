@@ -3,7 +3,7 @@
  * Handles the phonetic buffer and composition state.
  */
 
-import { compose, charFor, VOWELS, DIGRAPHS, PHONETIC, ORDERS } from './fidel';
+import { compose, DIGRAPHS, PHONETIC } from './fidel';
 
 export interface PhoneticState {
   buffer: string;

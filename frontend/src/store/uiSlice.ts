@@ -2,6 +2,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 interface UIState {
   sidebarOpen: boolean;
+  sidebarCollapsed: boolean;
   inspectorOpen: boolean;
   inspectorTab: 'style' | 'text' | 'layout';
   findOpen: boolean;
@@ -43,6 +44,7 @@ interface UIState {
 
 const initialState: UIState = {
   sidebarOpen: false,
+  sidebarCollapsed: true, // Start collapsed on desktop
   inspectorOpen: false,
   inspectorTab: 'style',
   findOpen: false,
@@ -90,6 +92,12 @@ const uiSlice = createSlice({
     },
     setSidebarOpen: (state, action: PayloadAction<boolean>) => {
       state.sidebarOpen = action.payload;
+    },
+    toggleSidebarCollapsed: (state) => {
+      state.sidebarCollapsed = !state.sidebarCollapsed;
+    },
+    setSidebarCollapsed: (state, action: PayloadAction<boolean>) => {
+      state.sidebarCollapsed = action.payload;
     },
     toggleInspector: (state) => {
       state.inspectorOpen = !state.inspectorOpen;
@@ -228,6 +236,8 @@ const uiSlice = createSlice({
 export const {
   toggleSidebar,
   setSidebarOpen,
+  toggleSidebarCollapsed,
+  setSidebarCollapsed,
   toggleInspector,
   setInspectorOpen,
   setInspectorTab,

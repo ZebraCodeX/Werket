@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
-import { closeExportDialog } from '../../store/uiSlice';
+import { closeExportDialog, addToast } from '../../store/uiSlice';
 import { EXPORT_FORMATS } from '../../utils/constants';
 import { 
   htmlToMarkdown, 
@@ -23,10 +23,13 @@ export const ExportDialog: React.FC = () => {
 
   const handleExport = useCallback(async (format: string) => {
     if (!activeFile) return;
-    const editor = document.getElementById('editor') as HTMLElement | null;
-    if (!editor) return;
-
-    const html = editor.innerHTML;
+    const editorEl = document.getElementById('editor') as HTMLElement | null;
+    const html = editorEl?.innerHTML || activeFile.text || '';
+    if (!html) {
+      dispatch(addToast({ message: 'Nothing to export', type: 'warning' }));
+      dispatch(closeExportDialog());
+      return;
+    }
     const baseName = activeFile.name.replace(/\.[^.]+$/, '') || 'document';
     const title = activeFile.name;
 
@@ -91,10 +94,10 @@ export const ExportDialog: React.FC = () => {
           break;
         }
       }
-      dispatch({ type: 'ui/addToast', payload: { message: `Exported as ${EXPORT_FORMATS.find(f => f.id === format)?.label || format}`, type: 'success' } });
+      dispatch(addToast({ message: `Exported as ${EXPORT_FORMATS.find(f => f.id === format)?.label || format}`, type: 'success' }));
     } catch (err) {
       console.error('Export failed:', err);
-      dispatch({ type: 'ui/addToast', payload: { message: 'Export failed', type: 'error' } });
+      dispatch(addToast({ message: 'Export failed', type: 'error' }));
     }
     dispatch(closeExportDialog());
   }, [activeFile, files, projectName, dispatch]);

@@ -1,60 +1,51 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import type { RootState, AppDispatch } from '../../store';
-import { setLang, setActiveFile, createFileFromTemplate } from '../../store/workspaceSlice';
-import { TEMPLATES } from '../../utils/constants';
+import { useNavigate } from 'react-router-dom';
+import type { RootState, AppDispatch } from '../store';
+import { store } from '../store';
+import { createFileFromTemplate, setActiveFile, setLang } from '../store/workspaceSlice';
+import { TEMPLATES } from '../utils/constants';
 
-interface HomeProps {
-  onOpenEditor: () => void;
-}
-
-export const Home: React.FC<HomeProps> = React.memo(({ onOpenEditor }) => {
+export function HomePage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { files, lang } = useSelector((state: RootState) => state.workspace);
-  const [, setTick] = useState(0);
+  const navigate = useNavigate();
+  const { lang } = useSelector((state: RootState) => state.workspace);
+  const files = useSelector((state: RootState) => state.workspace.files);
 
-  // Refresh relative times every minute
-  React.useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 60000);
-    return () => clearInterval(id);
-  }, []);
+  // Find most recent draft
+  const recentFiles = [...files].sort((a, b) => b.updated - a.updated).slice(0, 8);
+  const continueDoc = recentFiles[0];
 
-  const recentFiles = useMemo(
-    () => [...files].sort((a, b) => b.updated - a.updated).slice(0, 6),
-    [files],
-  );
+  const handleTemplateSelect = (templateId: string) => {
+    const template = TEMPLATES.find(t => t.id === templateId);
+    if (template) {
+      const templateFiles = template.files[lang] || template.files.en;
+      templateFiles.forEach(([name, text]) => {
+        dispatch(createFileFromTemplate({ name, text, lang }));
+      });
+    } else {
+      dispatch(createFileFromTemplate({ name: 'Untitled.md', text: '', lang }));
+    }
+    // Navigate to the freshly created (active) file
+    const activeId = store.getState().workspace.activeId;
+    navigate(activeId ? `/editor/${activeId}` : '/editor');
+  };
 
-  const formatTime = useCallback((ts: number) => {
+  const handleRecentClick = (fileId: string) => {
+    dispatch(setActiveFile(fileId));
+    navigate(`/editor/${fileId}`);
+  };
+
+  const formatTime = (ts: number) => {
     const diff = Date.now() - ts;
     if (diff < 60000) return lang === 'am' ? 'አሁን' : 'just now';
     if (diff < 3600000) return lang === 'am' ? `${Math.floor(diff / 60000)} ደ.` : `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return lang === 'am' ? `${Math.floor(diff / 3600000)} ሰ.` : `${Math.floor(diff / 3600000)}h ago`;
     return lang === 'am' ? `${Math.floor(diff / 86400000)} ቀ.` : `${Math.floor(diff / 86400000)}d ago`;
-  }, [lang]);
-
-  const handleTemplateSelect = useCallback((templateId: string) => {
-    const template = TEMPLATES.find(t => t.id === templateId);
-    if (template) {
-      const templateLang = lang;
-      const templateFiles = template.files[templateLang] || template.files.en;
-      templateFiles.forEach(([name, text]) => {
-        dispatch(createFileFromTemplate({ name, text, lang: templateLang }));
-      });
-    } else {
-      dispatch(createFileFromTemplate({ name: 'Untitled.md', text: '', lang }));
-    }
-    onOpenEditor();
-  }, [dispatch, lang, onOpenEditor]);
-
-  const handleRecentClick = useCallback((fileId: string) => {
-    dispatch(setActiveFile(fileId));
-    onOpenEditor();
-  }, [dispatch, onOpenEditor]);
-
-  const continueDoc = recentFiles[0];
+  };
 
   return (
-    <div className="home">
+    <main className="home-page">
       <div className="home-inner">
         {/* Hero */}
         <div className="home-hero">
@@ -138,8 +129,6 @@ export const Home: React.FC<HomeProps> = React.memo(({ onOpenEditor }) => {
           </section>
         )}
       </div>
-    </div>
+    </main>
   );
-});
-
-export default Home;
+}

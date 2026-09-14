@@ -1,15 +1,13 @@
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
-import { 
-  deleteFile, 
-  duplicateFile, 
-  setActiveFile, 
+import {
+  deleteFile,
+  duplicateFile,
+  setActiveFile,
   closeTab,
-  createFileFromTemplate 
 } from '../../store/workspaceSlice';
 import { openNewDocDialog, openTemplateDialog } from '../../store/uiSlice';
-import { TEMPLATES } from '../../utils/constants';
 
 interface TreeFileProps {
   file: any;
@@ -66,10 +64,7 @@ export const FileTree: React.FC = () => {
             isActive={activeId === file.id}
             onSelect={id => dispatch(setActiveFile(id))}
             onClose={id => dispatch(closeTab(id))}
-            onContextMenu={(e, id) => {
-              e.preventDefault();
-              // Show context menu
-            }}
+            onContextMenu={e => { e.preventDefault(); }}
           />
         ))}
         {folders.map(([folderName, folderFiles]) => (
@@ -85,7 +80,7 @@ export const FileTree: React.FC = () => {
                 isActive={activeId === file.id}
                 onSelect={id => dispatch(setActiveFile(id))}
                 onClose={id => dispatch(closeTab(id))}
-                onContextMenu={(e, id) => { e.preventDefault(); }}
+                onContextMenu={e => { e.preventDefault(); }}
               />
             ))}
           </div>

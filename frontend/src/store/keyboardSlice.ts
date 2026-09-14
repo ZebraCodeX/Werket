@@ -5,7 +5,7 @@ const initialState: KeyboardState = {
   open: false,
   layer: 'fidel',
   phoneticMode: true,
-  deviceKeyboardMode: false,
+  deviceKeyboardMode: true,
 };
 
 const keyboardSlice = createSlice({

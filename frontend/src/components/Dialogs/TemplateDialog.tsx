@@ -1,13 +1,15 @@
 import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import type { RootState, AppDispatch } from '../../store';
-import { closeTemplateDialog, setHomeOpen } from '../../store/uiSlice';
+import { closeTemplateDialog } from '../../store/uiSlice';
 import { createFileFromTemplate } from '../../store/workspaceSlice';
 import { TEMPLATES } from '../../utils/constants';
 import { AiTopicDialog } from './AiTopicDialog';
 
 export const TemplateDialog: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { templateDialogOpen } = useSelector((state: RootState) => state.ui);
   const { lang } = useSelector((state: RootState) => state.workspace);
   const [showAi, setShowAi] = useState(false);
@@ -33,9 +35,9 @@ export const TemplateDialog: React.FC = () => {
       dispatch(createFileFromTemplate({ name, text, lang: templateLang }));
     });
     dispatch(closeTemplateDialog());
-    dispatch(setHomeOpen(false));
+    navigate('/editor');
     setShowAi(false);
-  }, [dispatch, lang]);
+  }, [dispatch, lang, navigate]);
 
   if (!templateDialogOpen) return null;
 

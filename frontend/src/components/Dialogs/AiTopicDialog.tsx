@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import type { RootState, AppDispatch } from '../../store';
-import { closeTemplateDialog, setHomeOpen } from '../../store/uiSlice';
+import { closeTemplateDialog } from '../../store/uiSlice';
 import { createFileFromTemplate } from '../../store/workspaceSlice';
 import { generateContent } from '../../api/ai';
 
@@ -14,6 +15,7 @@ const CONTENT_TYPES = [
 
 export const AiTopicDialog: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { lang } = useSelector((state: RootState) => state.workspace);
   const [topic, setTopic] = useState('');
   const [contentType, setContentType] = useState<string>('summary');
@@ -45,13 +47,13 @@ export const AiTopicDialog: React.FC = () => {
         lang,
       }));
       dispatch(closeTemplateDialog());
-      dispatch(setHomeOpen(false));
+      navigate('/editor');
     } catch (err: any) {
       setError(err.message || (lang === 'am' ? 'ስህተት ተፈጥሯል' : 'Generation failed'));
     } finally {
       setGenerating(false);
     }
-  }, [topic, contentType, lang, dispatch]);
+  }, [topic, contentType, lang, dispatch, navigate]);
 
   return (
     <div className="ai-topic-panel">

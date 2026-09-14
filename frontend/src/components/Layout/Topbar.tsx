@@ -1,23 +1,35 @@
 import React, { useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import type { RootState, AppDispatch } from '../../store';
 import {
-  toggleSidebar,
-  openAuthDialog,
+  setSidebarOpen,
+  toggleSidebarCollapsed,
   openExportDialog,
   openNewDocDialog,
   openPdfViewer,
   addToast,
-  setHomeOpen,
+  toggleTheme,
 } from '../../store/uiSlice';
 import { setProjectName, addFile, saveToCloud } from '../../store/workspaceSlice';
 
 export const Topbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { projectName, saving, lastSynced } = useSelector((state: RootState) => state.workspace);
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
+  const { sidebarOpen } = useSelector((state: RootState) => state.ui);
   const projectNameRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleToggleSidebar = useCallback(() => {
+    const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+    if (isMobile) {
+      dispatch(setSidebarOpen(!sidebarOpen));
+    } else {
+      dispatch(toggleSidebarCollapsed());
+    }
+  }, [dispatch, sidebarOpen]);
 
   const handleSave = useCallback(() => {
     dispatch(saveToCloud());
@@ -63,11 +75,15 @@ export const Topbar: React.FC = () => {
     e.target.value = '';
   }, [dispatch]);
 
+  const handleHomeClick = useCallback(() => {
+    navigate('/');
+  }, [navigate]);
+
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <button className="icon-btn" id="sidebarToggle" title="Toggle sidebar" onClick={() => dispatch(toggleSidebar())}>☰</button>
-        <button className="icon-btn" id="brandHome" title="Home" onClick={() => dispatch(setHomeOpen(true))}>🏠</button>
+        <button className="icon-btn" id="sidebarToggle" title="Toggle sidebar" onClick={handleToggleSidebar}>☰</button>
+        <button className="icon-btn" id="brandHome" title="Home" onClick={handleHomeClick}>🏠</button>
       </div>
       <div className="topbar-center">
         <input
@@ -101,12 +117,19 @@ export const Topbar: React.FC = () => {
           <button className="icon-btn primary" id="saveBtn" title="Save" onClick={handleSave}>💾</button>
         </div>
         <span id="saveStatus" className="save-status">{saveStatus}</span>
-        <button className="icon-btn" id="themeBtn" title="Toggle theme" onClick={() => dispatch({ type: 'ui/toggleTheme' })}>
+        <button className="icon-btn" id="themeBtn" title="Toggle theme" onClick={() => dispatch(toggleTheme())}>
           🌙
         </button>
-        <button className="avatar" id="avatarBtn" title={currentUser ? `${currentUser.name} (${currentUser.email})` : 'Sign in to save across devices'} onClick={() => dispatch(openAuthDialog('login'))}>
-          {currentUser ? (currentUser.name || currentUser.email || 'U')[0].toUpperCase() : 'Z'}
-        </button>
+        {currentUser ? (
+          <button className="avatar" id="avatarBtn" title={`${currentUser.name} (${currentUser.email})`}>
+            {(currentUser.name || currentUser.email || 'U')[0].toUpperCase()}
+          </button>
+        ) : (
+          <div className="auth-links">
+            <a href="/login/" className="auth-link">Sign In</a>
+            <a href="/signup/" className="auth-link primary">Sign Up</a>
+          </div>
+        )}
       </div>
     </header>
   );

@@ -19,7 +19,7 @@ const initialWorkspace = (): WorkspaceState => {
             font: parsed.font || 'Noto Sans Ethiopic',
             size: parsed.size || 18,
             align: parsed.align || 'left',
-            lang: parsed.lang || 'am',
+            lang: parsed.lang || 'en',
           };
         }
       }
@@ -32,7 +32,7 @@ const initialWorkspace = (): WorkspaceState => {
     name: 'Untitled.md',
     text: '',
     folder: '',
-    lang: 'am',
+    lang: 'en',
     updated: Date.now(),
   };
   return {
@@ -43,7 +43,7 @@ const initialWorkspace = (): WorkspaceState => {
     font: 'Noto Sans Ethiopic',
     size: 18,
     align: 'left',
-    lang: 'am',
+    lang: 'en',
   };
 };
 
