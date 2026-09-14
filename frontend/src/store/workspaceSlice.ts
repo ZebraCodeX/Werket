@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import { workspaceApi } from '../api/workspace';
-import type { WorkspaceState, File, WorkspaceData } from '../types/workspace';
+import type { WorkspaceState, File, WorkspaceData, DeletedFile } from '../types/workspace';
 
 const WORKSPACE_KEY = 'werket-workspace-v2';
 
@@ -14,12 +14,17 @@ const initialWorkspace = (): WorkspaceState => {
           return {
             projectName: parsed.projectName || 'My documents',
             files: parsed.files,
+            deletedFiles: parsed.deletedFiles || [],
             openIds: parsed.openIds || [parsed.files[0]?.id].filter(Boolean),
             activeId: parsed.activeId || parsed.files[0]?.id || null,
             font: parsed.font || 'Noto Sans Ethiopic',
             size: parsed.size || 18,
             align: parsed.align || 'left',
             lang: parsed.lang || 'en',
+            loading: false,
+            saving: false,
+            lastSynced: parsed.lastSynced || null,
+            syncError: parsed.syncError || null,
           };
         }
       }
@@ -38,23 +43,21 @@ const initialWorkspace = (): WorkspaceState => {
   return {
     projectName: 'My documents',
     files: [firstFile],
+    deletedFiles: [],
     openIds: [firstFile.id],
     activeId: firstFile.id,
     font: 'Noto Sans Ethiopic',
     size: 18,
     align: 'left',
     lang: 'en',
+    loading: false,
+    saving: false,
+    lastSynced: null,
+    syncError: null,
   };
 };
 
-interface WorkspaceSliceState extends WorkspaceState {
-  loading: boolean;
-  saving: boolean;
-  lastSynced: number | null;
-  syncError: string | null;
-}
-
-const initialState: WorkspaceSliceState = {
+const initialState: WorkspaceState = {
   ...initialWorkspace(),
   loading: false,
   saving: false,
@@ -67,6 +70,7 @@ const saveToLocal = (workspace: WorkspaceState) => {
     localStorage.setItem(WORKSPACE_KEY, JSON.stringify({
       projectName: workspace.projectName,
       files: workspace.files,
+      deletedFiles: workspace.deletedFiles,
       openIds: workspace.openIds,
       activeId: workspace.activeId,
       font: workspace.font,
@@ -94,11 +98,12 @@ export const loadFromCloud = createAsyncThunk<WorkspaceData, void, { rejectValue
 export const saveToCloud = createAsyncThunk<void, void, { rejectValue: string }>(
   'workspace/saveToCloud',
   async (_, { getState, rejectWithValue }) => {
-    const { workspace } = getState() as { workspace: WorkspaceSliceState };
+    const { workspace } = getState() as { workspace: WorkspaceState };
     try {
       await workspaceApi.save({
         projectName: workspace.projectName,
         files: workspace.files,
+        deletedFiles: workspace.deletedFiles,
         openIds: workspace.openIds,
         activeId: workspace.activeId,
         font: workspace.font,
@@ -176,11 +181,49 @@ const workspaceSlice = createSlice({
     },
     deleteFile: (state, action: PayloadAction<string>) => {
       const id = action.payload;
-      state.files = state.files.filter(f => f.id !== id);
-      state.openIds = state.openIds.filter(openId => openId !== id);
-      if (state.activeId === id) {
-        state.activeId = state.openIds[0] || state.files[0]?.id || null;
+      const fileIndex = state.files.findIndex(f => f.id === id);
+      if (fileIndex !== -1) {
+        const file = state.files[fileIndex];
+        const deletedFile: DeletedFile = {
+          ...file,
+          deletedAt: Date.now(),
+          originalFolder: file.folder,
+        };
+        state.deletedFiles.unshift(deletedFile);
+        state.files.splice(fileIndex, 1);
+        state.openIds = state.openIds.filter(openId => openId !== id);
+        if (state.activeId === id) {
+          state.activeId = state.openIds[0] || state.files[0]?.id || null;
+        }
+        // Keep only last 50 deleted files
+        if (state.deletedFiles.length > 50) {
+          state.deletedFiles = state.deletedFiles.slice(0, 50);
+        }
       }
+      saveToLocal(state);
+    },
+    restoreFile: (state, action: PayloadAction<string>) => {
+      const id = action.payload;
+      const deletedIndex = state.deletedFiles.findIndex(f => f.id === id);
+      if (deletedIndex !== -1) {
+        const deletedFile = state.deletedFiles[deletedIndex];
+        const { originalFolder, ...restoredFile } = deletedFile;
+        restoredFile.folder = originalFolder || '';
+        restoredFile.updated = Date.now();
+        state.files.push(restoredFile);
+        state.openIds.push(restoredFile.id);
+        state.activeId = restoredFile.id;
+        state.deletedFiles.splice(deletedIndex, 1);
+      }
+      saveToLocal(state);
+    },
+    permanentlyDeleteFile: (state, action: PayloadAction<string>) => {
+      const id = action.payload;
+      state.deletedFiles = state.deletedFiles.filter(f => f.id !== id);
+      saveToLocal(state);
+    },
+    emptyTrash: (state) => {
+      state.deletedFiles = [];
       saveToLocal(state);
     },
     duplicateFile: (state, action: PayloadAction<string>) => {
@@ -223,6 +266,7 @@ const workspaceSlice = createSlice({
       const data = action.payload;
       state.projectName = data.projectName || state.projectName;
       state.files = data.files || state.files;
+      state.deletedFiles = data.deletedFiles || state.deletedFiles;
       state.openIds = data.openIds || state.openIds;
       state.activeId = data.activeId || state.activeId;
       state.font = data.font || state.font;
@@ -256,6 +300,7 @@ const workspaceSlice = createSlice({
         const data = action.payload;
         state.projectName = data.projectName || state.projectName;
         state.files = data.files || state.files;
+        state.deletedFiles = data.deletedFiles || state.deletedFiles;
         state.openIds = data.openIds || state.openIds;
         state.activeId = data.activeId || state.activeId;
         state.font = data.font || state.font;
@@ -296,6 +341,9 @@ export const {
   updateFileName,
   setFileLang,
   deleteFile,
+  restoreFile,
+  permanentlyDeleteFile,
+  emptyTrash,
   duplicateFile,
   setActiveFile,
   closeTab,

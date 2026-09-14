@@ -265,6 +265,71 @@ button {
   color: var(--ink);
 }
 
+/* ========== Trash Folder Styles ========== */
+
+.tree-folder.trash-folder {
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+}
+
+.trash-folder .tree-folder-label:hover {
+  background: var(--danger);
+  color: #fff;
+  border-radius: var(--radius-sm);
+}
+
+.trash-folder .tree-folder-label:hover span:last-child {
+  color: #fff;
+}
+
+.trash-files {
+  padding-left: 12px;
+  margin-top: 4px;
+  animation: trash-slide 0.2s ease;
+}
+
+@keyframes trash-slide {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 500px; }
+}
+
+.trash-file {
+  opacity: 0.7;
+  background: color-mix(in srgb, var(--danger) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent);
+}
+
+.trash-file:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.trash-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.trash-btn {
+  padding: 2px 6px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.trash-btn.restore:hover {
+  background: var(--success);
+  color: #fff;
+}
+
+.trash-btn.delete:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
 /* ========== App shell ========== */
 
 .route-loading {

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import {
@@ -6,6 +6,9 @@ import {
   duplicateFile,
   setActiveFile,
   closeTab,
+  restoreFile,
+  permanentlyDeleteFile,
+  emptyTrash,
 } from '../../store/workspaceSlice';
 import { openNewDocDialog, openTemplateDialog } from '../../store/uiSlice';
 
@@ -31,9 +34,23 @@ const TreeFile: React.FC<TreeFileProps> = ({ file, isActive, onSelect, onClose, 
   </div>
 );
 
+const TrashFile: React.FC<{ file: any; onRestore: (id: string) => void; onPermanentDelete: (id: string) => void }> = ({ file, onRestore, onPermanentDelete }) => (
+  <div className="tree-file trash-file">
+    <span className="file-icon">🗑️</span>
+    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      {file.name}
+    </span>
+    <div className="trash-actions">
+      <button className="trash-btn restore" title="Restore" onClick={e => { e.stopPropagation(); onRestore(file.id); }}>↩</button>
+      <button className="trash-btn delete" title="Delete permanently" onClick={e => { e.stopPropagation(); onPermanentDelete(file.id); }}>×</button>
+    </div>
+  </div>
+);
+
 export const FileTree: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { files, activeId } = useSelector((state: RootState) => state.workspace);
+  const { files, deletedFiles, activeId } = useSelector((state: RootState) => state.workspace);
+  const [showTrash, setShowTrash] = useState(false);
 
   const handleNewFile = useCallback(() => {
     dispatch(openNewDocDialog());
@@ -85,6 +102,26 @@ export const FileTree: React.FC = () => {
             ))}
           </div>
         ))}
+        {deletedFiles.length > 0 && (
+          <div className="tree-folder trash-folder">
+            <div className="tree-folder-label" onClick={() => setShowTrash(!showTrash)} style={{ cursor: 'pointer' }}>
+              <span>{showTrash ? '📂' : '📁'}</span>
+              <span>🗑️ Trash ({deletedFiles.length})</span>
+            </div>
+            {showTrash && (
+              <div className="trash-files">
+                {deletedFiles.map(file => (
+                  <TrashFile
+                    key={file.id}
+                    file={file}
+                    onRestore={id => dispatch(restoreFile(id))}
+                    onPermanentDelete={id => dispatch(permanentlyDeleteFile(id))}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div className="explorer-bottom">
         <button id="templatesBtn" className="outline-action" onClick={() => dispatch(openTemplateDialog())}>
@@ -94,6 +131,9 @@ export const FileTree: React.FC = () => {
           <button title="Rename selected file">Rename</button>
           <button title="Duplicate selected file" onClick={() => activeId && dispatch(duplicateFile(activeId))}>Duplicate</button>
           <button title="Delete selected file" onClick={() => activeId && dispatch(deleteFile(activeId))}>Delete</button>
+          {deletedFiles.length > 0 && (
+            <button title="Empty trash" onClick={() => dispatch(emptyTrash())} style={{ color: 'var(--danger)' }}>Empty Trash</button>
+          )}
         </div>
       </div>
     </aside>
