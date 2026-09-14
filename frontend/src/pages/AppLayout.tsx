@@ -8,6 +8,7 @@ import { setSidebarOpen, setTheme, setInstallPromptAvailable } from '../store/ui
 import { Topbar } from '../components/Layout';
 import { ContextMenu } from '../components/common/ContextMenu';
 import { ToastContainer } from '../components/common/ToastContainer';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { TemplateDialog } from '../components/Dialogs/TemplateDialog';
 import { NewDocDialog } from '../components/Dialogs/NewDocDialog';
 import { ExportDialog } from '../components/Dialogs/ExportDialog';
@@ -49,7 +50,9 @@ export function AppLayout() {
     <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <div className="sidebar-backdrop" onClick={() => dispatch(setSidebarOpen(false))} />
       <Topbar />
-      <Outlet />
+      <ErrorBoundary>
+        <Outlet />
+      </ErrorBoundary>
       <ContextMenu />
       <TemplateDialog />
       <NewDocDialog />

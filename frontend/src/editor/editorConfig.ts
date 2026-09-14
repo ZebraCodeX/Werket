@@ -1,9 +1,20 @@
 import { HeadingNode, QuoteNode } from '@lexical/rich-text';
 import { ListItemNode, ListNode } from '@lexical/list';
+import { LinkNode } from '@lexical/link';
+import { TableCellNode, TableNode, TableRowNode } from '@lexical/table';
 
 export const initialConfig = {
   namespace: 'WerketEditor',
-  nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode],
+  nodes: [
+    HeadingNode,
+    QuoteNode,
+    ListNode,
+    ListItemNode,
+    LinkNode,
+    TableNode,
+    TableCellNode,
+    TableRowNode,
+  ],
   theme: {
     paragraph: 'editor-paragraph',
     heading: {
