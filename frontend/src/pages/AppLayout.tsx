@@ -50,8 +50,8 @@ export function AppLayout() {
   }, [user, dispatch]);
 
   return (
-    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-      <div className="sidebar-backdrop" onClick={() => dispatch(setSidebarOpen(false))} />
+    <div className="sidebar-backdrop" onClick={() => dispatch(setSidebarOpen(false))} />
+    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''} ${sidebar ? 'sidebar' : ''}`}>
       <Topbar />
       <ErrorBoundary>
         <Outlet />
