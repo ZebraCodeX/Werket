@@ -18,7 +18,7 @@ const PdfViewer = React.lazy(() => import('../components/Editor/PdfViewer').then
 
 export function AppLayout() {
   const dispatch = useDispatch<AppDispatch>();
-  const { theme, sidebarOpen, sidebarCollapsed, pdfViewerOpen } = useSelector((state: RootState) => state.ui);
+  const { theme, sidebarOpen, sidebar, pdfViewerOpen } = useSelector((state: RootState) => state.ui);
   const { user } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
