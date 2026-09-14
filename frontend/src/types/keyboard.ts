@@ -9,6 +9,7 @@ export interface KeyboardKey {
 
 export interface KeyboardState {
   open: boolean;
+  docked: boolean;
   layer: KeyboardLayer;
   phoneticMode: boolean;
   deviceKeyboardMode: boolean;

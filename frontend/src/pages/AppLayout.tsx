@@ -5,8 +5,10 @@ import type { RootState, AppDispatch } from '../store';
 import { checkSession } from '../store/authSlice';
 import { apiClient } from '../api/client';
 import { loadFromCloud } from '../store/workspaceSlice';
-import { setSidebarOpen, setTheme, setInstallPromptAvailable } from '../store/uiSlice';
+import { setSidebarOpen, setTheme, setInstallPromptAvailable, setSidebarWidth } from '../store/uiSlice';
 import { Topbar } from '../components/Layout';
+import { ResizeHandle } from '../components/Layout/ResizeHandle';
+import { FidelKeyboard } from '../components/Keyboard/FidelKeyboard';
 import { ContextMenu } from '../components/common/ContextMenu';
 import { ToastContainer } from '../components/common/ToastContainer';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
@@ -18,7 +20,7 @@ const PdfViewer = React.lazy(() => import('../components/Editor/PdfViewer').then
 
 export function AppLayout() {
   const dispatch = useDispatch<AppDispatch>();
-  const { theme, sidebarOpen, sidebarCollapsed, pdfViewerOpen } = useSelector((state: RootState) => state.ui);
+  const { theme, sidebarOpen, sidebarCollapsed, sidebarWidth, pdfViewerOpen } = useSelector((state: RootState) => state.ui);
   const { user } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
@@ -28,8 +30,11 @@ export function AppLayout() {
     } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       dispatch(setTheme('dark'));
     }
+    const savedWidth = localStorage.getItem('werket-sidebar-width');
+    if (savedWidth) {
+      dispatch(setSidebarWidth(parseInt(savedWidth, 10)));
+    }
     dispatch(checkSession());
-    // Prime the CSRF cookie so every API POST/PUT carries X-CSRFToken.
     apiClient.getCsrfTokenFromServer().catch(() => {});
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -49,9 +54,12 @@ export function AppLayout() {
     }
   }, [user, dispatch]);
 
+  const sidebarStyle = { width: sidebarCollapsed ? '60px' : `${sidebarWidth}px` } as React.CSSProperties;
+
   return (
-    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`} style={sidebarStyle as any}>
       <div className="sidebar-backdrop" onClick={() => dispatch(setSidebarOpen(false))} />
+      <ResizeHandle />
       <Topbar />
       <ErrorBoundary>
         <Outlet />
@@ -61,6 +69,7 @@ export function AppLayout() {
       <NewDocDialog />
       <ExportDialog />
       <ToastContainer />
+      <FidelKeyboard />
       {pdfViewerOpen &&
         <React.Suspense fallback={null}>
           <PdfViewer />

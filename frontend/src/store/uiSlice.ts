@@ -3,6 +3,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 interface UIState {
   sidebarOpen: boolean;
   sidebarCollapsed: boolean;
+  sidebarWidth: number;
   inspectorOpen: boolean;
   inspectorTab: 'style' | 'text' | 'layout';
   findOpen: boolean;
@@ -45,6 +46,7 @@ interface UIState {
 const initialState: UIState = {
   sidebarOpen: false,
   sidebarCollapsed: true, // Start collapsed on desktop
+  sidebarWidth: 320,
   inspectorOpen: false,
   inspectorTab: 'style',
   findOpen: false,
@@ -98,6 +100,12 @@ const uiSlice = createSlice({
     },
     setSidebarCollapsed: (state, action: PayloadAction<boolean>) => {
       state.sidebarCollapsed = action.payload;
+    },
+    setSidebarWidth: (state, action: PayloadAction<number>) => {
+      state.sidebarWidth = action.payload;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('werket-sidebar-width', String(action.payload));
+      }
     },
     toggleInspector: (state) => {
       state.inspectorOpen = !state.inspectorOpen;
@@ -238,6 +246,7 @@ export const {
   setSidebarOpen,
   toggleSidebarCollapsed,
   setSidebarCollapsed,
+  setSidebarWidth,
   toggleInspector,
   setInspectorOpen,
   setInspectorTab,

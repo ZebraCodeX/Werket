@@ -11,7 +11,7 @@ import {
   nextLayer,
   setPhoneticMode,
   setDeviceKeyboardMode,
-  setOpen,
+  setDocked,
 } from '../../store/keyboardSlice';
 import { FUNCTION_KEYS } from '../../utils/fidel';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
@@ -37,7 +37,7 @@ const KEY_LAYOUTS = {
 export const FidelKeyboard: React.FC = React.memo(() => {
   const [editor] = useLexicalComposerContext();
   const dispatch = useDispatch<AppDispatch>();
-  const { open, layer, phoneticMode, deviceKeyboardMode } = useSelector((state: RootState) => state.keyboard);
+  const { docked, layer, phoneticMode, deviceKeyboardMode } = useSelector((state: RootState) => state.keyboard);
   const { activeId, files } = useSelector((state: RootState) => state.workspace);
   const grabRef = useRef<HTMLDivElement>(null);
 
@@ -45,21 +45,20 @@ export const FidelKeyboard: React.FC = React.memo(() => {
   const isAmharicDoc = activeFile?.lang === 'am';
 
   useSwipeGesture(grabRef, {
-    onSwipeDown: () => dispatch(setOpen(false)),
+    onSwipeDown: () => dispatch(setDocked(false)),
     onSwipeUp: () => {},
     threshold: 50,
   });
 
   useEffect(() => {
-    if (open && !isAmharicDoc) {
-      dispatch(setOpen(false));
+    if (!isAmharicDoc) {
+      dispatch(setDocked(false));
       dispatch(setDeviceKeyboardMode(true));
     }
-  }, [isAmharicDoc, open, dispatch]);
+  }, [isAmharicDoc, dispatch]);
 
   const functionKeys = useMemo(() => FUNCTION_KEYS[layer], [layer]);
 
-  // Insert via the Lexical editor so the editor state stays the source of truth.
   const handleKeyClick = useCallback((key: string) => {
     const rootElement = editor.getRootElement();
     if (rootElement) rootElement.focus();
@@ -114,7 +113,7 @@ export const FidelKeyboard: React.FC = React.memo(() => {
   }, [dispatch, editor]);
 
   const closeKeyboard = useCallback(() => {
-    dispatch(setOpen(false));
+    dispatch(setDocked(false));
   }, [dispatch]);
 
   if (deviceKeyboardMode) return null;
@@ -125,8 +124,10 @@ export const FidelKeyboard: React.FC = React.memo(() => {
   return (
     <section
       id="keyboardPanel"
-      className={`keyboard-panel${open ? ' open' : ''}`}
+      className={`keyboard-panel${docked ? ' open' : ''}`}
       data-layer={layer}
+      role="region"
+      aria-label="Amharic keyboard"
     >
       <div ref={grabRef} className="keyboard-grab" aria-hidden="true" />
 

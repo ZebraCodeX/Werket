@@ -3,6 +3,7 @@ import type { KeyboardState, KeyboardLayer } from '../types/keyboard';
 
 const initialState: KeyboardState = {
   open: false,
+  docked: false,
   layer: 'fidel',
   phoneticMode: true,
   deviceKeyboardMode: false,
@@ -14,6 +15,12 @@ const keyboardSlice = createSlice({
   reducers: {
     setOpen: (state, action: PayloadAction<boolean>) => {
       state.open = action.payload;
+    },
+    setDocked: (state, action: PayloadAction<boolean>) => {
+      state.docked = action.payload;
+    },
+    toggleDocked: (state) => {
+      state.docked = !state.docked;
     },
     nextLayer: (state) => {
       const layers: KeyboardLayer[] = ['fidel', 'numbers', 'symbols'];
@@ -31,6 +38,8 @@ const keyboardSlice = createSlice({
 
 export const {
   setOpen,
+  setDocked,
+  toggleDocked,
   nextLayer,
   setPhoneticMode,
   setDeviceKeyboardMode,

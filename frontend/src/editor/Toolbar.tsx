@@ -24,7 +24,7 @@ import { $isListNode, INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND
 import { PARAGRAPH_STYLES, FONT_FAMILIES, FONT_SIZES, ZOOM_LEVELS } from '../utils/constants';
 import { setFindOpen, setZoom } from '../store/uiSlice';
 import { setAlign, setFileLang } from '../store/workspaceSlice';
-import { setDeviceKeyboardMode } from '../store/keyboardSlice';
+import { setDeviceKeyboardMode, toggleDocked } from '../store/keyboardSlice';
 
 interface ToolbarProps {
   font: string;
@@ -94,6 +94,7 @@ export function Toolbar({ font, size, align, isAmharicDoc, deviceKeyboardMode, f
   const [editor] = useLexicalComposerContext();
   const dispatch = useDispatch<AppDispatch>();
   const zoom = useSelector((state: RootState) => state.ui.zoom);
+  const keyboardDocked = useSelector((state: RootState) => state.keyboard.docked);
   const [blockType, setBlockType] = useState('paragraph');
   const [textFont, setTextFont] = useState<string | null>(null);
   const [textSize, setTextSize] = useState<number | null>(null);
@@ -225,6 +226,14 @@ export function Toolbar({ font, size, align, isAmharicDoc, deviceKeyboardMode, f
             onClick={() => setDocLang('en')}
           >EN</button>
         </div>
+        {isAmharicDoc && (
+          <button
+            className={`toolbar-btn keyboard-toggle ${keyboardDocked ? 'active' : ''}`}
+            title={keyboardDocked ? 'Hide Amharic keyboard' : 'Show Amharic keyboard'}
+            onClick={() => dispatch(toggleDocked())}
+            aria-label={keyboardDocked ? 'Hide Amharic keyboard' : 'Show Amharic keyboard'}
+          >⌨</button>
+        )}
         {(['left', 'center', 'right', 'justify'] as const).map(value => (
           <button
             key={value}
