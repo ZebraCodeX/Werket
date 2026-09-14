@@ -22,7 +22,7 @@ import { $patchStyleText, $setBlocksType, getStyleObjectFromCSS } from '@lexical
 import { $createHeadingNode, $createQuoteNode, $isHeadingNode, $isQuoteNode } from '@lexical/rich-text';
 import { $isListNode, INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from '@lexical/list';
 import { PARAGRAPH_STYLES, FONT_FAMILIES, FONT_SIZES, ZOOM_LEVELS } from '../utils/constants';
-import { toggleInspector, setFindOpen, setZoom } from '../store/uiSlice';
+import { setFindOpen, setZoom } from '../store/uiSlice';
 import { setAlign, setFileLang } from '../store/workspaceSlice';
 import { setDeviceKeyboardMode } from '../store/keyboardSlice';
 
@@ -93,7 +93,6 @@ function paragraphRange(selection: RangeSelection): RangeSelection | null {
 export function Toolbar({ font, size, align, isAmharicDoc, deviceKeyboardMode, fileId }: ToolbarProps) {
   const [editor] = useLexicalComposerContext();
   const dispatch = useDispatch<AppDispatch>();
-  const inspectorOpen = useSelector((state: RootState) => state.ui.inspectorOpen);
   const zoom = useSelector((state: RootState) => state.ui.zoom);
   const [blockType, setBlockType] = useState('paragraph');
   const [textFont, setTextFont] = useState<string | null>(null);
@@ -212,9 +211,7 @@ export function Toolbar({ font, size, align, isAmharicDoc, deviceKeyboardMode, f
           onClick={() => changeStyle('blockquote')}
         >❝</button>
       </div>
-      <div className="toolbar-center">
-        <button className={`toolbar-btn ${inspectorOpen ? 'active' : ''}`} onClick={() => dispatch(toggleInspector())}>⚙</button>
-      </div>
+      <div className="toolbar-center" />
       <div className="toolbar-right">
         <div className="lang-toggle" role="group" aria-label="Document language">
           <button

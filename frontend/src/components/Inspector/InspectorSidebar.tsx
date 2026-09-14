@@ -11,7 +11,7 @@ export const InspectorSidebar: React.FC = () => {
   if (!inspectorOpen) return null;
 
   return (
-    <aside id="inspectorSidebar" className="inspector-sidebar">
+    <aside id="inspectorSidebar" className={`inspector-sidebar ${inspectorOpen ? 'open' : ''}`}>
       <div className="inspector-header">
         <div className="inspector-tabs">
           <button
