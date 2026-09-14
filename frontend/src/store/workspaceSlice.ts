@@ -166,6 +166,14 @@ const workspaceSlice = createSlice({
         saveToLocal(state);
       }
     },
+    setFileLang: (state, action: PayloadAction<{ id: string; lang: 'am' | 'en' }>) => {
+      const file = state.files.find(f => f.id === action.payload.id);
+      if (file) {
+        file.lang = action.payload.lang;
+        file.updated = Date.now();
+        saveToLocal(state);
+      }
+    },
     deleteFile: (state, action: PayloadAction<string>) => {
       const id = action.payload;
       state.files = state.files.filter(f => f.id !== id);
@@ -286,6 +294,7 @@ export const {
   addFile,
   updateFile,
   updateFileName,
+  setFileLang,
   deleteFile,
   duplicateFile,
   setActiveFile,

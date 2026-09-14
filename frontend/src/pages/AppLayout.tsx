@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../store';
 import { checkSession } from '../store/authSlice';
+import { apiClient } from '../api/client';
 import { loadFromCloud } from '../store/workspaceSlice';
 import { setSidebarOpen, setTheme, setInstallPromptAvailable } from '../store/uiSlice';
 import { Topbar } from '../components/Layout';
@@ -28,6 +29,8 @@ export function AppLayout() {
       dispatch(setTheme('dark'));
     }
     dispatch(checkSession());
+    // Prime the CSRF cookie so every API POST/PUT carries X-CSRFToken.
+    apiClient.getCsrfTokenFromServer().catch(() => {});
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       dispatch(setInstallPromptAvailable(true));

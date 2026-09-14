@@ -2167,3 +2167,42 @@ dialog.export-dialog {
     padding: 12px 8px;
   }
 }
+
+/* ========== Toolbar: document language toggle ========== */
+
+.lang-toggle {
+  display: inline-flex;
+  margin: 0 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  gap: 2px;
+}
+
+.lang-toggle-btn {
+  padding: 3px 8px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.lang-toggle-btn:hover {
+  color: var(--ink);
+}
+
+.lang-toggle-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.editor-toolbar {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}

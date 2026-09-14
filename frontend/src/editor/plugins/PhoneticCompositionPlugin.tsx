@@ -5,7 +5,7 @@
  */
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useCallback } from 'react';
 import { $getSelection, $isRangeSelection } from 'lexical';
 import {
   processPhoneticKey,
@@ -17,28 +17,30 @@ import {
 export function PhoneticCompositionPlugin({
   isAmharicDoc,
   phoneticMode,
-  deviceKeyboardMode,
 }: {
   isAmharicDoc: boolean;
   phoneticMode: boolean;
-  deviceKeyboardMode: boolean;
 }) {
   const [editor] = useLexicalComposerContext();
   const phoneticStateRef = useRef<PhoneticState>(initialPhoneticState);
+  const configRef = useRef({ isAmharicDoc, phoneticMode });
 
-  // Insert text at the current selection (outside of a user-event update)
-  const insertText = (text: string) => {
+  useLayoutEffect(() => {
+    configRef.current = { isAmharicDoc, phoneticMode };
+  }, [isAmharicDoc, phoneticMode]);
+
+  const insertText = useCallback((text: string) => {
     editor.update(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
         selection.insertText(text);
       }
     });
-  };
+  }, [editor]);
 
-  useEffect(() => {
-    if (!isAmharicDoc || !phoneticMode || deviceKeyboardMode) {
-      // Flush buffer when leaving Amharic/phonetic mode
+  useLayoutEffect(() => {
+    const { isAmharicDoc, phoneticMode } = configRef.current;
+    if (!isAmharicDoc || !phoneticMode) {
       if (phoneticStateRef.current.buffer.length > 0) {
         const flushed = flushPhoneticBuffer(phoneticStateRef.current);
         if (flushed) insertText(flushed);
@@ -47,22 +49,19 @@ export function PhoneticCompositionPlugin({
       return;
     }
 
-    // Register beforeinput listener for phonetic composition
     const handleBeforeInput = (event: InputEvent) => {
-      // Only handle direct text input (not composition events)
+      const { isAmharicDoc, phoneticMode } = configRef.current;
+      if (!isAmharicDoc || !phoneticMode) return;
+
       if (event.inputType !== 'insertText' || !event.data) {
         return;
       }
 
       const text = event.data;
 
-      // Native Amharic keyboards already emit Ethiopic characters. Leave
-      // those events untouched and only compose Latin phonetic input.
       if (/[\u1200-\u137f]/u.test(text)) return;
 
-      // Only process single characters for phonetic composition
       if (text.length !== 1) {
-        // Multi-character input (paste, etc.) - flush buffer first
         const flushed = flushPhoneticBuffer(phoneticStateRef.current);
         if (flushed) insertText(flushed);
         phoneticStateRef.current = initialPhoneticState;
@@ -81,22 +80,15 @@ export function PhoneticCompositionPlugin({
       }
     };
 
-    const rootElement = editor.getRootElement();
-    if (rootElement) {
-      rootElement.addEventListener('beforeinput', handleBeforeInput as EventListener);
-    }
-
-    // Also handle keydown for backspace and other control keys
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isAmharicDoc || !phoneticMode || deviceKeyboardMode) return;
+      const { isAmharicDoc, phoneticMode } = configRef.current;
+      if (!isAmharicDoc || !phoneticMode) return;
 
       const { key, ctrlKey, metaKey } = event;
       const isMod = ctrlKey || metaKey;
 
-      // Don't intercept modifier keys
       if (isMod) return;
 
-      // Handle backspace by popping the phonetic buffer first
       if (key === 'Backspace') {
         if (phoneticStateRef.current.buffer.length > 0) {
           event.preventDefault();
@@ -106,7 +98,6 @@ export function PhoneticCompositionPlugin({
         return;
       }
 
-      // Flush buffer on Enter, Tab, Arrow keys, etc.
       if (['Enter', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Escape'].includes(key)) {
         const flushed = flushPhoneticBuffer(phoneticStateRef.current);
         if (flushed) insertText(flushed);
@@ -115,6 +106,10 @@ export function PhoneticCompositionPlugin({
       }
     };
 
+    const rootElement = editor.getRootElement();
+    if (rootElement) {
+      rootElement.addEventListener('beforeinput', handleBeforeInput as EventListener);
+    }
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
@@ -123,8 +118,7 @@ export function PhoneticCompositionPlugin({
       }
       document.removeEventListener('keydown', handleKeyDown);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAmharicDoc, phoneticMode, deviceKeyboardMode, editor]);
+  }, [editor, isAmharicDoc, phoneticMode, insertText]);
 
   return null;
 }

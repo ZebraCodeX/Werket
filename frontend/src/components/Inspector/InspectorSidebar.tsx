@@ -2,13 +2,11 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import { setInspectorOpen, setInspectorTab } from '../../store/uiSlice';
-import { setFont, setSize } from '../../store/workspaceSlice';
-import { FONT_FAMILIES, PARAGRAPH_STYLES } from '../../utils/constants';
+import { PARAGRAPH_STYLES } from '../../utils/constants';
 
 export const InspectorSidebar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { inspectorOpen, inspectorTab } = useSelector((state: RootState) => state.ui);
-  const { font, size } = useSelector((state: RootState) => state.workspace);
 
   if (!inspectorOpen) return null;
 
@@ -71,19 +69,7 @@ export const InspectorSidebar: React.FC = () => {
         )}
         {inspectorTab === 'text' && (
           <div id="inspectorText" className="inspector-panel">
-            <div className="inspector-section">
-              <label>Font</label>
-              <select className="inspector-select" value={font} onChange={e => dispatch(setFont(e.target.value))}>
-                {FONT_FAMILIES.map(f => (
-                  <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>
-                ))}
-              </select>
-            </div>
             <div className="inspector-row">
-              <div>
-                <label>Size</label>
-                <input type="number" className="inspector-input" min="6" max="144" step="1" value={size} onChange={e => dispatch(setSize(parseInt(e.target.value)))} />
-              </div>
               <div>
                 <label>Color</label>
                 <input type="color" className="inspector-color" />

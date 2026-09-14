@@ -19,8 +19,11 @@ import { PhoneticCompositionPlugin } from './plugins/PhoneticCompositionPlugin';
 import { FindOverlay } from './FindOverlay';
 import { FidelKeyboard } from '../components/Keyboard/FidelKeyboard';
 
+const DEFAULT_FONT = 'Noto Sans Ethiopic';
+const DEFAULT_SIZE = 18;
+
 export function LexicalEditor() {
-  const { font, size, align, activeId, files } = useSelector((state: RootState) => state.workspace);
+  const { align, activeId, files } = useSelector((state: RootState) => state.workspace);
   const { phoneticMode, deviceKeyboardMode } = useSelector((state: RootState) => state.keyboard);
   const zoom = useSelector((state: RootState) => state.ui.zoom);
   const activeFile = files.find(file => file.id === activeId);
@@ -30,11 +33,12 @@ export function LexicalEditor() {
     <div className="lexical-editor-wrapper">
       <LexicalComposer initialConfig={initialConfig}>
         <Toolbar
-          font={font}
-          size={size}
+          font={DEFAULT_FONT}
+          size={DEFAULT_SIZE}
           align={align}
           isAmharicDoc={isAmharicDoc}
           deviceKeyboardMode={deviceKeyboardMode}
+          fileId={activeId}
         />
         <div className="document-paper" style={{ zoom }}>
           <RichTextPlugin
@@ -42,7 +46,7 @@ export function LexicalEditor() {
               <ContentEditable
                 id="editor"
                 className="editor-content"
-                style={{ fontFamily: font, fontSize: `${size}px` }}
+                style={{ fontFamily: DEFAULT_FONT, fontSize: `${DEFAULT_SIZE}px` }}
               />
             }
             placeholder={<div className="editor-placeholder" />}
@@ -59,7 +63,6 @@ export function LexicalEditor() {
           <PhoneticCompositionPlugin
             isAmharicDoc={isAmharicDoc}
             phoneticMode={phoneticMode}
-            deviceKeyboardMode={deviceKeyboardMode}
           />
           <FindOverlay />
         </div>
