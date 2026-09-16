@@ -35,7 +35,10 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - uses: android-actions/setup-android@v3
+      # Use the Android SDK that ships on the GitHub-hosted runner (the
+      # setup-android action's `sdkmanager tools` step is broken upstream).
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses > /dev/null 2>&1 || true
 
       - name: Install frontend dependencies
         working-directory: frontend

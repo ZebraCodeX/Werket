@@ -5,6 +5,11 @@
   "description": "Werket - a Pages-style Amharic editor (desktop)",
   "author": "ZebraCodeX",
   "license": "MIT",
+  "homepage": "https://github.com/ZebraCodeX/Werket",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ZebraCodeX/Werket.git"
+  },
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
