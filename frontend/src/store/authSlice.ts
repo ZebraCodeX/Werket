@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import { authApi } from '../api/auth';
+import { tokenStore } from '../api/client';
 import type { User } from '../types/api';
 
 interface AuthState {
@@ -33,6 +34,7 @@ export const loginUser = createAsyncThunk<User | null, { email: string; password
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await authApi.login(credentials);
+      if (response.data.token) tokenStore.set(response.data.token);
       return response.data.user;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.error || 'Login failed');
@@ -45,6 +47,7 @@ export const registerUser = createAsyncThunk<User | null, { name: string; email:
   async (data, { rejectWithValue }) => {
     try {
       const response = await authApi.register(data);
+      if (response.data.token) tokenStore.set(response.data.token);
       return response.data.user;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.error || 'Registration failed');
@@ -59,6 +62,8 @@ export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
       await authApi.logout();
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.error || 'Logout failed');
+    } finally {
+      tokenStore.clear();
     }
   }
 );

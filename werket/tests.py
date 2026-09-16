@@ -2,7 +2,7 @@
 import json
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 
 from .models import Workspace
@@ -57,6 +57,34 @@ class AuthApiTest(TestCase):
         self.assertEqual(good.json()['user']['email'], 'writer@example.com')
         me = self.client.get(reverse('auth-me'))
         self.assertEqual(me.json()['user']['email'], 'writer@example.com')
+
+
+class TokenAuthTest(TestCase):
+    """Token auth is what the packaged desktop/mobile apps use."""
+
+    def test_login_token_authenticates_and_revokes(self):
+        User.objects.create_user('writer@example.com', 'writer@example.com', 'WerketPass123')
+        login = _post(self.client, reverse('auth-login'), {
+            'email': 'writer@example.com', 'password': 'WerketPass123',
+        })
+        token = login.json().get('token')
+        self.assertTrue(token)
+
+        native = Client()
+        auth = {'HTTP_AUTHORIZATION': f'Token {token}'}
+        self.assertEqual(native.get(reverse('workspace-list'), **auth).status_code, 200)
+
+        # Logging out revokes the token.
+        self.assertEqual(native.post(reverse('auth-logout'), **auth).status_code, 200)
+        self.assertIn(
+            native.get(reverse('workspace-list'), **auth).status_code,
+            (401, 403),
+        )
+
+    def test_health(self):
+        response = self.client.get('/api/health/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'ok')
 
 
 class WorkspaceApiTest(TestCase):

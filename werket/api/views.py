@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
+from rest_framework.authtoken.models import Token
 
 from ..models import Workspace
 from .serializers import (
@@ -31,6 +32,14 @@ class CsrfTokenView(APIView):
 
     def get(self, request):
         return Response({'csrfToken': get_token(request)})
+
+
+class HealthView(APIView):
+    """Liveness/version probe used by the packaged apps and Render."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        return Response({'status': 'ok', 'service': 'werket', 'version': '1.0.0'})
 
 
 class AuthViewSet(viewsets.ViewSet):
@@ -71,11 +80,13 @@ class AuthViewSet(viewsets.ViewSet):
             )
 
         login(request, user)
+        token, _ = Token.objects.get_or_create(user=user)
         return Response({
             'user': {
                 'name': user.first_name or user.email or user.username or 'Writer',
                 'email': user.email or '',
-            }
+            },
+            'token': token.key,
         })
 
     @action(detail=False, methods=['post'])
@@ -104,17 +115,21 @@ class AuthViewSet(viewsets.ViewSet):
 
         Workspace.objects.get_or_create(user=user)
         login(request, user)
+        token, _ = Token.objects.get_or_create(user=user)
 
         return Response({
             'user': {
                 'name': user.first_name or user.email or user.username or 'Writer',
                 'email': user.email or '',
-            }
+            },
+            'token': token.key,
         }, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['post'])
     def logout(self, request):
-        """Sign out the current session."""
+        """Sign out and revoke the token (web uses session cookies)."""
+        if isinstance(request.auth, Token):
+            request.auth.delete()
         logout(request)
         return Response({'ok': True})
 

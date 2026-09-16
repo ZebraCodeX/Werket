@@ -10,10 +10,12 @@ import {
   openPdfViewer,
   addToast,
   toggleTheme,
+  openAuthDialog,
 } from '../../store/uiSlice';
 import { setProjectName, addFile, saveToCloud } from '../../store/workspaceSlice';
 import { toggleDocked } from '../../store/keyboardSlice';
 import { useOnline } from '../../hooks/useOnline';
+import { isTokenAuth } from '../../platform';
 
 export const Topbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -143,6 +145,11 @@ export const Topbar: React.FC = () => {
           <button className="avatar" id="avatarBtn" title={`${currentUser.name} (${currentUser.email})`}>
             {(currentUser.name || currentUser.email || 'U')[0].toUpperCase()}
           </button>
+        ) : isTokenAuth ? (
+          <div className="auth-links">
+            <button className="auth-link" onClick={() => dispatch(openAuthDialog('login'))}>Sign In</button>
+            <button className="auth-link primary" onClick={() => dispatch(openAuthDialog('signup'))}>Sign Up</button>
+          </div>
         ) : (
           <div className="auth-links">
             <a href="/login/" className="auth-link">Sign In</a>

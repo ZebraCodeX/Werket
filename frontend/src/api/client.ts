@@ -1,11 +1,12 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
-
-const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+import { API_BASE, AUTH_TOKEN_KEY, isTokenAuth } from '../platform';
 
 const createClient = (): AxiosInstance => {
   const client = axios.create({
     baseURL: API_BASE,
-    withCredentials: true,
+    // Token auth doesn't need cross-origin cookies (and avoiding them keeps
+    // CORS simple in native WebViews).
+    withCredentials: !isTokenAuth,
     headers: {
       'Content-Type': 'application/json',
     },
@@ -13,9 +14,14 @@ const createClient = (): AxiosInstance => {
 
   client.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-      const csrfToken = getCsrfToken();
-      if (csrfToken && config.method !== 'get') {
-        config.headers['X-CSRFToken'] = csrfToken;
+      if (isTokenAuth) {
+        const token = tokenStore.get();
+        if (token) config.headers['Authorization'] = `Token ${token}`;
+      } else {
+        const csrfToken = getCsrfToken();
+        if (csrfToken && config.method !== 'get') {
+          config.headers['X-CSRFToken'] = csrfToken;
+        }
       }
       return config;
     },
@@ -45,6 +51,31 @@ function getCsrfToken(): string | null {
   return null;
 }
 
+/** Token storage for the packaged apps. */
+export const tokenStore = {
+  get(): string | null {
+    try {
+      return localStorage.getItem(AUTH_TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  },
+  set(token: string): void {
+    try {
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+    } catch {
+      /* ignore */
+    }
+  },
+  clear(): void {
+    try {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+    } catch {
+      /* ignore */
+    }
+  },
+};
+
 const client = createClient();
 
 export const apiClient = {
@@ -54,6 +85,7 @@ export const apiClient = {
   patch: client.patch.bind(client),
   delete: client.delete.bind(client),
   async getCsrfTokenFromServer(): Promise<string> {
+    if (isTokenAuth) return '';
     const response = await client.get('/csrf/');
     return response.data.csrfToken;
   },

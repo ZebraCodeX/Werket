@@ -15,6 +15,7 @@ import { ErrorBoundary } from '../components/common/ErrorBoundary';
 import { TemplateDialog } from '../components/Dialogs/TemplateDialog';
 import { NewDocDialog } from '../components/Dialogs/NewDocDialog';
 import { ExportDialog } from '../components/Dialogs/ExportDialog';
+import { AuthDialog } from '../components/Dialogs/AuthDialog';
 
 const PdfViewer = React.lazy(() => import('../components/Editor/PdfViewer').then(m => ({ default: m.PdfViewer })));
 
@@ -79,6 +80,7 @@ export function AppLayout() {
       <TemplateDialog />
       <NewDocDialog />
       <ExportDialog />
+      <AuthDialog />
       <ToastContainer />
       {pdfViewerOpen &&
         <React.Suspense fallback={null}>

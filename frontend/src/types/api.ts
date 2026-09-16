@@ -7,6 +7,8 @@ export interface User {
 
 export interface AuthResponse {
   user: User | null;
+  /** Present on login/register; used by the native (token-auth) builds. */
+  token?: string;
   error?: string;
 }
 

@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'werket',
 ]
@@ -97,7 +98,10 @@ LOGOUT_REDIRECT_URL = 'login'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        # Session cookies for the web app; tokens for the packaged
+        # desktop/mobile apps (which cannot rely on cross-origin cookies).
         'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
@@ -112,6 +116,16 @@ REST_FRAMEWORK = {
     ],
 }
 
+# Origins used by the packaged desktop (Electron: app://werket) and mobile
+# (Capacitor: capacitor://localhost / http://localhost) apps.
+NATIVE_ORIGINS = ['capacitor://localhost', 'http://localhost', 'https://localhost', 'app://werket']
+
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173,http://127.0.0.1:5173').split(',')
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:5173,http://127.0.0.1:5173').split(',')
+CORS_ALLOWED_ORIGINS = config(
+    'CORS_ALLOWED_ORIGINS',
+    default=','.join(['http://localhost:5173', 'http://127.0.0.1:5173'] + NATIVE_ORIGINS),
+).split(',')
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default=','.join(['http://localhost:5173', 'http://127.0.0.1:5173'] + NATIVE_ORIGINS),
+).split(',')
