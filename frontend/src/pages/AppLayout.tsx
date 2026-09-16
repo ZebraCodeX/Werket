@@ -19,16 +19,21 @@ import { ResizeHandle } from '../components/Layout/ResizeHandle';
 import { ContextMenu } from '../components/common/ContextMenu';
 import { ToastContainer } from '../components/common/ToastContainer';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
-import { TemplateDialog } from '../components/Dialogs/TemplateDialog';
 import { NewDocDialog } from '../components/Dialogs/NewDocDialog';
-import { ExportDialog } from '../components/Dialogs/ExportDialog';
 import { AuthDialog } from '../components/Dialogs/AuthDialog';
 
+// Lazy so the heavy bits (pdf-lib for export, AI dialog for templates) stay
+// out of the main bundle until they are actually opened.
 const PdfViewer = React.lazy(() => import('../components/Editor/PdfViewer').then(m => ({ default: m.PdfViewer })));
+const TemplateDialog = React.lazy(() => import('../components/Dialogs/TemplateDialog').then(m => ({ default: m.TemplateDialog })));
+const ExportDialog = React.lazy(() => import('../components/Dialogs/ExportDialog').then(m => ({ default: m.ExportDialog })));
 
 export function AppLayout() {
   const dispatch = useDispatch<AppDispatch>();
-  const { theme, sidebarOpen, sidebarCollapsed, sidebarWidth, pdfViewerOpen } = useSelector((state: RootState) => state.ui);
+  const {
+    theme, sidebarOpen, sidebarCollapsed, sidebarWidth, pdfViewerOpen,
+    templateDialogOpen, exportDialogOpen,
+  } = useSelector((state: RootState) => state.ui);
   const { user } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
@@ -136,9 +141,13 @@ export function AppLayout() {
         <Outlet />
       </ErrorBoundary>
       <ContextMenu />
-      <TemplateDialog />
+      {templateDialogOpen && (
+        <React.Suspense fallback={null}><TemplateDialog /></React.Suspense>
+      )}
+      {exportDialogOpen && (
+        <React.Suspense fallback={null}><ExportDialog /></React.Suspense>
+      )}
       <NewDocDialog />
-      <ExportDialog />
       <AuthDialog />
       <ToastContainer />
       {pdfViewerOpen &&
