@@ -8,6 +8,7 @@ interface UIState {
   inspectorTab: 'style' | 'text' | 'layout';
   findOpen: boolean;
   findQuery: string;
+  spellOpen: boolean;
   authDialogOpen: boolean;
   authMode: 'login' | 'signup';
   templateDialogOpen: boolean;
@@ -51,6 +52,7 @@ const initialState: UIState = {
   inspectorTab: 'style',
   findOpen: false,
   findQuery: '',
+  spellOpen: false,
   authDialogOpen: false,
   authMode: 'login',
   templateDialogOpen: false,
@@ -122,6 +124,12 @@ const uiSlice = createSlice({
     },
     setFindQuery: (state, action: PayloadAction<string>) => {
       state.findQuery = action.payload;
+    },
+    openSpell: (state) => {
+      state.spellOpen = true;
+    },
+    closeSpell: (state) => {
+      state.spellOpen = false;
     },
     openAuthDialog: (state, action: PayloadAction<'login' | 'signup'>) => {
       state.authDialogOpen = true;
@@ -252,6 +260,8 @@ export const {
   setInspectorTab,
   setFindOpen,
   setFindQuery,
+  openSpell,
+  closeSpell,
   openAuthDialog,
   closeAuthDialog,
   setAuthMode,

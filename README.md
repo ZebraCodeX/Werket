@@ -14,24 +14,14 @@ python3 -m venv .venv
 .venv/bin/python manage.py runserver
 ```
 
-Open `http://localhost:8000`. Create an account from the login page; documents
-are stored per-user on the server and sync automatically as you type. A
-superuser for the Django admin is created with:
+Open `http://localhost:8000`. Create an account from the login page. Edits
+autosave to the browser immediately; use **Save** in the topbar to sync the
+workspace to your account on the server. A superuser for the Django admin is
+created with:
 
 ```bash
 .venv/bin/python manage.py createsuperuser   # then visit /admin/
 ```
-
-## Run (standalone, no accounts)
-
-The original no-auth server is still available:
-
-```bash
-python3 app.py
-```
-
-Open `http://localhost:8765`. On a phone or tablet, use **Install app** or
-**Add to Home screen**. Documents are saved locally in the browser.
 
 ## Deploy
 
@@ -42,12 +32,13 @@ The Render Blueprint uses the included `render.yaml` and `Dockerfile`.
 The home screen and **New** menu offer Blank document, Letter, Daily journal,
 Meeting notes, and Book project templates. The Book project creates an outline,
 characters file, research notes, and chapter files in a `chapters/` folder.
-Font family and size are adjustable in the editor toolbar. On phones, an
-optional Amharic keyboard floats over the document (with the device keyboard
-suppressed); laptops with a physical keyboard do not show that control.
+Font family and size are adjustable in the editor toolbar. The on-screen
+Amharic keyboard is available on every device from the ⌨ toggle (in the toolbar,
+and in the topbar on phones). It opens only when you ask, and while it is docked
+it suppresses the device keyboard so the two never fight.
 
 Werket is installable as a PWA and ready for app-store packaging via PWABuilder
-(icons, maskable icons, Apple touch icon, and screenshots are included), and is
+(icons, maskable icons, and an Apple touch icon are included), and is
 indexed for search engines via `robots.txt`, `sitemap.xml`, and structured data.
 
 ## Input

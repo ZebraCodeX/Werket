@@ -120,10 +120,10 @@ class AuthViewSet(viewsets.ViewSet):
 
 
 class WorkspaceViewSet(viewsets.ViewSet):
-    """One cloud-synced workspace per user (GET/PUT on /api/workspace/).
+    """One cloud-synced workspace per user (GET/POST on /api/workspace/).
 
     The frontend stores its entire editor state as a single JSON blob and
-    round-trips it here verbatim.
+    round-trips it here verbatim; POST merges/upserts the blob.
     """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = WorkspaceSerializer

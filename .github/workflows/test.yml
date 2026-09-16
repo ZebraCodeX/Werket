@@ -5,12 +5,38 @@ on:
   pull_request:
 
 jobs:
-  test:
+  backend:
+    name: Django tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m unittest discover -s tests -v
-      - run: python -m py_compile app.py nlp.py
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: System check
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.dev
+        run: python manage.py check
+      - name: Tests
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.dev
+        run: python manage.py test werket -v 2
+
+  frontend:
+    name: Frontend lint + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run build

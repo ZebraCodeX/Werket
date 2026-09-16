@@ -24,6 +24,7 @@ class WorkspaceDataSerializer(serializers.Serializer):
     """Serializer for the workspace JSON data."""
     projectName = serializers.CharField(default='My documents', required=False)
     files = serializers.ListField(child=serializers.DictField(), default=list, required=False)
+    deletedFiles = serializers.ListField(child=serializers.DictField(), default=list, required=False)
     openIds = serializers.ListField(child=serializers.CharField(), default=list, required=False)
     activeId = serializers.CharField(required=False, allow_null=True)
     font = serializers.CharField(default='Noto Sans Ethiopic', required=False)

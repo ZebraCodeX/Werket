@@ -17,6 +17,8 @@ import { LoadContentPlugin } from './plugins/LoadContentPlugin';
 import { PlaceholderPlugin } from './plugins/PlaceholderPlugin';
 import { PhoneticCompositionPlugin } from './plugins/PhoneticCompositionPlugin';
 import { FindOverlay } from './FindOverlay';
+import { PredictionStrip } from './PredictionStrip';
+import { SpellCheckPanel } from './SpellCheckPanel';
 import { FidelKeyboard } from '../components/Keyboard/FidelKeyboard';
 
 const DEFAULT_FONT = 'Noto Sans Ethiopic';
@@ -25,7 +27,7 @@ const DEFAULT_SIZE = 18;
 export function LexicalEditor() {
   const { align, activeId, files } = useSelector((state: RootState) => state.workspace);
   const { phoneticMode, deviceKeyboardMode } = useSelector((state: RootState) => state.keyboard);
-  const zoom = useSelector((state: RootState) => state.ui.zoom);
+  const { zoom, spellOpen } = useSelector((state: RootState) => state.ui);
   const activeFile = files.find(file => file.id === activeId);
   const isAmharicDoc = activeFile?.lang === 'am';
 
@@ -40,6 +42,7 @@ export function LexicalEditor() {
           deviceKeyboardMode={deviceKeyboardMode}
           fileId={activeId}
         />
+        <PredictionStrip isAmharicDoc={isAmharicDoc} />
         <div className="document-paper" style={{ zoom }}>
           <RichTextPlugin
             contentEditable={
@@ -67,6 +70,7 @@ export function LexicalEditor() {
           <FindOverlay />
         </div>
         <FidelKeyboard />
+        {spellOpen && <SpellCheckPanel isAmharicDoc={isAmharicDoc} />}
       </LexicalComposer>
     </div>
   );
