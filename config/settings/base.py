@@ -77,8 +77,12 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = []
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+# The frontend's public/ assets (manifest, sw, robots, icons) are available
+# from source so PWA root URLs work in dev/tests before a Vite build exists;
+# the built copies in STATIC_ROOT take over in production.
+_frontend_public = BASE_DIR / 'frontend' / 'public'
+STATICFILES_DIRS = [_frontend_public] if _frontend_public.is_dir() else []
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',

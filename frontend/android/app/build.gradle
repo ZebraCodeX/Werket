@@ -18,11 +18,12 @@ android {
     }
     // Optional release signing, driven by CI environment variables so no
     // keystore is committed. Without them the release build stays unsigned.
+    def releaseKeystore = System.getenv("ANDROID_KEYSTORE_FILE")
+    def hasReleaseKeystore = releaseKeystore && file(releaseKeystore).exists()
     signingConfigs {
         release {
-            def keystoreFile = System.getenv("ANDROID_KEYSTORE_FILE")
-            if (keystoreFile) {
-                storeFile file(keystoreFile)
+            if (hasReleaseKeystore) {
+                storeFile file(releaseKeystore)
                 storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
                 keyAlias System.getenv("ANDROID_KEY_ALIAS")
                 keyPassword System.getenv("ANDROID_KEY_PASSWORD")
@@ -33,7 +34,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            if (System.getenv("ANDROID_KEYSTORE_FILE")) {
+            if (hasReleaseKeystore) {
                 signingConfig signingConfigs.release
             }
         }
