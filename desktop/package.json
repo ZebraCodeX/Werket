@@ -47,7 +47,7 @@
     ],
     "win": {
       "target": ["nsis"],
-      "artifactName": "Werket-Setup-${version}.${ext}"
+      "artifactName": "Werket-Setup.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -58,7 +58,7 @@
       "target": ["AppImage", "deb"],
       "category": "Office",
       "maintainer": "ZebraCodeX",
-      "artifactName": "Werket-${version}.${ext}"
+      "artifactName": "Werket.${ext}"
     },
     "publish": [
       { "provider": "github", "owner": "ZebraCodeX", "repo": "Werket" }

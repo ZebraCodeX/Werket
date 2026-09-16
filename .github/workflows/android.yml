@@ -61,21 +61,23 @@ jobs:
         working-directory: frontend/android
         run: ./gradlew assembleDebug assembleRelease bundleRelease --no-daemon
 
+      # Stable file names so releases/latest/download/Werket.apk always resolves.
+      - name: Collect installable artifacts
+        working-directory: frontend/android
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk dist/Werket.apk
+          cp app/build/outputs/bundle/release/app-release.aab dist/Werket.aab
+
       - name: Upload APK/AAB
         uses: actions/upload-artifact@v4
         with:
           name: werket-android
-          path: |
-            frontend/android/app/build/outputs/apk/debug/*.apk
-            frontend/android/app/build/outputs/apk/release/*.apk
-            frontend/android/app/build/outputs/bundle/release/*.aab
+          path: frontend/android/dist/*
           if-no-files-found: warn
 
       - name: Publish to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            frontend/android/app/build/outputs/apk/debug/*.apk
-            frontend/android/app/build/outputs/apk/release/*.apk
-            frontend/android/app/build/outputs/bundle/release/*.aab
+          files: frontend/android/dist/*

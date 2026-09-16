@@ -1,9 +1,28 @@
 # Werket
 
+[![Latest release](https://img.shields.io/github/v/release/ZebraCodeX/Werket?sort=semver&label=download)](https://github.com/ZebraCodeX/Werket/releases/latest)
+[![Android build](https://github.com/ZebraCodeX/Werket/actions/workflows/android.yml/badge.svg)](https://github.com/ZebraCodeX/Werket/actions/workflows/android.yml)
+[![Desktop build](https://github.com/ZebraCodeX/Werket/actions/workflows/desktop.yml/badge.svg)](https://github.com/ZebraCodeX/Werket/actions/workflows/desktop.yml)
+
 Werket is a standalone Amharic file editor inspired by Pages. It combines a file tree, tabs, a paper-like editor, Fidel
 phonetic typing, direct seven-order letter families, dictionary-backed spell
 checking, predictive words/sentences, book templates, local document storage,
 import, export, printing, and a mobile/desktop-installable PWA.
+
+## Download
+
+**[⬇ Download the latest release](https://github.com/ZebraCodeX/Werket/releases/latest)** — or grab a specific build:
+
+| Platform | Download | Notes |
+| --- | --- | --- |
+| **Android** | [Werket.apk](https://github.com/ZebraCodeX/Werket/releases/latest/download/Werket.apk) | Install (allow "unknown sources"). `Werket.aab` is the Play Store bundle. |
+| **Windows** | [Werket-Setup.exe](https://github.com/ZebraCodeX/Werket/releases/latest/download/Werket-Setup.exe) | Installer. Unsigned, so SmartScreen may warn → "More info" → "Run anyway". |
+| **Linux** | [Werket.AppImage](https://github.com/ZebraCodeX/Werket/releases/latest/download/Werket.AppImage) · [Werket.deb](https://github.com/ZebraCodeX/Werket/releases/latest/download/Werket.deb) | `chmod +x Werket.AppImage && ./Werket.AppImage`, or install the `.deb`. |
+| **Web (PWA)** | [Deploy to Render](#deploy) | Installs from the browser too. |
+
+The installed apps work **offline** (documents, Fidel keyboard, spell-check and
+predictions all run on-device). Signing in is optional and enables cloud sync
+and AI generation when the server is reachable.
 
 ## Run (Django)
 
