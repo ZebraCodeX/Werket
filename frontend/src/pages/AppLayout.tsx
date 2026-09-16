@@ -6,6 +6,7 @@ import { checkSession } from '../store/authSlice';
 import { apiClient } from '../api/client';
 import { loadFromCloud, hydrateWorkspace } from '../store/workspaceSlice';
 import { flushWorkspace } from '../storage/workspaceStore';
+import { initNative } from '../native';
 import { setSidebarOpen, setTheme, setInstallPromptAvailable, setSidebarWidth } from '../store/uiSlice';
 import { Topbar } from '../components/Layout';
 import { ResizeHandle } from '../components/Layout/ResizeHandle';
@@ -35,6 +36,7 @@ export function AppLayout() {
     if (savedWidth) {
       dispatch(setSidebarWidth(parseInt(savedWidth, 10)));
     }
+    void initNative();
     dispatch(hydrateWorkspace());
     dispatch(checkSession());
     apiClient.getCsrfTokenFromServer().catch(() => {});

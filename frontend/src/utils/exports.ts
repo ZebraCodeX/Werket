@@ -1,4 +1,5 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { isNativePlatform, saveBlobNative } from '../native';
 
 export interface ExportOptions {
   title?: string;
@@ -221,6 +222,12 @@ export function downloadBlob(data: string | Uint8Array, filename: string, mime: 
     blob = new Blob([ab], { type: mime });
   } else {
     blob = new Blob([data], { type: mime });
+  }
+  // On phones/tablets hand the file to the OS share sheet instead of relying
+  // on the WebView's (unreliable) download handling.
+  if (isNativePlatform()) {
+    void saveBlobNative(filename, blob);
+    return;
   }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
