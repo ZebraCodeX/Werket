@@ -1,0 +1,62 @@
+{
+  "name": "werket-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Werket - a Pages-style Amharic editor (desktop)",
+  "author": "ZebraCodeX",
+  "license": "MIT",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:linux": "electron-builder --linux",
+    "dist:win": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "build": {
+    "appId": "com.zebracodex.werket",
+    "productName": "Werket",
+    "copyright": "Copyright © 2026 ZebraCodeX",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      { "from": "../staticfiles", "to": "web" }
+    ],
+    "fileAssociations": [
+      { "ext": "wkt", "name": "Werket project", "role": "Editor" },
+      { "ext": "md", "name": "Markdown", "role": "Editor" },
+      { "ext": "txt", "name": "Text", "role": "Editor" }
+    ],
+    "win": {
+      "target": ["nsis"],
+      "artifactName": "Werket-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Office",
+      "maintainer": "ZebraCodeX",
+      "artifactName": "Werket-${version}.${ext}"
+    },
+    "publish": [
+      { "provider": "github", "owner": "ZebraCodeX", "repo": "Werket" }
+    ]
+  }
+}

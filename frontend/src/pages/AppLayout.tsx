@@ -4,10 +4,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../store';
 import { checkSession } from '../store/authSlice';
 import { apiClient } from '../api/client';
-import { loadFromCloud, hydrateWorkspace } from '../store/workspaceSlice';
+import { loadFromCloud, hydrateWorkspace, applyCloudWorkspace, addFile } from '../store/workspaceSlice';
 import { flushWorkspace } from '../storage/workspaceStore';
 import { initNative } from '../native';
-import { setSidebarOpen, setTheme, setInstallPromptAvailable, setSidebarWidth } from '../store/uiSlice';
+import {
+  setSidebarOpen, setTheme, setInstallPromptAvailable, setSidebarWidth,
+  openNewDocDialog, openExportDialog, setFindOpen,
+} from '../store/uiSlice';
+import { store } from '../store';
+import { isDesktop, onDesktopMenu, openProjectFile, saveProjectFile, openTextFile } from '../desktop';
+import { exportWkt, parseWkt } from '../utils/projectFile';
 import { Topbar } from '../components/Layout';
 import { ResizeHandle } from '../components/Layout/ResizeHandle';
 import { ContextMenu } from '../components/common/ContextMenu';
@@ -62,6 +68,57 @@ export function AppLayout() {
       dispatch(loadFromCloud());
     }
   }, [user, dispatch]);
+
+  // Native desktop menu (Electron) → renderer commands.
+  useEffect(() => {
+    if (!isDesktop()) return;
+    return onDesktopMenu(async (command, payload) => {
+      switch (command) {
+        case 'new':
+          dispatch(openNewDocDialog());
+          break;
+        case 'open-project': {
+          const text = await openProjectFile();
+          const data = text ? parseWkt(text) : null;
+          if (data) dispatch(applyCloudWorkspace(data));
+          break;
+        }
+        case 'open-file': {
+          const fromPayload = payload && typeof payload === 'object' && 'text' in payload
+            ? (payload as { name: string; text: string })
+            : null;
+          const file = fromPayload ?? await openTextFile();
+          if (!file) break;
+          if (/\.wkt$/i.test(file.name)) {
+            const data = parseWkt(file.text);
+            if (data) dispatch(applyCloudWorkspace(data));
+          } else {
+            dispatch(addFile({ name: file.name, text: file.text }));
+          }
+          break;
+        }
+        case 'save-project': {
+          const workspace = store.getState().workspace;
+          await saveProjectFile(exportWkt(workspace));
+          break;
+        }
+        case 'save-markdown':
+          dispatch(openExportDialog('md'));
+          break;
+        case 'export':
+          dispatch(openExportDialog('pdf'));
+          break;
+        case 'print':
+          window.print();
+          break;
+        case 'find':
+          dispatch(setFindOpen(true));
+          break;
+        default:
+          break;
+      }
+    });
+  }, [dispatch]);
 
   // Drive the grid/sidebar width through CSS variables instead of setting a
   // width on the grid container (which squashed the whole app shell).
