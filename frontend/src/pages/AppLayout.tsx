@@ -4,7 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../store';
 import { checkSession } from '../store/authSlice';
 import { apiClient } from '../api/client';
-import { loadFromCloud } from '../store/workspaceSlice';
+import { loadFromCloud, hydrateWorkspace } from '../store/workspaceSlice';
+import { flushWorkspace } from '../storage/workspaceStore';
 import { setSidebarOpen, setTheme, setInstallPromptAvailable, setSidebarWidth } from '../store/uiSlice';
 import { Topbar } from '../components/Layout';
 import { ResizeHandle } from '../components/Layout/ResizeHandle';
@@ -33,14 +34,20 @@ export function AppLayout() {
     if (savedWidth) {
       dispatch(setSidebarWidth(parseInt(savedWidth, 10)));
     }
+    dispatch(hydrateWorkspace());
     dispatch(checkSession());
     apiClient.getCsrfTokenFromServer().catch(() => {});
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       dispatch(setInstallPromptAvailable(true));
     };
+    const handleBeforeUnload = () => { void flushWorkspace(); };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [dispatch]);
 
   useEffect(() => {

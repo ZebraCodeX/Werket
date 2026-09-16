@@ -13,6 +13,7 @@ import {
 } from '../../store/uiSlice';
 import { setProjectName, addFile, saveToCloud } from '../../store/workspaceSlice';
 import { toggleDocked } from '../../store/keyboardSlice';
+import { useOnline } from '../../hooks/useOnline';
 
 export const Topbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,6 +23,7 @@ export const Topbar: React.FC = () => {
   const { sidebarOpen } = useSelector((state: RootState) => state.ui);
   const { docked: keyboardDocked, deviceKeyboardMode } = useSelector((state: RootState) => state.keyboard);
   const isAmharicDoc = files.find(f => f.id === activeId)?.lang === 'am';
+  const online = useOnline();
   const projectNameRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -129,6 +131,11 @@ export const Topbar: React.FC = () => {
           <button className="icon-btn primary" id="saveBtn" title="Save" onClick={handleSave}>💾</button>
         </div>
         <span id="saveStatus" className="save-status">{saveStatus}</span>
+        {!online && (
+          <span className="offline-badge" title="Offline - changes are saved on this device">
+            Offline
+          </span>
+        )}
         <button className="icon-btn" id="themeBtn" title="Toggle theme" onClick={() => dispatch(toggleTheme())}>
           🌙
         </button>

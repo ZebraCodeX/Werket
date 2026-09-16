@@ -6,7 +6,7 @@ import {
   COMMAND_PRIORITY_HIGH,
   KEY_TAB_COMMAND,
 } from 'lexical';
-import { dictionaryApi } from '../api/dictionary';
+import { initializeNlp, suggestText } from '../nlp';
 
 /**
  * Amharic word / next-word predictions.
@@ -43,6 +43,9 @@ export function PredictionStrip({ isAmharicDoc }: { isAmharicDoc: boolean }) {
       return;
     }
 
+    // Warm the offline dictionary in the background.
+    void initializeNlp();
+
     const unregister = editor.registerUpdateListener(({ editorState }) => {
       editorState.read(() => {
         const selection = $getSelection();
@@ -63,9 +66,9 @@ export function PredictionStrip({ isAmharicDoc }: { isAmharicDoc: boolean }) {
         window.clearTimeout(timerRef.current);
         timerRef.current = window.setTimeout(async () => {
           try {
-            const res = await dictionaryApi.suggest(fragment);
-            setWords((res.data.words || []).slice(0, 5));
-            setNext((res.data.next || []).slice(0, 3));
+            const res = await suggestText(fragment);
+            setWords((res.words || []).slice(0, 5));
+            setNext((res.next || []).slice(0, 3));
           } catch {
             setWords([]);
             setNext([]);

@@ -196,6 +196,17 @@ button {
   white-space: nowrap;
 }
 
+.offline-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--warning);
+  color: #1d1d1f;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .icon-btn {
   display: grid;
   place-items: center;

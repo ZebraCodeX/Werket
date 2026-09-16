@@ -4,8 +4,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $getRoot } from 'lexical';
 import type { AppDispatch } from '../store';
 import { closeSpell } from '../store/uiSlice';
-import { dictionaryApi } from '../api/dictionary';
-import type { CheckWordResponse } from '../types/api';
+import { checkText, type CheckWord } from '../nlp';
 
 /**
  * Dictionary-backed spell check for Amharic documents.
@@ -17,7 +16,7 @@ import type { CheckWordResponse } from '../types/api';
 export function SpellCheckPanel({ isAmharicDoc }: { isAmharicDoc: boolean }) {
   const [editor] = useLexicalComposerContext();
   const dispatch = useDispatch<AppDispatch>();
-  const [issues, setIssues] = useState<CheckWordResponse[]>([]);
+  const [issues, setIssues] = useState<CheckWord[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -26,8 +25,8 @@ export function SpellCheckPanel({ isAmharicDoc }: { isAmharicDoc: boolean }) {
     setError('');
     try {
       const text = editor.getEditorState().read(() => $getRoot().getTextContent());
-      const res = await dictionaryApi.check(text);
-      setIssues((res.data.words || []).filter(word => !word.known));
+      const found = await checkText(text);
+      setIssues(found.filter(word => !word.known));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Spell check failed');
     } finally {

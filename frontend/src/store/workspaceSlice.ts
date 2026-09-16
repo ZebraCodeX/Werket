@@ -1,36 +1,26 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import { workspaceApi } from '../api/workspace';
 import type { WorkspaceState, File, WorkspaceData, DeletedFile } from '../types/workspace';
-
-const WORKSPACE_KEY = 'werket-workspace-v2';
+import { loadWorkspace, saveWorkspace, snapshotWorkspace, readLocalMirror } from '../storage/workspaceStore';
 
 const initialWorkspace = (): WorkspaceState => {
-  if (typeof window !== 'undefined') {
-    try {
-      const saved = localStorage.getItem(WORKSPACE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.files && Array.isArray(parsed.files)) {
-          return {
-            projectName: parsed.projectName || 'My documents',
-            files: parsed.files,
-            deletedFiles: parsed.deletedFiles || [],
-            openIds: parsed.openIds || [parsed.files[0]?.id].filter(Boolean),
-            activeId: parsed.activeId || parsed.files[0]?.id || null,
-            font: parsed.font || 'Noto Sans Ethiopic',
-            size: parsed.size || 18,
-            align: parsed.align || 'left',
-            lang: parsed.lang || 'en',
-            loading: false,
-            saving: false,
-            lastSynced: parsed.lastSynced || null,
-            syncError: parsed.syncError || null,
-          };
-        }
-      }
-    } catch {
-      // Ignore parse errors
-    }
+  const saved = readLocalMirror();
+  if (saved) {
+    return {
+      projectName: saved.projectName || 'My documents',
+      files: saved.files,
+      deletedFiles: saved.deletedFiles || [],
+      openIds: saved.openIds || [saved.files[0]?.id].filter(Boolean),
+      activeId: saved.activeId || saved.files[0]?.id || null,
+      font: saved.font || 'Noto Sans Ethiopic',
+      size: saved.size || 18,
+      align: saved.align || 'left',
+      lang: saved.lang || 'en',
+      loading: false,
+      saving: false,
+      lastSynced: null,
+      syncError: null,
+    };
   }
   const firstFile: File = {
     id: `f-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -65,20 +55,22 @@ const initialState: WorkspaceState = {
   syncError: null,
 };
 
+// Persist to IndexedDB (with a localStorage mirror) so documents survive
+// offline and aren't limited by the ~5 MB localStorage quota.
 const saveToLocal = (workspace: WorkspaceState) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(WORKSPACE_KEY, JSON.stringify({
-      projectName: workspace.projectName,
-      files: workspace.files,
-      deletedFiles: workspace.deletedFiles,
-      openIds: workspace.openIds,
-      activeId: workspace.activeId,
-      font: workspace.font,
-      size: workspace.size,
-      align: workspace.align,
-      lang: workspace.lang,
-    }));
-  }
+  saveWorkspace(snapshotWorkspace(workspace));
+};
+
+const applyWorkspaceData = (state: WorkspaceState, data: WorkspaceData) => {
+  state.projectName = data.projectName || state.projectName;
+  state.files = data.files || state.files;
+  state.deletedFiles = data.deletedFiles || state.deletedFiles;
+  state.openIds = data.openIds || state.openIds;
+  state.activeId = data.activeId || state.activeId;
+  state.font = data.font || state.font;
+  state.size = data.size || state.size;
+  state.align = data.align || state.align;
+  if (data.lang) state.lang = data.lang;
 };
 
 const generateId = () => `f-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -115,6 +107,11 @@ export const saveToCloud = createAsyncThunk<void, void, { rejectValue: string }>
       return rejectWithValue(err.response?.data?.error || 'Failed to save to cloud');
     }
   }
+);
+
+export const hydrateWorkspace = createAsyncThunk<WorkspaceData | null, void>(
+  'workspace/hydrate',
+  async () => loadWorkspace()
 );
 
 const workspaceSlice = createSlice({
@@ -263,16 +260,7 @@ const workspaceSlice = createSlice({
       saveToLocal(state);
     },
     applyCloudWorkspace: (state, action: PayloadAction<WorkspaceData>) => {
-      const data = action.payload;
-      state.projectName = data.projectName || state.projectName;
-      state.files = data.files || state.files;
-      state.deletedFiles = data.deletedFiles || state.deletedFiles;
-      state.openIds = data.openIds || state.openIds;
-      state.activeId = data.activeId || state.activeId;
-      state.font = data.font || state.font;
-      state.size = data.size || state.size;
-      state.align = data.align || state.align;
-      if (data.lang) state.lang = data.lang;
+      applyWorkspaceData(state, action.payload);
       saveToLocal(state);
     },
     createFileFromTemplate: (state, action: PayloadAction<{ name: string; text: string; lang?: 'am' | 'en' }>) => {
@@ -297,19 +285,16 @@ const workspaceSlice = createSlice({
       })
       .addCase(loadFromCloud.fulfilled, (state, action) => {
         state.loading = false;
-        const data = action.payload;
-        state.projectName = data.projectName || state.projectName;
-        state.files = data.files || state.files;
-        state.deletedFiles = data.deletedFiles || state.deletedFiles;
-        state.openIds = data.openIds || state.openIds;
-        state.activeId = data.activeId || state.activeId;
-        state.font = data.font || state.font;
-        state.size = data.size || state.size;
-        state.align = data.align || state.align;
-        if (data.lang) state.lang = data.lang;
+        applyWorkspaceData(state, action.payload);
         state.lastSynced = Date.now();
         state.syncError = null;
         saveToLocal(state);
+      })
+      .addCase(hydrateWorkspace.fulfilled, (state, action) => {
+        if (action.payload) {
+          applyWorkspaceData(state, action.payload);
+          saveToLocal(state);
+        }
       })
       .addCase(loadFromCloud.rejected, (state, action) => {
         state.loading = false;
