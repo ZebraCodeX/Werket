@@ -1017,11 +1017,8 @@ button {
   overflow: auto;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .keyboard-panel {
-    display: none;
-  }
-}
+/* The on-screen keyboard is available on every device via an explicit toggle;
+   it never opens on its own, so no pointer-based hiding here. */
 
 /* Dynamic keyboard height based on layer */
 .keyboard-panel.open[data-layer="fidel"] {
@@ -1056,22 +1053,79 @@ button {
   border-radius: 2px;
 }
 
+/* Explicit hide control inside the panel (works without hover/swipe). */
+.keyboard-hide-btn {
+  align-self: flex-end;
+  margin: 0 12px 2px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.keyboard-hide-btn:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+
+/* Seven vowel orders for the selected family. */
+.keyboard-orders {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 8px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.keyboard-orders .order-key {
+  min-width: 44px;
+  height: 44px;
+  background: var(--chrome);
+  border: 1px solid var(--line);
+}
+
+.keyboard-orders .order-key:hover,
+.keyboard-orders .order-key:active {
+  background: var(--accent-soft);
+}
+
+.fidel-key-wrapper .key.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* Keep the caret reachable above the docked keyboard. */
+.osk-open .editor-content {
+  padding-bottom: 46vh;
+}
+
 /* ========== Keyboard Toggle Button ========== */
 
 .toolbar-btn.keyboard-toggle {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .toolbar-btn.keyboard-toggle {
-    display: flex;
-  }
+  display: flex;
 }
 
 .toolbar-btn.keyboard-toggle.active {
   background: var(--primary);
   color: var(--primary-contrast);
   border-color: var(--primary);
+}
+
+/* Mobile-only keyboard toggle in the topbar (desktop uses the toolbar). */
+.keyboard-toggle-topbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .icon-btn.keyboard-toggle-topbar {
+    display: grid;
+  }
 }
 
 /* ========== Editor Toolbar ========== */

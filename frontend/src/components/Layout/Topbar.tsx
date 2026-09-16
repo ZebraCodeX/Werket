@@ -12,13 +12,16 @@ import {
   toggleTheme,
 } from '../../store/uiSlice';
 import { setProjectName, addFile, saveToCloud } from '../../store/workspaceSlice';
+import { toggleDocked } from '../../store/keyboardSlice';
 
 export const Topbar: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { projectName, saving, lastSynced } = useSelector((state: RootState) => state.workspace);
+  const { projectName, saving, lastSynced, activeId, files } = useSelector((state: RootState) => state.workspace);
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
   const { sidebarOpen } = useSelector((state: RootState) => state.ui);
+  const { docked: keyboardDocked, deviceKeyboardMode } = useSelector((state: RootState) => state.keyboard);
+  const isAmharicDoc = files.find(f => f.id === activeId)?.lang === 'am';
   const projectNameRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -113,6 +116,15 @@ export const Topbar: React.FC = () => {
           <button className="icon-btn" id="exportBtn" title="Export" onClick={() => dispatch(openExportDialog('pdf'))}>📤</button>
         </div>
         <button className="icon-btn" id="printBtn" title="Print" onClick={() => window.print()}>🖨️</button>
+        {isAmharicDoc && !deviceKeyboardMode && (
+          <button
+            className={`icon-btn keyboard-toggle-topbar ${keyboardDocked ? 'primary' : ''}`}
+            title={keyboardDocked ? 'Hide Amharic keyboard' : 'Show Amharic keyboard'}
+            aria-label={keyboardDocked ? 'Hide Amharic keyboard' : 'Show Amharic keyboard'}
+            aria-pressed={keyboardDocked}
+            onClick={() => dispatch(toggleDocked())}
+          >⌨</button>
+        )}
         <div className="menu-wrap">
           <button className="icon-btn primary" id="saveBtn" title="Save" onClick={handleSave}>💾</button>
         </div>

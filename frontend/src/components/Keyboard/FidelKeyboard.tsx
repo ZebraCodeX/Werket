@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect, useMemo } from 'react';
+import React, { useCallback, useRef, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
@@ -13,7 +13,7 @@ import {
   setDeviceKeyboardMode,
   setDocked,
 } from '../../store/keyboardSlice';
-import { FUNCTION_KEYS } from '../../utils/fidel';
+import { FUNCTION_KEYS, ordersFor } from '../../utils/fidel';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 
 const KEY_LAYOUTS = {
@@ -34,15 +34,22 @@ const KEY_LAYOUTS = {
   ],
 };
 
+const ORDER_LABELS = ['e', 'u', 'i', 'a', 'ie', '', 'o'];
+
 export const FidelKeyboard: React.FC = React.memo(() => {
   const [editor] = useLexicalComposerContext();
   const dispatch = useDispatch<AppDispatch>();
   const { docked, layer, phoneticMode, deviceKeyboardMode } = useSelector((state: RootState) => state.keyboard);
   const { activeId, files } = useSelector((state: RootState) => state.workspace);
   const grabRef = useRef<HTMLDivElement>(null);
+  const [ordersFamily, setOrdersFamily] = useState<string | null>(null);
 
   const activeFile = files.find(f => f.id === activeId);
   const isAmharicDoc = activeFile?.lang === 'am';
+
+  // The custom keyboard is "active" only when it is docked for an Amharic doc
+  // and the user has not switched to the device keyboard.
+  const customKeyboardActive = docked && !!isAmharicDoc && !deviceKeyboardMode;
 
   useSwipeGesture(grabRef, {
     onSwipeDown: () => dispatch(setDocked(false)),
@@ -50,12 +57,23 @@ export const FidelKeyboard: React.FC = React.memo(() => {
     threshold: 50,
   });
 
+  // Suppress the OS soft keyboard while the custom keyboard is showing, and
+  // give the editor room to scroll above the docked panel. This is purely
+  // manual: the keyboard never opens on its own.
   useEffect(() => {
-    if (!isAmharicDoc) {
-      dispatch(setDocked(false));
-      dispatch(setDeviceKeyboardMode(true));
+    const root = editor.getRootElement();
+    if (root) {
+      if (customKeyboardActive) {
+        root.setAttribute('inputmode', 'none');
+      } else {
+        root.removeAttribute('inputmode');
+      }
     }
-  }, [isAmharicDoc, dispatch]);
+    document.documentElement.classList.toggle('osk-open', customKeyboardActive);
+    return () => {
+      document.documentElement.classList.remove('osk-open');
+    };
+  }, [editor, customKeyboardActive]);
 
   const functionKeys = useMemo(() => FUNCTION_KEYS[layer], [layer]);
 
@@ -102,6 +120,16 @@ export const FidelKeyboard: React.FC = React.memo(() => {
     }
   }, [handleDelete, handleKeyClick, handleEnter, dispatch]);
 
+  // A family key opens its seven vowel orders; picking one inserts it.
+  const handleFamilyKey = useCallback((family: string) => {
+    setOrdersFamily(current => (current === family ? null : family));
+  }, []);
+
+  const insertOrder = useCallback((char: string) => {
+    handleKeyClick(char);
+    setOrdersFamily(null);
+  }, [handleKeyClick]);
+
   const handlePhoneticToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setPhoneticMode(e.target.checked));
   }, [dispatch]);
@@ -130,23 +158,58 @@ export const FidelKeyboard: React.FC = React.memo(() => {
       aria-label="Amharic keyboard"
     >
       <div ref={grabRef} className="keyboard-grab" aria-hidden="true" />
+      <button className="keyboard-hide-btn" onClick={closeKeyboard}>Hide keyboard</button>
+
+      {ordersFamily && layer === 'fidel' && (
+        <div className="keyboard-orders" role="group" aria-label={`${ordersFamily} vowel orders`}>
+          {ordersFor(ordersFamily).map((char, index) => (
+            <button
+              key={char}
+              className="order-key"
+              onPointerDown={e => { e.preventDefault(); insertOrder(char); }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); insertOrder(char); } }}
+            >
+              <span className="order-char">{char}</span>
+              <span className="order-label">{ORDER_LABELS[index]}</span>
+            </button>
+          ))}
+          <button
+            className="order-key order-close"
+            aria-label="Close order picker"
+            onPointerDown={e => { e.preventDefault(); setOrdersFamily(null); }}
+          >
+            <span className="order-char">✕</span>
+          </button>
+        </div>
+      )}
 
       <div id="keyboard" className="keyboard" role="application" aria-label="Amharic keyboard">
         <div className="keyboard-rows">
           {currentLayout.map((row, rowIndex) => (
             <div key={rowIndex} className="keyboard-row">
               {row.map((keyChar, keyIndex) => (
-                <button
-                  key={`${rowIndex}-${keyIndex}`}
-                  className="key key-char"
-                  onClick={() => handleKeyClick(keyChar)}
-                  onTouchStart={e => { e.preventDefault(); handleKeyClick(keyChar); }}
-                >
-                  <span className="key-label">{keyChar}</span>
-                  {layer === 'fidel' && (
-                    <span className="key-sub-label">⋯</span>
-                  )}
-                </button>
+                <span key={`${rowIndex}-${keyIndex}`} className="fidel-key-wrapper">
+                  <button
+                    className={`key key-char${ordersFamily === keyChar ? ' active' : ''}`}
+                    onPointerDown={e => {
+                      e.preventDefault();
+                      if (layer === 'fidel') handleFamilyKey(keyChar);
+                      else handleKeyClick(keyChar);
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (layer === 'fidel') handleFamilyKey(keyChar);
+                        else handleKeyClick(keyChar);
+                      }
+                    }}
+                    aria-haspopup={layer === 'fidel' ? 'true' : undefined}
+                    aria-expanded={layer === 'fidel' ? ordersFamily === keyChar : undefined}
+                  >
+                    <span className="key-label">{keyChar}</span>
+                    {layer === 'fidel' && <span className="key-sub-label">⌄</span>}
+                  </button>
+                </span>
               ))}
             </div>
           ))}
@@ -157,11 +220,8 @@ export const FidelKeyboard: React.FC = React.memo(() => {
             <button
               key={i}
               className={`key key-fn key-fn-${k.type}`}
-              onClick={() => handleFunctionKey(k.value)}
-              onTouchStart={e => { e.preventDefault(); handleFunctionKey(k.value); }}
-              style={{
-                flex: k.type === 'space' ? '2.6' : k.type === 'enter' ? '1.3' : k.value === 'layer' ? '1' : '1',
-              }}
+              onPointerDown={e => { e.preventDefault(); handleFunctionKey(k.value); }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleFunctionKey(k.value); } }}
               aria-label={k.label}
             >
               <span className="fn-label">{k.label}</span>
