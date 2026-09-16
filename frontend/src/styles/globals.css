@@ -25,6 +25,9 @@
   --radius-lg: 14px;
   --transition: 0.2s ease;
   --composing-bg: #e8e8ed;
+  --sidebar-width: 320px;
+  --sidebar-hover-width: 320px;
+  --primary-focus: rgba(0, 113, 227, 0.4);
 }
 
 [data-theme="dark"] {
@@ -44,6 +47,7 @@
   --danger: #ff453a;
   --warning: #ff9f0a;
   --composing-bg: #3a3a3c;
+  --primary-focus: rgba(10, 132, 255, 0.45);
   --template-blank: linear-gradient(135deg, #3a3a3c 0%, #2c2c2e 100%);
   --template-letter: linear-gradient(135deg, #1e3a5f 0%, #0d2540 100%);
   --template-journal: linear-gradient(135deg, #3d2e00 0%, #2d1e00 100%);
@@ -78,265 +82,6 @@ button {
   font-family: inherit;
 }
 
-/* ========== File Explorer ========== */
-
-.explorer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 320px;
-  z-index: 105;
-  background: var(--bg);
-  border-right: 1px solid var(--line);
-  overflow: hidden;
-  transition: transform 0.3s ease;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-}
-
-.explorer.closed {
-  transform: translateX(-320px);
-}
-
-.explorer .panel-heading {
-  display: flex;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--line);
-  background: var(--chrome);
-  cursor: move;
-  user-select: none;
-}
-
-.explorer .panel-heading span {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.explorer .panel-heading button {
-  margin-left: 12px;
-  padding: 6px 12px;
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--muted);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.explorer .panel-heading button:hover {
-  background: var(--line);
-  color: var(--ink);
-}
-
-/* Responsive: on mobile <768px, hide explorer by default, show hamburger */
-@media (max-width: 768px) {
-  .explorer {
-    transform: translateX(-320px);
-  }
-  
-  .explorer.open {
-    transform: translateX(0);
-  }
-  
-  .explorer .file-tree {
-    max-height: none;
-  }
-}
-
-.explorer .file-tree {
-  max-height: calc(100vh - 180px);
-  overflow-y: auto;
-  padding: 12px 20px;
-}
-
-.explorer .tree-file {
-  display: flex;
-  align-items: center;
-  padding: 8px 4px;
-  margin: 2px 0;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.explorer .tree-file.active {
-  background: var(--chrome);
-}
-
-.explorer .tree-file:hover:not(.active) {
-  background: var(--line);
-}
-
-.explorer .tree-file .file-icon {
-  width: 20px;
-  font-size: 12px;
-  color: var(--muted);
-  margin-right: 10px;
-  flex-shrink: 0;
-}
-
-.explorer .tree-file .file-name {
-  flex: 1;
-  font-size: 13px;
-  color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.explorer .tree-file .close-tab {
-  margin-left: 8px;
-  padding: 2px 6px;
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--muted);
-  font-size: 10px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.explorer .tree-file:hover .close-tab,
-.explorer .tree-file.active .close-tab {
-  color: var(--ink);
-}
-
-.explorer .tree-folder {
-  padding: 4px 0;
-  margin: 4px 0;
-  border-top: 1px solid var(--line);
-}
-
-.explorer .tree-folder .tree-folder-label {
-  display: flex;
-  align-items: center;
-  padding: 4px 8px;
-  font-size: 12px;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.explorer .tree-folder .tree-folder-label:hover {
-  background: var(--chrome);
-}
-
-.explorer .tree-folder .file-icon {
-  margin-right: 6px;
-  font-size: 10px;
-}
-
-.explorer .explorer-bottom {
-  padding: 12px 20px;
-  border-top: 1px solid var(--line);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.explorer .outline-action {
-  padding: 6px 12px;
-  background: var(--chrome);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.explorer .outline-action:hover {
-  background: var(--line);
-  color: var(--ink);
-}
-
-.explorer .file-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.explorer .file-actions button {
-  padding: 4px 8px;
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--muted);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.explorer .file-actions button:hover {
-  background: var(--line);
-  color: var(--ink);
-}
-
-/* ========== Trash Folder Styles ========== */
-
-.tree-folder.trash-folder {
-  border-top: 1px solid var(--line);
-  margin-top: 8px;
-}
-
-.trash-folder .tree-folder-label:hover {
-  background: var(--danger);
-  color: #fff;
-  border-radius: var(--radius-sm);
-}
-
-.trash-folder .tree-folder-label:hover span:last-child {
-  color: #fff;
-}
-
-.trash-files {
-  padding-left: 12px;
-  margin-top: 4px;
-  animation: trash-slide 0.2s ease;
-}
-
-@keyframes trash-slide {
-  from { opacity: 0; max-height: 0; }
-  to { opacity: 1; max-height: 500px; }
-}
-
-.trash-file {
-  opacity: 0.7;
-  background: color-mix(in srgb, var(--danger) 5%, transparent);
-  border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent);
-}
-
-.trash-file:hover {
-  opacity: 1;
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
-}
-
-.trash-actions {
-  display: flex;
-  gap: 4px;
-}
-
-.trash-btn {
-  padding: 2px 6px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--muted);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.trash-btn.restore:hover {
-  background: var(--success);
-  color: #fff;
-}
-
-.trash-btn.delete:hover {
-  background: var(--danger);
-  color: #fff;
-}
 
 /* ========== App shell ========== */
 
@@ -351,6 +96,7 @@ button {
 }
 
 .app-shell {
+  position: relative;
   display: grid;
   grid-template-rows: 44px 1fr;
   grid-template-columns: var(--sidebar-width, 320px) 1fr;
@@ -857,14 +603,15 @@ button {
 
 .sidebar-resize-handle {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 44px;
   bottom: 0;
-  width: 4px;
+  left: calc(var(--sidebar-width, 320px) - 2px);
+  width: 5px;
   cursor: col-resize;
   background: transparent;
   transition: background 0.15s ease;
-  z-index: 10;
+  touch-action: none;
+  z-index: 110;
 }
 
 .sidebar-resize-handle:hover,
@@ -1300,7 +1047,9 @@ button {
 
 .editor-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
@@ -1573,59 +1322,6 @@ button {
   }
 }
 
-/* ========== Keyboard Panel - Enhanced Responsive ========== */
-
-.keyboard-panel {
-  background: var(--chrome);
-  border-top: 1px solid var(--line);
-  flex-shrink: 0;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.25s ease, padding 0.25s ease;
-}
-
-.keyboard-panel.open {
-  max-height: 55vh;
-  overflow: auto;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .keyboard-panel {
-    display: none;
-  }
-}
-
-/* Dynamic keyboard height based on layer */
-.keyboard-panel.open[data-layer="fidel"] {
-  max-height: 60vh;
-}
-
-.keyboard-panel.open[data-layer="numbers"],
-.keyboard-panel.open[data-layer="symbols"] {
-  max-height: 50vh;
-}
-
-/* Safe area for notched devices */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .keyboard-panel.open {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
-
-.keyboard-grab {
-  display: flex;
-  justify-content: center;
-  padding: 6px 0 2px;
-  cursor: grab;
-}
-
-.keyboard-grab::after {
-  content: '';
-  width: 36px;
-  height: 4px;
-  background: var(--line);
-  border-radius: 2px;
-}
 
 /* ========== Native-style Keyboard ========== */
 
@@ -2626,10 +2322,6 @@ dialog.export-dialog {
   color: #fff;
 }
 
-.editor-toolbar {
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
 
 /* ========== Inspector Sidebar ========== */
 

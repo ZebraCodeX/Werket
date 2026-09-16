@@ -1,7 +1,10 @@
-import React, { useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../../store';
 import { setSidebarWidth } from '../../store/uiSlice';
+
+const MIN_WIDTH = 240;
+const MAX_WIDTH = 600;
 
 export function ResizeHandle() {
   const dispatch = useDispatch<AppDispatch>();
@@ -9,52 +12,46 @@ export function ResizeHandle() {
   const isResizingRef = useRef(false);
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
-  const handleMouseMoveRef = useRef<((e: MouseEvent) => void) | null>(null);
-  const handleMouseUpRef = useRef<(() => void) | null>(null);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isResizingRef.current) return;
-    const deltaX = e.clientX - startXRef.current;
-    const newWidth = Math.max(240, Math.min(600, startWidthRef.current + deltaX));
-    dispatch(setSidebarWidth(newWidth));
-  }, [dispatch]);
+  const clamp = (value: number) => Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, value));
 
-  const handleMouseUp = useCallback(() => {
-    isResizingRef.current = false;
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-    if (handleMouseMoveRef.current) {
-      document.removeEventListener('mousemove', handleMouseMoveRef.current);
-    }
-    if (handleMouseUpRef.current) {
-      document.removeEventListener('mouseup', handleMouseUpRef.current);
-    }
-  }, []);
-
-  useLayoutEffect(() => {
-    handleMouseMoveRef.current = handleMouseMove;
-    handleMouseUpRef.current = handleMouseUp;
-  }, [handleMouseMove, handleMouseUp]);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (sidebarCollapsed) return;
     e.preventDefault();
     e.stopPropagation();
     isResizingRef.current = true;
     startXRef.current = e.clientX;
     startWidthRef.current = sidebarWidth;
+    e.currentTarget.setPointerCapture(e.pointerId);
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [sidebarCollapsed, sidebarWidth, handleMouseMove, handleMouseUp]);
+  }, [sidebarCollapsed, sidebarWidth]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isResizingRef.current) return;
+    dispatch(setSidebarWidth(clamp(startWidthRef.current + (e.clientX - startXRef.current))));
+  }, [dispatch]);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isResizingRef.current) return;
+    isResizingRef.current = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  }, []);
 
   if (sidebarCollapsed) return null;
 
   return (
     <div
       className="sidebar-resize-handle"
-      onMouseDown={handleMouseDown}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onDoubleClick={() => dispatch(setSidebarWidth(320))}
       aria-label="Resize sidebar"
       role="separator"
       tabIndex={0}
@@ -62,9 +59,7 @@ export function ResizeHandle() {
       onKeyDown={(e) => {
         if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
           e.preventDefault();
-          const delta = e.key === 'ArrowLeft' ? -20 : 20;
-          const newWidth = Math.max(240, Math.min(600, sidebarWidth + delta));
-          dispatch(setSidebarWidth(newWidth));
+          dispatch(setSidebarWidth(clamp(sidebarWidth + (e.key === 'ArrowLeft' ? -20 : 20))));
         }
       }}
     />

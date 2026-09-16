@@ -8,7 +8,6 @@ import { loadFromCloud } from '../store/workspaceSlice';
 import { setSidebarOpen, setTheme, setInstallPromptAvailable, setSidebarWidth } from '../store/uiSlice';
 import { Topbar } from '../components/Layout';
 import { ResizeHandle } from '../components/Layout/ResizeHandle';
-import { FidelKeyboard } from '../components/Keyboard/FidelKeyboard';
 import { ContextMenu } from '../components/common/ContextMenu';
 import { ToastContainer } from '../components/common/ToastContainer';
 import { ErrorBoundary } from '../components/common/ErrorBoundary';
@@ -54,10 +53,15 @@ export function AppLayout() {
     }
   }, [user, dispatch]);
 
-  const sidebarStyle = { width: sidebarCollapsed ? '60px' : `${sidebarWidth}px` } as React.CSSProperties;
+  // Drive the grid/sidebar width through CSS variables instead of setting a
+  // width on the grid container (which squashed the whole app shell).
+  const shellVars = {
+    '--sidebar-width': `${sidebarWidth}px`,
+    '--sidebar-hover-width': `${sidebarWidth}px`,
+  } as React.CSSProperties;
 
   return (
-    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`} style={sidebarStyle as any}>
+    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : ''} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`} style={shellVars}>
       <div className="sidebar-backdrop" onClick={() => dispatch(setSidebarOpen(false))} />
       <ResizeHandle />
       <Topbar />
@@ -69,7 +73,6 @@ export function AppLayout() {
       <NewDocDialog />
       <ExportDialog />
       <ToastContainer />
-      <FidelKeyboard />
       {pdfViewerOpen &&
         <React.Suspense fallback={null}>
           <PdfViewer />
