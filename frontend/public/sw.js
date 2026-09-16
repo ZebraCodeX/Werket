@@ -1,4 +1,4 @@
-const CACHE_NAME = 'werket-v2';
+const CACHE_NAME = 'werket-v3';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',

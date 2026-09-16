@@ -28,6 +28,8 @@
   --sidebar-width: 320px;
   --sidebar-hover-width: 320px;
   --primary-focus: rgba(0, 113, 227, 0.4);
+  --topbar-h: 44px;
+  --topbar-h: calc(44px + env(safe-area-inset-top));
 }
 
 [data-theme="dark"] {
@@ -98,7 +100,7 @@ button {
 .app-shell {
   position: relative;
   display: grid;
-  grid-template-rows: 44px 1fr;
+  grid-template-rows: var(--topbar-h) 1fr;
   grid-template-columns: var(--sidebar-width, 320px) 1fr;
   height: 100vh;
   height: 100dvh;
@@ -116,7 +118,7 @@ button {
 @media (max-width: 1023px) {
   .app-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: 44px 1fr;
+    grid-template-rows: var(--topbar-h) 1fr;
   }
   
   .app-shell.sidebar-open {
@@ -131,8 +133,9 @@ button {
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  height: 44px;
+  height: var(--topbar-h);
   padding: 0 8px;
+  padding-top: env(safe-area-inset-top);
   gap: 4px;
   background: var(--chrome);
   border-bottom: 1px solid var(--line);
@@ -145,6 +148,23 @@ button {
   display: flex;
   align-items: center;
   gap: 2px;
+}
+
+.topbar-left {
+  flex-shrink: 0;
+}
+
+/* The right cluster scrolls horizontally on narrow phones instead of
+   clipping, so every action stays reachable. */
+.topbar-right {
+  min-width: 0;
+  flex-shrink: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.topbar-right::-webkit-scrollbar {
+  display: none;
 }
 
 .topbar-center {
@@ -249,7 +269,7 @@ button {
 @media (max-width: 1023px) {
   .explorer {
     position: fixed;
-    top: 44px;
+    top: var(--topbar-h);
     left: 0;
     bottom: 0;
     width: 320px;
@@ -523,7 +543,10 @@ button {
 }
 
 /* ========== Sidebar Collapsed State (Desktop) - VSCode-like hover overlay ========== */
+/* Scoped to desktop: on phones/tablets the explorer is a drawer, so its labels
+   and footer must stay visible (there is no hover on touch). */
 
+@media (min-width: 1024px) {
 .app-shell.sidebar-collapsed .explorer .file-name,
 .app-shell.sidebar-collapsed .explorer .tree-folder-label span:last-child,
 .app-shell.sidebar-collapsed .explorer .panel-heading span,
@@ -598,12 +621,13 @@ button {
 .app-shell.sidebar-collapsed .explorer:hover .panel-heading button {
   margin-left: 12px;
 }
+} /* @media (min-width: 1024px) */
 
 /* ========== Sidebar Resize Handle ========== */
 
 .sidebar-resize-handle {
   position: absolute;
-  top: 44px;
+  top: var(--topbar-h);
   bottom: 0;
   left: calc(var(--sidebar-width, 320px) - 2px);
   width: 5px;
@@ -662,13 +686,20 @@ button {
 /* ========== Home Page ========== */
 
 .home-page {
-  flex: 1;
+  grid-row: 2;
+  grid-column: 1 / -1;
   display: flex;
   justify-content: center;
-  padding: 40px 20px;
+  padding: 40px 20px max(40px, env(safe-area-inset-bottom));
   background: var(--bg);
   overflow-y: auto;
   min-height: 0;
+}
+
+.home-subtitle {
+  font-size: 15px;
+  color: var(--muted);
+  margin: 0 0 20px;
 }
 
 .home-inner {
@@ -1180,19 +1211,6 @@ button {
 }
 
 /* ========== Document Paper ========== */
-
-.document-stage {
-  flex: 1;
-  overflow: auto;
-  position: relative;
-}
-
-.document-paper-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
 
 .document-paper {
   box-sizing: border-box;
@@ -2595,5 +2613,272 @@ dialog.export-dialog {
   .inspector-row {
     flex-direction: column;
     gap: 16px;
+  }
+}
+
+/* ========== Inspector as a right rail on desktop ========== */
+
+@media (min-width: 1024px) {
+  .editor-area {
+    flex-direction: row;
+  }
+
+  .lexical-editor-wrapper {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .inspector-wrapper {
+    flex: 0 0 auto;
+  }
+
+  .inspector-sidebar {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .inspector-toggle {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+  }
+
+  .inspector-wrapper:has(.inspector-sidebar.open) .inspector-toggle {
+    display: none;
+  }
+}
+
+/* ========== Tablet document padding ========== */
+
+@media (min-width: 769px) and (max-width: 1023px) {
+  .lexical-editor-wrapper > .document-paper {
+    padding: 48px;
+  }
+}
+
+/* ========== Touch (coarse pointer) tap targets ========== */
+
+@media (pointer: coarse) {
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+  }
+
+  .toolbar-btn,
+  .toolbar-select {
+    min-height: 40px;
+  }
+
+  .inspector-close {
+    width: 36px;
+    height: 36px;
+  }
+
+  .trash-btn {
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .tree-file .close-tab {
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .auth-link {
+    padding: 10px 14px;
+  }
+}
+
+/* ========== Topbar on narrow phones ========== */
+
+@media (max-width: 640px) {
+  .save-status {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar {
+    gap: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .auth-links {
+    gap: 6px;
+    margin-left: 4px;
+  }
+
+  .auth-link {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .icon-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .avatar {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+/* ========== PDF Viewer ========== */
+
+.pdf-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.pdf-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  padding-top: calc(10px + env(safe-area-inset-top));
+  background: var(--chrome);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.pdf-viewer-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pdf-viewer-title span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdf-viewer-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pdf-ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.pdf-ctrl-btn:hover {
+  background: var(--line);
+}
+
+.pdf-close-btn {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.pdf-zoom-label {
+  min-width: 44px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pdf-viewer-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+
+.pdf-loading,
+.pdf-error {
+  text-align: center;
+  padding: 40px 16px;
+  color: var(--muted);
+}
+
+.pdf-error {
+  color: var(--danger);
+}
+
+@media (max-width: 480px) {
+  .pdf-viewer-title {
+    font-size: 12px;
+  }
+
+  .pdf-ctrl-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+  }
+}
+
+/* ========== Toasts ========== */
+
+.toast-container {
+  position: fixed;
+  right: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  z-index: 1300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(320px, calc(100vw - 24px));
+  pointer-events: none;
+}
+
+.toast {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  animation: toast-in 0.3s ease;
+  pointer-events: auto;
+  cursor: pointer;
+  word-break: break-word;
+}
+
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+.toast.warning { background: var(--warning); }
+.toast.info { background: var(--accent); }
+
+@keyframes toast-in {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@media (max-width: 480px) {
+  .toast-container {
+    left: 12px;
+    right: 12px;
+    max-width: none;
   }
 }

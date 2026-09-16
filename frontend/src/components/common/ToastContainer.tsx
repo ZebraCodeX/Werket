@@ -19,45 +19,16 @@ export const ToastContainer: React.FC = () => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="toast-container" style={{
-      position: 'fixed',
-      bottom: '20px',
-      right: '20px',
-      zIndex: 1000,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '8px',
-      pointerEvents: 'none',
-    }}>
+    <div className="toast-container" role="status" aria-live="polite">
       {toasts.map(toast => (
         <div
           key={toast.id}
-          style={{
-            padding: '12px 20px',
-            borderRadius: '8px',
-            background: toast.type === 'error' ? 'var(--danger)' :
-              toast.type === 'success' ? 'var(--success)' :
-              toast.type === 'warning' ? 'var(--warning)' : 'var(--accent)',
-            color: 'white',
-            fontSize: '13px',
-            fontWeight: 500,
-            boxShadow: 'var(--shadow-lg)',
-            animation: 'slideIn 0.3s ease',
-            pointerEvents: 'auto',
-            cursor: 'pointer',
-            maxWidth: '300px',
-          }}
+          className={`toast ${toast.type}`}
           onClick={() => dispatch(removeToast(toast.id))}
         >
           {toast.message}
         </div>
       ))}
-      <style>{`
-        @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 };
